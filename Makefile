@@ -3,7 +3,7 @@
 #
 include config.mak
 
-CFLAGS+=-g -Wall
+CFLAGS+=-g -Wall -fsigned-char -Os
 ifndef CONFIG_WIN32
 LIBS=-ldl
 BCHECK_O=bcheck.o
@@ -294,5 +294,5 @@ FILE=tcc-$(shell cat VERSION)
 tar:
 	rm -rf /tmp/$(FILE)
 	cp -r . /tmp/$(FILE)
-	( cd /tmp ; tar zcvf ~/$(FILE).tar.gz $(FILE) --exclude CVS )
+	( cd /tmp ; tar zcvf ~/$(FILE).tar.gz $(FILE) --exclude .hg )
 	rm -rf /tmp/$(FILE)
