@@ -6660,13 +6660,14 @@ static void struct_decl(CType *type, int u)
  */
 static int parse_btype(CType *type, AttributeDef *ad)
 {
-    int t, u, type_found, typespec_found;
+    int t, u, type_found, typespec_found, typedef_found;
     Sym *s;
     CType type1;
 
     memset(ad, 0, sizeof(AttributeDef));
     type_found = 0;
     typespec_found = 0;
+    typedef_found = 0;
     t = 0;
     while(1) {
         switch(tok) {
@@ -6799,11 +6800,12 @@ static int parse_btype(CType *type, AttributeDef *ad)
             parse_expr_type(&type1);
             goto basic_type2;
         default:
-            if (typespec_found)
+            if (typespec_found || typedef_found)
                 goto the_end;
             s = sym_find(tok);
             if (!s || !(s->type.t & VT_TYPEDEF))
                 goto the_end;
+            typedef_found = 1;
             t |= (s->type.t & ~VT_TYPEDEF);
             type->ref = s->type.ref;
             next();
