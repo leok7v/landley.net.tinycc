@@ -1066,7 +1066,7 @@ void cast_test()
     int a;
     char c;
     char tab[10];
-    unsigned b,c;
+    unsigned b,d;
     short s;
 
     printf("cast_test:\n");
