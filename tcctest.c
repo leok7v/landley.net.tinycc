@@ -1066,6 +1066,8 @@ void cast_test()
     int a;
     char c;
     char tab[10];
+    unsigned b,c;
+    short s;
 
     printf("cast_test:\n");
     a = 0xfffff;
@@ -1088,6 +1090,14 @@ void cast_test()
     printf("%d\n", a);
     
     printf("sizeof(c) = %d, sizeof((int)c) = %d\n", sizeof(c), sizeof((int)c));
+
+    /* test cast from unsigned to signed short to int */
+    b = 0xf000;
+    d = (short)b;
+    printf("((unsigned)(short)0x%08x) = 0x%08x\n", b, d);
+    b = 0xf0f0;
+    d = (char)b;
+    printf("((unsigned)(char)0x%08x) = 0x%08x\n", b, d);
 
     /* test implicit int casting for array accesses */
     c = 0;
