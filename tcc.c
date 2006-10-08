@@ -4585,7 +4585,8 @@ void save_reg(int r)
     l = 0;
     for(p=vstack;p<=vtop;p++) {
         if ((p->r & VT_VALMASK) == r ||
-            (p->r2 & VT_VALMASK) == r) {
+            ((p->type.t & VT_BTYPE) == VT_LLONG && (p->r2 & VT_VALMASK) == r)
+        {
             /* must save value on stack if not already done */
             if (!saved) {
                 /* NOTE: must reload 'r' because r might be equal to r2 */
