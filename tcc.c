@@ -9297,6 +9297,16 @@ static int tcc_compile(TCCState *s1)
     func_old_type.t = VT_FUNC;
     func_old_type.ref = sym_push(SYM_FIELD, &int_type, FUNC_CDECL, FUNC_OLD);
 
+#if defined(TCC_ARM_EABI) && defined(TCC_ARM_VFP)
+    float_type.t = VT_FLOAT;
+    double_type.t = VT_DOUBLE;
+
+    func_float_type.t = VT_FUNC;
+    func_float_type.ref = sym_push(SYM_FIELD, &float_type, FUNC_CDECL, FUNC_OLD);
+    func_double_type.t = VT_FUNC;
+    func_double_type.ref = sym_push(SYM_FIELD, &double_type, FUNC_CDECL, FUNC_OLD);
+#endif
+
 #if 0
     /* define 'void *alloca(unsigned int)' builtin function */
     {

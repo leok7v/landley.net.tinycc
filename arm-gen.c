@@ -117,6 +117,10 @@ static int regmask(int r) {
    are directly pushed on stack. */
 //#define FUNC_STRUCT_PARAM_AS_PTR
 
+#if defined(TCC_ARM_EABI) && defined(TCC_ARM_VFP)
+static CType float_type, double_type, func_float_type, func_double_type;
+#endif
+
 /* pointer size, in bytes */
 #define PTR_SIZE 4
 
@@ -898,7 +902,7 @@ save_regs(keep); /* save used temporary registers */
       o(0xEE000A10); /* fmsr s0,r0 */
     } else {
       o(0xEE000B10); /* fmdlr d0,r0 */
-      o(0xEE200B10); /* fmdhr d0,r1 */
+      o(0xEE201B10); /* fmdhr d0,r1 */
     }
   }
 #endif
@@ -1582,8 +1586,15 @@ void gen_cvt_itof(int t)
     return;
   } else if(bt == VT_LLONG) {
     int func;
+    CType *func_type = &func_old_type;
 #ifdef TCC_ARM_VFP
+#ifdef TCC_ARM_EABI
+    func_type = &func_double_type;
+#endif
     if((t & VT_BTYPE) == VT_FLOAT) {
+#ifdef TCC_ARM_EABI
+      func_type = &func_float_type;
+#endif
       if(vtop->type.t & VT_UNSIGNED)
 	func=TOK___ulltof;
       else
@@ -1594,7 +1605,7 @@ void gen_cvt_itof(int t)
       func=TOK___ulltold;
     else
       func=TOK___slltold;
-    vpush_global_sym(&func_old_type, func);
+    vpush_global_sym(func_type, func);
     vswap();
     gfunc_call(1);
     vpushi(0);
