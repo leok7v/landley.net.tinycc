@@ -59,45 +59,45 @@ Makefile: config.mak
 test: test.ref test.out
 	@if diff -u test.ref test.out ; then echo "Auto Test OK"; fi
 
-tcctest.ref: tcctest.c 
+tcctest.ref: tests/tcctest.c 
 	$(CC) $(CFLAGS) -I. -o $@ $<
 
 test.ref: tcctest.ref
 	./tcctest.ref > $@
 
-test.out: tcc tcctest.c
-	$(TCC) -run tcctest.c > $@
+test.out: tcc tests/tcctest.c
+	$(TCC) -run tests/tcctest.c > $@
 
-run: tcc tcctest.c
-	$(TCC) -run tcctest.c
+run: tcc tests/tcctest.c
+	$(TCC) -run tests/tcctest.c
 
 # iterated test2 (compile tcc then compile tcctest.c !)
-test2: tcc tcc.c tcctest.c test.ref
-	$(TCC) -run tcc.c -B. -I. -run tcctest.c > test.out2
+test2: tcc tcc.c tests/tcctest.c test.ref
+	$(TCC) -run tcc.c -B. -I. -run tests/tcctest.c > test.out2
 	@if diff -u test.ref test.out2 ; then echo "Auto Test2 OK"; fi
 
 # iterated test3 (compile tcc then compile tcc then compile tcctest.c !)
-test3: tcc tcc.c tcctest.c test.ref
-	$(TCC) -run tcc.c -B. -I. -run tcc.c -B. -I. -run tcctest.c > test.out3
+test3: tcc tcc.c tests/tcctest.c test.ref
+	$(TCC) -run tcc.c -B. -I. -run tcc.c -B. -I. -run tests/tcctest.c > test.out3
 	@if diff -u test.ref test.out3 ; then echo "Auto Test3 OK"; fi
 
 # binary output test
 test4: tcc test.ref
 # dynamic output
-	$(TCC) -o tcctest1 tcctest.c
+	$(TCC) -o tcctest1 tests/tcctest.c
 	./tcctest1 > test1.out
 	@if diff -u test.ref test1.out ; then echo "Dynamic Auto Test OK"; fi
 # static output
-	$(TCC) -static -o tcctest2 tcctest.c
+	$(TCC) -static -o tcctest2 tests/tcctest.c
 	./tcctest2 > test2.out
 	@if diff -u test.ref test2.out ; then echo "Static Auto Test OK"; fi
 # object + link output
-	$(TCC) -c -o tcctest3.o tcctest.c
+	$(TCC) -c -o tcctest3.o tests/tcctest.c
 	$(TCC) -o tcctest3 tcctest3.o
 	./tcctest3 > test3.out
 	@if diff -u test.ref test3.out ; then echo "Object Auto Test OK"; fi
 # dynamic output + bound check
-	$(TCC) -b -o tcctest4 tcctest.c
+	$(TCC) -b -o tcctest4 tests/tcctest.c
 	./tcctest4 > test4.out
 	@if diff -u test.ref test4.out ; then echo "BCheck Auto Test OK"; fi
 
@@ -242,7 +242,7 @@ libtcc.o: tcc.c i386-gen.c Makefile
 libtcc.a: libtcc.o 
 	$(AR) rcs $@ $^
 
-libtcc_test$(EXESUF): libtcc_test.c libtcc.a
+libtcc_test$(EXESUF): tests/libtcc_test.c libtcc.a
 	$(CC) $(CFLAGS) -o $@ $< libtcc.a $(LIBS)
 
 libtest: libtcc_test
