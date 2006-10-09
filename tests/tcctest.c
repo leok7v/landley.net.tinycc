@@ -1109,6 +1109,9 @@ void cast_test()
     printf("sizeof(+(char)'a') = %d\n", sizeof(+(char)'a'));
     printf("sizeof(-(char)'a') = %d\n", sizeof(-(char)'a'));
     printf("sizeof(~(char)'a') = %d\n", sizeof(-(char)'a'));
+
+    /* Cast float to bool */
+    printf("%d\n", (_Bool) 0.1);
 }
 
 /* initializers tests */

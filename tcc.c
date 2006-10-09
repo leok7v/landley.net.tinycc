@@ -5846,6 +5846,7 @@ static void gen_cast(CType *type)
             /* we handle char/short/etc... with generic code */
             if (dbt != (VT_INT | VT_UNSIGNED) &&
                 dbt != (VT_LLONG | VT_UNSIGNED) &&
+                dbt != VT_BOOL &&
                 dbt != VT_LLONG)
                 dbt = VT_INT;
             if (c) {
@@ -5860,6 +5861,10 @@ static void gen_cast(CType *type)
                     case VT_DOUBLE: vtop->c.ui = (unsigned int)vtop->c.d; break;
                     case VT_LDOUBLE: vtop->c.ui = (unsigned int)vtop->c.d; break;
                     }
+                    break;
+                case VT_BOOL:
+                    vpushi(0);
+                    gen_op(TOK_NE);
                     break;
                 default:
                     /* int case */
