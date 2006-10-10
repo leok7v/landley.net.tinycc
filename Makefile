@@ -48,9 +48,8 @@ endif
 # run local version of tcc with local libraries and includes
 TCC=./tcc -B. -I.
 
-all: $(PROGS) \
-     libtcc1.a $(BCHECK_O) tcc-doc.html tcc.1 libtcc.a \
-     libtcc_test$(EXESUF)
+all: $(PROGS) libtcc1.a $(BCHECK_O) libtcc.a libtcc_test$(EXESUF) \
+     tcc-doc.html tcc.1
 
 Makefile: config.mak
 
@@ -191,12 +190,12 @@ bcheck.o: bcheck.c
 
 install: tcc_install libinstall
 
-tcc_install: $(PROGS) tcc.1 libtcc1.a $(BCHECK_O) tcc-doc.html
+tcc_install: $(PROGS) libtcc1.a $(BCHECK_O) tcc-doc.html tcc.1
 	mkdir -p "$(bindir)"
 	$(INSTALL) -s -m755 $(PROGS) "$(bindir)"
 ifndef CONFIG_WIN32
 	mkdir -p "$(mandir)/man1"
-	$(INSTALL) tcc.1 "$(mandir)/man1"
+	-$(INSTALL) tcc.1 "$(mandir)/man1"
 endif
 	mkdir -p "$(tccdir)"
 	mkdir -p "$(tccdir)/include"
@@ -207,11 +206,10 @@ ifdef CONFIG_WIN32
 	cp -r win32/examples/. "$(tccdir)/examples"
 else
 	$(INSTALL) -m644 libtcc1.a $(BCHECK_O) "$(tccdir)"
-	$(INSTALL) -m644 stdarg.h stddef.h stdbool.h float.h varargs.h \
-                   tcclib.h "$(tccdir)/include"
+	$(INSTALL) -m644 include/* "$(tccdir)/include"
 endif
 	mkdir -p "$(docdir)"
-	$(INSTALL) -m644 tcc-doc.html "$(docdir)"
+	-$(INSTALL) -m644 tcc-doc.html "$(docdir)"
 ifdef CONFIG_WIN32
 	$(INSTALL) -m644 win32/readme.txt "$(docdir)"
 endif
@@ -282,11 +280,11 @@ cache: tcc_g
 
 # documentation and man page
 tcc-doc.html: tcc-doc.texi
-	texi2html -monolithic -number $<
+	-texi2html -monolithic -number $<
 
 tcc.1: tcc-doc.texi
-	./texi2pod.pl $< tcc.pod
-	pod2man --section=1 --center=" " --release=" " tcc.pod > $@
+	-./texi2pod.pl $< tcc.pod
+	-pod2man --section=1 --center=" " --release=" " tcc.pod > $@
 
 FILE=tcc-$(shell cat VERSION)
 
