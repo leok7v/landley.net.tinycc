@@ -51,6 +51,10 @@ int tcc_add_file(TCCState *s, const char *filename);
    error. */
 int tcc_compile_string(TCCState *s, const char *buf);
 
+/* preprocess a string containing a C source. Return null if
+   error. Returns string allocated with malloc() */
+char *tcc_preprocess_string(TCCState *s, const char *buf);
+
 /*****************************/
 /* linking commands */
 
