@@ -3141,6 +3141,8 @@ static void parse_escape_string(CString *outstr, const uint8_t *buf, int is_long
                 c = n;
                 goto add_char_nonext;
             case 'x':
+            case 'u':
+            case 'U':
                 p++;
                 n = 0;
                 for(;;) {
