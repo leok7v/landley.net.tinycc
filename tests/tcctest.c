@@ -1770,6 +1770,7 @@ void sizeof_test(void)
     printf("a=%d\n", a);
     ptr = NULL;
     printf("sizeof(**ptr) = %d\n", sizeof (**ptr));
+    printf("-1>sizeof(int) = %d\n", -1>sizeof(int));
 
     /* some alignof tests */
     printf("__alignof__(int) = %d\n", __alignof__(int));
