@@ -7351,6 +7351,7 @@ static void unary(void)
         } else {
             vpushi(align);
         }
+        vtop->type.t |= VT_UNSIGNED;
         break;
 
     case TOK_builtin_types_compatible_p:
