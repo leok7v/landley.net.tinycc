@@ -64,7 +64,7 @@ tcctest.ref: tests/tcctest.c
 test.ref: tcctest.ref
 	./tcctest.ref > $@
 
-test.out: tcc tests/tcctest.c
+test.out: tcc libtcc1.a tests/tcctest.c
 	$(TCC) -run tests/tcctest.c > $@
 
 run: tcc tests/tcctest.c
