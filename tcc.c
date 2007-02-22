@@ -4830,6 +4830,13 @@ int gv(int rc)
             offset = (data_section->data_offset + align - 1) & -align;
             data_section->data_offset = offset;
             /* XXX: not portable yet */
+#ifdef __i386__
+            /* long doubles are defined to be 96 bit wide by
+               the i386 ABI but the x87 only uses the first 80. The rest
+               is filled with garbage by now, so clear it before writing */
+            if(size == 12)
+                vtop->c.tab[2] &= 0xffff;
+#endif
             ptr = section_ptr_add(data_section, size);
             size = size >> 2;
 #if defined(TCC_TARGET_ARM) && !defined(TCC_ARM_VFP)
