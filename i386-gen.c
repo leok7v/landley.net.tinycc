@@ -600,7 +600,8 @@ int gtst(int inv, int t)
             gsym(vtop->c.i);
         }
     } else {
-        if (is_float(vtop->type.t)) {
+        if (is_float(vtop->type.t) || is_llong(vtop->type.t)) {
+            /* compare != 0 to get a 32-bit int for testing */
             vpushi(0);
             gen_op(TOK_NE);
         }

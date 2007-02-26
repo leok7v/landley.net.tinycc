@@ -1587,6 +1587,7 @@ long long int value(struct S *v)
 void longlong_test(void)
 {
     long long a, b, c;
+    unsigned long long ull;
     int ia;
     unsigned int ua;
     printf("longlong_test:\n");
@@ -1638,6 +1639,12 @@ void longlong_test(void)
         p[0]++;
         printf("%lld\n", *p);
     }
+
+    /* Make sure long long comparison tests upper 32 bits */
+    ull = 0xffffffff00000000ULL;
+    printf("ull=%llx\n",ull);
+    printf("ull!=0  ", (ull != 0) ? "true" : "false");
+    printf("ull     ", ull ? "true" : "false");
 }
 
 void vprintf1(const char *fmt, ...)

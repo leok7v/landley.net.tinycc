@@ -910,6 +910,14 @@ static inline int is_float(int t)
     return bt == VT_LDOUBLE || bt == VT_DOUBLE || bt == VT_FLOAT;
 }
 
+/* true if long long type */
+static inline int is_llong(int t)
+{
+    int bt;
+    bt = t & VT_BTYPE;
+    return bt == VT_LLONG;
+}
+
 #ifdef TCC_TARGET_I386
 #include "i386-gen.c"
 #endif
