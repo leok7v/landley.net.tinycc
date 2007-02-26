@@ -216,7 +216,7 @@ if test "$mingw32" = "yes" ; then
     docdir="$prefix/doc"
 else
     if test -z "$prefix" ; then
-        prefix="/usr/local"
+        prefix="/usr"
     fi
     if test x"$execprefix" = x""; then
         execprefix="${prefix}"
