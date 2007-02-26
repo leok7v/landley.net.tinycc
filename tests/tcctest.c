@@ -1112,6 +1112,12 @@ void cast_test()
 
     /* Cast float to bool */
     printf("%d\n", (_Bool) 0.1);
+
+    /* Cast with sign extension */
+    a = (short)0xf000;
+    printf("0x%x == 0xfffff000\n", a);
+    a = (signed char)0xf0f0;
+    printf("0x%x == 0xfffffff0\n", a);
 }
 
 /* initializers tests */
