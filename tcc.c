@@ -4272,9 +4272,14 @@ static inline int *macro_twosharps(const int *macro_str)
                     (t >= TOK_IDENT || t == TOK_PPNUM)) {
                     if (tok == TOK_PPNUM) {
                         /* if number, then create a number token */
-                        /* NOTE: no need to allocate because
-                           tok_str_add2() does it */
-                        tokc.cstr = &cstr;
+                        /* NOTE: we cannot use cstr directly for this
+                           because if there are multiple token pastings
+                           in a sequence the concatenation will reset
+                           cstr before the final token is ready. */
+                        cstr_reset(&tokcstr);
+                        cstr_cat(&tokcstr, cstr.data);
+                        cstr_ccat(&tokcstr, '\0');
+                        tokc.cstr = &tokcstr;
                     } else {
                         /* if identifier, we must do a test to
                            validate we have a correct identifier */

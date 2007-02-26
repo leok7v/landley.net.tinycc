@@ -276,6 +276,12 @@ comment
     /* test function macro substitution when the function name is
        substituted */
     TEST2();
+
+#define PART_ONE(n) (!!((n) & 0xF))
+#define PART_TWO(n) (PART_ONE(n))
+#define PART_THREE(f) PART_TWO(0x##f##U)
+    printf("Nested macros: %d == 0\n", PART_THREE(0));
+
 }
 
 int op(a,b)
