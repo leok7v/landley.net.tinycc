@@ -40,9 +40,7 @@
 #include <time.h>
 #ifdef WIN32
 #include <sys/timeb.h>
-int __stdcall VirtualProtect(void *, int, int, int *);
-#endif
-#ifndef WIN32
+#else
 #include <sys/time.h>
 #include <sys/ucontext.h>
 #include <sys/mman.h>
@@ -736,6 +734,8 @@ void *__stdcall GetProcAddress(void *, const char *);
 void *__stdcall GetModuleHandleA(const char *);
 void *__stdcall LoadLibraryA(const char *);
 int __stdcall FreeConsole(void);
+int __stdcall VirtualProtect(void*,int,int,int*);
+#define PAGE_EXECUTE_READWRITE 0x40
 
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
