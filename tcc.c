@@ -20,6 +20,121 @@
 
 #include "tcc.h"
 
+// This stuff is used by the code generation backend.
+
+static int ind; /* output code index */
+static int loc; /* local variable index */
+static Section *cur_text_section; /* current section where function code is generated */
+static SValue *vtop;
+static Section *symtab_section;
+static CType func_vt; /* current function return type (used by return instruction) */
+static int func_vc;
+static Section *lbounds_section; /* contains local data bound description */
+// Predefined types
+static CType char_pointer_type;
+static CType func_old_type;
+
+/* compile with built-in memory and bounds checker */
+static int do_bounds_check = 0;
+
+#ifdef TCC_TARGET_I386
+#include "i386-gen.c"
+#endif
+
+#ifdef TCC_TARGET_ARM
+#include "arm-gen.c"
+#endif
+
+#ifdef TCC_TARGET_C67
+#include "c67-gen.c"
+#endif
+
+/* parser */
+static struct BufferedFile *file;
+static int ch, tok;
+static CValue tokc;
+static CString tokcstr; /* current parsed string, if any */
+/* additional informations about token */
+static int tok_flags;
+
+static int *macro_ptr, *macro_ptr_allocated;
+static int *unget_saved_macro_ptr;
+static int unget_saved_buffer[TOK_MAX_SIZE + 1];
+static int unget_buffer_enabled;
+static int parse_flags;
+static Section *text_section, *data_section, *bss_section; /* predefined sections */
+#ifdef CONFIG_TCC_ASM
+static Section *last_text_section; /* to handle .previous asm directive */
+#endif
+
+/* bound check related sections */
+static Section *bounds_section; /* contains global data bound description */
+/* symbol sections */
+static Section *strtab_section;
+
+/* debug sections */
+static Section *stab_section, *stabstr_section;
+
+/*
+   rsym: return symbol
+   anon_sym: anonymous symbol index
+*/
+static int rsym, anon_sym;
+/* expression generation modifiers */
+static int const_wanted; /* true if constant wanted */
+static int nocode_wanted; /* true if no code generation wanted for an expression */
+static int global_expr;  /* true if compound literals must be allocated
+			                                globally (used during initializers parsing */
+static int last_line_num, last_ind, func_ind; /* debug last line number and pc */
+static int tok_ident;
+static TokenSym **table_ident;
+static TokenSym *hash_ident[TOK_HASH_SIZE];
+static char token_buf[STRING_MAX_SIZE + 1];
+static char *funcname;
+static Sym *global_stack, *local_stack;
+static Sym *define_stack;
+static Sym *global_label_stack, *local_label_stack;
+/* symbol allocator */
+static Sym *sym_free_first;
+
+static SValue vstack[VSTACK_SIZE];
+/* some predefined types */
+static CType int_type;
+/* true if isid(c) || isnum(c) */
+static unsigned char isidnum_table[256];
+
+/* compile with debug symbol (and use them if error during execution) */
+static int do_debug = 0;
+
+/* print output from preprocessor */
+static int tcc_preprocess = 0;
+static int out_linenum = 1;
+
+
+/* display benchmark infos */
+#if !defined(LIBTCC)
+static int do_bench = 0;
+#endif
+static int total_lines;
+static int total_bytes;
+
+/* use GNU C extensions */
+static int gnu_ext = 1;
+
+/* use Tiny C extensions */
+static int tcc_ext = 1;
+
+/* max number of callers shown if error */
+static int num_callers = 6;
+static const char **rt_bound_error_msg;
+
+/* XXX: get rid of this ASAP */
+static struct TCCState *tcc_state;
+
+/* give the path of the tcc libraries */
+static const char *tcc_lib_path = CONFIG_TCCDIR;
+
+
 /********************************************************/
 
 /* we use our own 'finite' function to avoid potential problems with
