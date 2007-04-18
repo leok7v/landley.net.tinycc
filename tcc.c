@@ -9320,8 +9320,6 @@ int tcc_set_flag(TCCState *s, const char *flag_name, int value)
                     flag_name, value);
 }
 
-#if !defined(LIBTCC)
-
 /* extract the basename of a file */
 static const char *tcc_basename(const char *name)
 {
@@ -9337,6 +9335,8 @@ static const char *tcc_basename(const char *name)
         p++;
     return p;
 }
+
+#if !defined(LIBTCC)
 
 static int64_t getclock_us(void)
 {
