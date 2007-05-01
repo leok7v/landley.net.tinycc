@@ -919,6 +919,7 @@ void bool_test()
         if (toupper1 (i) != TOUPPER (i))
             printf("error %d\n", i);
     }
+
 }
 
 /* GCC accepts that */
@@ -1074,6 +1075,7 @@ void cast_test()
     char tab[10];
     unsigned b,d;
     short s;
+    double g = 0.1;
 
     printf("cast_test:\n");
     a = 0xfffff;
@@ -1118,6 +1120,8 @@ void cast_test()
 
     /* Cast float to bool */
     printf("%d\n", (_Bool) 0.1);
+    /* Cast non-constant double 0.1 to bool, should be 1, grischka case 6.2 */
+    printf("1 -> %d\n", (_Bool) g);
 
     /* Cast with sign extension */
     a = (short)0xf000;

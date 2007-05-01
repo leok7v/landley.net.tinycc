@@ -5053,46 +5053,47 @@ static void gen_cast(CType *type)
             }
         } else if (sf) {
             /* convert fp to int */
-            /* we handle char/short/etc... with generic code */
-            if (dbt != (VT_INT | VT_UNSIGNED) &&
-                dbt != (VT_LLONG | VT_UNSIGNED) &&
-                dbt != VT_BOOL &&
-                dbt != VT_LLONG)
-                dbt = VT_INT;
-            if (c) {
-                switch(dbt) {
-                case VT_LLONG | VT_UNSIGNED:
-                case VT_LLONG:
-                    /* XXX: add const cases for long long */
-                    goto do_ftoi;
-                case VT_INT | VT_UNSIGNED:
-                    switch(sbt) {
-                    case VT_FLOAT: vtop->c.ui = (unsigned int)vtop->c.d; break;
-                    case VT_DOUBLE: vtop->c.ui = (unsigned int)vtop->c.d; break;
-                    case VT_LDOUBLE: vtop->c.ui = (unsigned int)vtop->c.d; break;
-                    }
-                    break;
-                case VT_BOOL:
-                    vpushi(0);
-                    gen_op(TOK_NE);
-                    break;
-                default:
-                    /* int case */
-                    switch(sbt) {
-                    case VT_FLOAT: vtop->c.i = (int)vtop->c.d; break;
-                    case VT_DOUBLE: vtop->c.i = (int)vtop->c.d; break;
-                    case VT_LDOUBLE: vtop->c.i = (int)vtop->c.d; break;
-                    }
-                    break;
-                }
+            if (dbt == VT_BOOL) {
+                 vpushi(0);
+                 gen_op(TOK_NE);
             } else {
-            do_ftoi:
-                gen_cvt_ftoi1(dbt);
-            }
-            if (dbt == VT_INT && (type->t & (VT_BTYPE | VT_UNSIGNED)) != dbt) {
-                /* additional cast for char/short/bool... */
-                vtop->type.t = dbt;
-                gen_cast(type);
+                /* we handle char/short/etc... with generic code */
+                if (dbt != (VT_INT | VT_UNSIGNED) &&
+                    dbt != (VT_LLONG | VT_UNSIGNED) &&
+                    dbt != VT_BOOL &&
+                    dbt != VT_LLONG)
+                    dbt = VT_INT;
+                if (c) {
+                    switch(dbt) {
+                    case VT_LLONG | VT_UNSIGNED:
+                    case VT_LLONG:
+                        /* XXX: add const cases for long long */
+                        goto do_ftoi;
+                    case VT_INT | VT_UNSIGNED:
+                        switch(sbt) {
+                        case VT_FLOAT: vtop->c.ui = (unsigned int)vtop->c.d; break;
+                        case VT_DOUBLE: vtop->c.ui = (unsigned int)vtop->c.d; break;
+                        case VT_LDOUBLE: vtop->c.ui = (unsigned int)vtop->c.d; break;
+                        }
+                        break;
+                    default:
+                        /* int case */
+                        switch(sbt) {
+                        case VT_FLOAT: vtop->c.i = (int)vtop->c.d; break;
+                        case VT_DOUBLE: vtop->c.i = (int)vtop->c.d; break;
+                        case VT_LDOUBLE: vtop->c.i = (int)vtop->c.d; break;
+                        }
+                        break;
+                    }
+                } else {
+                do_ftoi:
+                    gen_cvt_ftoi1(dbt);
+                }
+                if (dbt == VT_INT && (type->t & (VT_BTYPE | VT_UNSIGNED)) != dbt) {
+                    /* additional cast for char/short... */
+                    vtop->type.t = dbt;
+                    gen_cast(type);
+                }
             }
         } else if ((dbt & VT_BTYPE) == VT_LLONG) {
             if ((sbt & VT_BTYPE) != VT_LLONG) {
