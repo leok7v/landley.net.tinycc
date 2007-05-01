@@ -5060,7 +5060,6 @@ static void gen_cast(CType *type)
                 /* we handle char/short/etc... with generic code */
                 if (dbt != (VT_INT | VT_UNSIGNED) &&
                     dbt != (VT_LLONG | VT_UNSIGNED) &&
-                    dbt != VT_BOOL &&
                     dbt != VT_LLONG)
                     dbt = VT_INT;
                 if (c) {
