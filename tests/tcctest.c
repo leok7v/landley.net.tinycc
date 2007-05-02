@@ -1107,6 +1107,16 @@ void cast_test()
     d = (char)b;
     printf("((unsigned)(char)0x%08x) = 0x%08x\n", b, d);
 
+    /* Try casting pointer to short or _Bool (grishka case_6.1). This
+     * is lossy, so tcc will print a warning.  This capability is needed
+     * to compile gcc 2.95 as well as other programs.  */
+    {
+        void *p = (void *) 3;
+        printf("Expect 3 1 -> %hd %hhd\n",
+            (short) p, (_Bool) p); /* Expect warning */
+    }
+
+
     /* test implicit int casting for array accesses */
     c = 0;
     tab[1] = 2;

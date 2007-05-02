@@ -5125,6 +5125,10 @@ static void gen_cast(CType *type)
             gen_op(TOK_NE);
         } else if ((dbt & VT_BTYPE) == VT_BYTE || 
                    (dbt & VT_BTYPE) == VT_SHORT) {
+            if (sbt == VT_PTR) {
+                vtop->type.t = VT_INT;
+                warning("nonportable conversion from pointer to char/short");
+            }
             force_charshort_cast(dbt);
         } else if ((dbt & VT_BTYPE) == VT_INT) {
             /* scalar to int */
