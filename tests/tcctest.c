@@ -80,6 +80,7 @@ void local_label_test(void);
 void statement_expr_test(void);
 void asm_test(void);
 void builtin_test(void);
+void static_test(void);
 
 int fib(int n);
 void num(int n);
@@ -532,6 +533,7 @@ int main(int argc, char **argv)
     local_label_test();
     asm_test();
     builtin_test();
+    static_test();
     return 0; 
 }
 
@@ -2022,6 +2024,43 @@ void builtin_test(void)
     printf("res = %d\n", __builtin_constant_p(1 + 2));
     printf("res = %d\n", __builtin_constant_p(&constant_p_var));
     printf("res = %d\n", __builtin_constant_p(constant_p_var));
+}
+
+
+/* static_stub1 takes a pointer to a function, and returns a pointer to
+ * a function; that function must accept no parameters, and return nothing. */
+void ((*static_stub1(void ((*p)(void)))) (void))
+{
+    static void (*pfn)(void);
+    void (*mytemp)(void);
+    mytemp = pfn;
+    pfn = p;
+    return mytemp;
+}
+
+/* Another stub.  The static "pfn" is in a different function, so it'd better
+   not be mapped to the same memory location. */
+void ((*static_stub2(void ((*p)(void)))) (void))
+{
+    static void (*pfn)(void);
+    void (*mytemp)(void);
+    mytemp = pfn;
+    pfn = p;
+    return mytemp;
+}
+
+
+void static_test(void)
+{
+    void (*result)(void);
+    result = static_stub1(static_test);
+    printf("static_test Expect 1 -> %d\n", result == 0);
+    result = static_stub1(static_test);
+    printf("static_test Expect 1 -> %d\n", result == static_test);
+    result = static_stub2(static_test);
+    printf("static_test Expect 1 -> %d\n", result == 0);
+    result = static_stub2(static_test);
+    printf("static_test Expect 1 -> %d\n", result == static_test);
 }
 
 

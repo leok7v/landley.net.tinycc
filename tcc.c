@@ -8422,6 +8422,7 @@ static void decl(int l)
                            extern */
                         external_sym(v, &type, r);
                     } else {
+                        type.t |= (btype.t & VT_STATIC); // Retain "static".
                         if (type.t & VT_STATIC)
                             r |= VT_CONST;
                         else
