@@ -8728,7 +8728,7 @@ static void asm_global_instr(void)
 #endif
 
 #ifdef TCC_TARGET_PE
-#include "tccpe.c"
+#include "win32/tccpe.c"
 #endif
 
 /* do all relocations (needed before using tcc_get_symbol()) */
