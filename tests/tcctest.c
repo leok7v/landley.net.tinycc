@@ -285,6 +285,16 @@ comment
 
 }
 
+int some_fn(int x)
+{
+    return x;
+}
+
+int other_fn(int x)
+{
+    return x*2;
+}
+
 int op(a,b)
 {
     return a / b;
@@ -928,6 +938,28 @@ void bool_test()
             printf("aspect=%d\n", aspect);
         }
     }
+
+    /* Test passing structs & function pointers though conditional
+     * operator ? :.  This is bug grischka-20050929 case_1 */
+    {
+        struct test1 { int a, b, c; };
+        struct test1 t0 = {10,20,30};
+        struct test1 t1 = {11,21,31};
+        struct test1 tx = {0,0,0};
+        int (*pfn)(int);
+        int f = 0;
+
+        tx = f==0 ? t0 : t1;
+        printf("case_1.1: 10,20,30 -> %d,%d,%d\n", tx.a, tx.b, tx.c);
+
+        /* This tests to see that function pointers correctly pass through
+           the conditional operator ?:.  This tests for
+           grischka-20050929 case_1.2.  Note that this was already FIXED
+           in rl-1.0.0, but we want to TEST for it too. */
+        pfn = f ? some_fn : other_fn;
+        printf("case_1.2: other -> %s\n", 1==pfn(1)?"some":"other");
+    }
+
 
     /* test ? : GCC extension */
     {
