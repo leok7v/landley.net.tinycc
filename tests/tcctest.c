@@ -1397,6 +1397,20 @@ void bitfield_test(void)
         printf("st1.f2 == -1\n");
     else 
         printf("st1.f2 != -1\n");
+
+    /* Do bitfield assignments return correct rvalue? This is bug
+     * grischka-2005-09-29 case_3 */
+    {
+        struct test1 { unsigned a:1, b:1, c:1, d:1; };
+        struct test1 t1 = {0, 1, 0, 1};
+        struct test1 *p = &t1;
+
+        printf("case_3.1: 0101 -> %d%d%d%d\n", p->a, p->b, p->c, p->d);
+        p->b = p->d = 0;
+        p->a = p->c = 1;
+        printf("case_3.2: 1010 -> %d%d%d%d\n", p->a, p->b, p->c, p->d);
+    }
+
 }
 
 #define FTEST(prefix, type, fmt)\

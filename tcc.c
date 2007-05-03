@@ -5507,6 +5507,11 @@ void vstore(void)
         /* remove bit field info to avoid loops */
         vtop[-1].type.t = ft & ~(VT_BITFIELD | (-1 << VT_STRUCT_SHIFT));
 
+        /* duplicate source into other register */
+        gv_dup();
+        vswap();
+        vrott(3);
+
         /* duplicate destination */
         vdup();
         vtop[-1] = vtop[-2];
@@ -5523,6 +5528,10 @@ void vstore(void)
         gen_op('|');
         /* store result */
         vstore();
+
+        /* pop off shifted source from "duplicate source..." above */
+        vpop();
+
     } else {
 #ifdef CONFIG_TCC_BCHECK
         /* bound check case */
@@ -7674,7 +7683,7 @@ static void init_putv(CType *type, Section *sec, unsigned long c,
         }
         vtop--;
     } else {
-        vset(&dtype, VT_LOCAL, c);
+        vset(&dtype, VT_LOCAL|VT_LVAL, c);
         vswap();
         vstore();
         vpop();
