@@ -646,6 +646,29 @@ void expr_test()
            isid('g'), 
            isid('T'), 
            isid('('));
+
+    {
+        /* Check that tcc saves registers before a conditional jump */
+        /* Addresses bug "grischka case_2" */
+        struct test_str { int a, b, c; };
+        struct test_str t1 = {0,0,0};
+        struct test_str t2 = {1,1,1};
+        struct test_str *p1 = &t1;
+        struct test_str *p2 = &t2;
+        int f = 0;
+        int g = 0;
+
+        p1->b = f==0 || isid(0);
+        printf("case_2.1: Expect 0 1 0 -> %d %d %d\n", p1->a, p1->b, p1->c);
+        p1->c = !f || isid(0);
+        printf("case_2.2: Expect 0 1 1 -> %d %d %d\n", p1->a, p1->b, p1->c);
+
+        /* This will crash old versions of tcc during compilation: */
+        p2->b = (f==1) && isid(0);
+        printf("case_2.1AND: Expect 0 1 0 -> %d %d %d\n", p2->a, p2->b, p2->c);
+        p2->b = (!(f==1)) && isid(0);
+        printf("case_2.2AND: Expect 0 1 0 -> %d %d %d\n", p2->a, p2->b, p2->c);
+    }
 }
 
 int isid(int c)

@@ -6486,8 +6486,10 @@ static void unary(void)
             vtop->c.i = !vtop->c.i;
         else if ((vtop->r & VT_VALMASK) == VT_CMP)
             vtop->c.i = vtop->c.i ^ 1;
-        else
+        else {
+            save_regs(1);
             vseti(VT_JMP, gtst(1, 0));
+        }
         break;
     case '~':
         next();
@@ -6900,6 +6902,7 @@ static void expr_land(void)
     expr_or();
     if (tok == TOK_LAND) {
         t = 0;
+        save_regs(1);
         for(;;) {
             t = gtst(1, t);
             if (tok != TOK_LAND) {
@@ -6919,6 +6922,7 @@ static void expr_lor(void)
     expr_land();
     if (tok == TOK_LOR) {
         t = 0;
+        save_regs(1);
         for(;;) {
             t = gtst(0, t);
             if (tok != TOK_LOR) {
