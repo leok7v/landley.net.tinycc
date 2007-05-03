@@ -5410,7 +5410,7 @@ static void gen_assign_cast(CType *dt)
             tmp_type1.t &= ~(VT_UNSIGNED | VT_CONSTANT | VT_VOLATILE);
             tmp_type2.t &= ~(VT_UNSIGNED | VT_CONSTANT | VT_VOLATILE);
             if (!is_compatible_types(&tmp_type1, &tmp_type2))
-                goto error;
+                warning("assignment from incompatible pointer type");
         }
         /* check const and volatile */
         if ((!(type1->t & VT_CONSTANT) && (type2->t & VT_CONSTANT)) ||

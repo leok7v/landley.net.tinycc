@@ -1060,6 +1060,14 @@ struct structa1 struct_assign_test2(struct structa1 s1, int t)
     return s1;
 }
 
+void struct_assign_test3(void)
+{
+    // incompatible assigment
+    struct _s1 { int a, b, c; } *p1 = NULL;
+    struct _s2 { int a, b, c; } *p2 = p1; //warning
+    printf("struct assign, 0 -> %x\n", p2);
+}
+
 void struct_assign_test(void)
 {
     struct structa1 lsta1, lsta2;
@@ -1081,6 +1089,7 @@ void struct_assign_test(void)
     printf("before call: %d %d\n", lsta2.f1, lsta2.f2);
     lsta2 = struct_assign_test2(lsta2, 4);
     printf("after call: %d %d\n", lsta2.f1, lsta2.f2);
+    struct_assign_test3();
 }
 
 /* casts to short/char */
