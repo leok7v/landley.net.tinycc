@@ -1745,6 +1745,16 @@ void longlong_test(void)
     printf("ull=%llx\n",ull);
     printf("ull!=0  ", (ull != 0) ? "true" : "false");
     printf("ull     ", ull ? "true" : "false");
+
+    /* check double -> ull cast */
+    {
+        double d = 2.4e18;
+        unsigned long long ull = d;
+        unsigned long long r = 100000000000LL;
+        printf("\ndouble->ull (grischka case 10): %.0f -> %ld\n",
+            d/r, (long)(ull/r));
+    }
+
 }
 
 void vprintf1(const char *fmt, ...)
