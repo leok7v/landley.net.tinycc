@@ -163,7 +163,7 @@ i386-win32-tcc$(EXESUF): tcc.c i386-gen.c tccelf.c tccasm.c i386-asm.c tcctok.h 
 	$(CC) $(CFLAGS) -DTCC_TARGET_PE -o $@ $< $(LIBS)
 
 # windows utilities
-tiny_impdef$(EXESUF): tiny_impdef.c
+tiny_impdef$(EXESUF): win32/tiny_impdef.c
 	$(CC) $(CFLAGS) -o $@ $< -lkernel32
 
 # TinyCC runtime libraries
