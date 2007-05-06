@@ -6280,13 +6280,17 @@ static int lvalue_type(int t)
 /* indirection with full error checking and bound check */
 static void indir(void)
 {
-    if ((vtop->type.t & VT_BTYPE) != VT_PTR)
+    if ((vtop->type.t & VT_BTYPE) != VT_PTR) {
+        if ((vtop->type.t & VT_BTYPE) == VT_FUNC)
+            return;
         expect("pointer");
+    }
     if ((vtop->r & VT_LVAL) && !nocode_wanted)
         gv(RC_INT);
     vtop->type = *pointed_type(&vtop->type);
-    /* an array is never an lvalue */
-    if (!(vtop->type.t & VT_ARRAY)) {
+    /* Arrays and functions are never lvalues */
+    if (!(vtop->type.t & VT_ARRAY)
+        && (vtop->type.t & VT_BTYPE) != VT_FUNC) {
         vtop->r |= lvalue_type(vtop->type.t);
         /* if bound checking, the referenced pointer must be checked */
         if (do_bounds_check) 

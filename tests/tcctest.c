@@ -1544,6 +1544,11 @@ int fib(int n)
         return fib(n-1) + fib(n-2);
 }
 
+int reply_self(int x)
+{
+    return x;
+}
+
 void funcptr_test()
 {
     void (*func)(int);
@@ -1567,6 +1572,14 @@ void funcptr_test()
     printf("sizeof2 = %d\n", sizeof funcptr_test);
     printf("sizeof3 = %d\n", sizeof(&funcptr_test));
     printf("sizeof4 = %d\n", sizeof &funcptr_test);
+
+    /* Test function pointer indirection */
+    {
+        int (*pfn)(int) = reply_self;
+        printf("case_9: 1 (7,8) -> %d (%d,%d)\n",
+            (int) (reply_self == *pfn), pfn(7), (******pfn)(8));
+    }
+
 }
 
 void lloptest(long long a, long long b)
