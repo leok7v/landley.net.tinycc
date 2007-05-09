@@ -50,34 +50,34 @@ can also use standard headers, although they are slower to compile.
 
 You can begin your C script with '#!/usr/bin/tcc -run' on the first
 line and set its execute bits (chmod a+x your_script). Then, you can
-launch the C code as a shell or perl script :-) The command line
-arguments are put in 'argc' and 'argv' of the main functions, as in
+launch the C code like a shell or perl script :-) The command line
+arguments are put in 'argc' and 'argv' of the function main(), as in
 ANSI C.
 
 3) Examples
 
-ex1.c: simplest example (hello world). Can also be launched directly
+examples/ex1.c: simplest example (hello world). Can also be launched directly
 as a script: './ex1.c'.
 
-ex2.c: more complicated example: find a number with the four
+examples/ex2.c: more complicated example: find a number with the four
 operations given a list of numbers (benchmark).
 
-ex3.c: compute fibonacci numbers (benchmark).
+examples/ex3.c: compute fibonacci numbers (benchmark).
 
-ex4.c: more complicated: X11 program. Very complicated test in fact
+examples/ex4.c: more complicated: X11 program. Very complicated test in fact
 because standard headers are being used !
 
-ex5.c: 'hello world' with standard glibc headers.
+examples/ex5.c: 'hello world' with standard glibc headers.
 
 tcc.c: TCC can of course compile itself. Used to check the code
 generator.
 
-tcctest.c: auto test for TCC which tests many subtle possible bugs. Used
-when doing 'make test'.
+tests/tcctest.c: auto test for TCC which tests many subtle possible bugs.
+Used when doing 'make test'.
 
 4) Full Documentation
 
-Please read tcc-doc.html to have all the features of TCC.
+Please read tcc-doc.html for more information.
 
 Additional information is available for the Windows port in
 win32/readme.txt.
