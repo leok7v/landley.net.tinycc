@@ -84,7 +84,7 @@ static int rsym, anon_sym;
 static int const_wanted; /* true if constant wanted */
 static int nocode_wanted; /* true if no code generation wanted for an expression */
 static int global_expr;  /* true if compound literals must be allocated
-			                                globally (used during initializers parsing */
+                            globally (used during initializers parsing */
 static int last_line_num, last_ind, func_ind; /* debug last line number and pc */
 static int tok_ident;
 static TokenSym **table_ident;
@@ -3960,7 +3960,7 @@ int gv(int rc)
             int *ptr;
             unsigned long offset;
 #if defined(TCC_TARGET_ARM) && !defined(TCC_ARM_VFP)
-	    CValue check;
+            CValue check;
 #endif
             
             /* XXX: unify with initializers handling ? */
@@ -3980,11 +3980,11 @@ int gv(int rc)
             ptr = section_ptr_add(data_section, size);
             size = size >> 2;
 #if defined(TCC_TARGET_ARM) && !defined(TCC_ARM_VFP)
-	    check.d = 1;
-	    if(check.tab[0])
-		for(i=0;i<size;i++)
-		    ptr[i] = vtop->c.tab[size-1-i];
-	    else
+            check.d = 1;
+            if(check.tab[0])
+                for(i=0;i<size;i++)
+                    ptr[i] = vtop->c.tab[size-1-i];
+            else
 #endif
             for(i=0;i<size;i++)
                 ptr[i] = vtop->c.tab[i];
@@ -4472,8 +4472,8 @@ void gen_opl(int op)
 #if defined(TCC_TARGET_I386)
                 b = psym(0x850f, 0);
 #elif defined(TCC_TARGET_ARM)
-		b = ind;
-		o(0x1A000000 | encbranch(ind, 0, 1));
+                b = ind;
+                o(0x1A000000 | encbranch(ind, 0, 1));
 #elif defined(TCC_TARGET_C67)
                 error("not implemented");
 #else
@@ -5154,9 +5154,9 @@ static int type_size(CType *type, int *a)
         *a = 4;
 #elif defined(TCC_TARGET_ARM)
 #ifdef TCC_ARM_EABI
-	*a = 8;	
+        *a = 8;
 #else
-	*a = 4;
+        *a = 4;
 #endif
 #else
         *a = 8;
@@ -5454,11 +5454,11 @@ void vstore(void)
             size = type_size(&vtop->type, &align);
 
 #ifdef TCC_ARM_EABI
-	    if(!(align & 7))
-		vpush_global_sym(&func_old_type, TOK_memcpy8);
-	    else if(!(align & 3))
-		vpush_global_sym(&func_old_type, TOK_memcpy4);
-	    else
+            if(!(align & 7))
+                vpush_global_sym(&func_old_type, TOK_memcpy8);
+            else if(!(align & 3))
+                vpush_global_sym(&func_old_type, TOK_memcpy4);
+            else
 #endif
             vpush_global_sym(&func_old_type, TOK_memcpy);
 
@@ -5978,9 +5978,9 @@ static int parse_btype(CType *type, AttributeDef *ad)
         case TOK_SIGNED2:
         case TOK_SIGNED3:
             typespec_found = 1;
-	    t |= VT_SIGNED;
-	    next();
-	    break;
+            t |= VT_SIGNED;
+            next();
+            break;
         case TOK_REGISTER:
         case TOK_AUTO:
         case TOK_RESTRICT1:
@@ -7233,25 +7233,24 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
                 /* if returning structure, must copy it to implicit
                    first pointer arg location */
 #ifdef TCC_ARM_EABI
-		int align, size;
-		size = type_size(&func_vt,&align);
-		if(size <= 4)
-		{
-		    if((vtop->r != (VT_LOCAL | VT_LVAL) || (vtop->c.i & 3))
-		       && (align & 3))
-		    {
-		        int addr;
-		        loc = (loc - size) & -4;
-			addr = loc;
-			type = func_vt;
-			vset(&type, VT_LOCAL | VT_LVAL, addr);
-			vswap();
-			vstore();
-			vset(&int_type, VT_LOCAL | VT_LVAL, addr);
-		    }
-		    vtop->type = int_type;
-		    gv(RC_IRET);
-		} else {
+                int align, size;
+                size = type_size(&func_vt,&align);
+                if(size <= 4) {
+                    if((vtop->r != (VT_LOCAL | VT_LVAL) || (vtop->c.i & 3))
+                       && (align & 3))
+                    {
+                        int addr;
+                        loc = (loc - size) & -4;
+                        addr = loc;
+                        type = func_vt;
+                        vset(&type, VT_LOCAL | VT_LVAL, addr);
+                        vswap();
+                        vstore();
+                        vset(&int_type, VT_LOCAL | VT_LVAL, addr);
+                    }
+                    vtop->type = int_type;
+                    gv(RC_IRET);
+                } else {
 #endif
                 type = func_vt;
                 mk_pointer(&type);
@@ -7261,7 +7260,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
                 /* copy structure value to pointer */
                 vstore();
 #ifdef TCC_ARM_EABI
-		}
+                }
 #endif
             } else if (is_float(func_vt.t)) {
                 gv(RC_FRET);
@@ -9341,7 +9340,7 @@ void help(void)
            "  -o outfile  set output filename\n"
            "  -Bdir       set tcc internal library path\n"
            "  -bench      output compilation statistics\n"
- 	   "  -run        run compiled source\n"
+           "  -run        run compiled source\n"
            "  -fflag      set or reset (with 'no-' prefix) 'flag' (see man page)\n"
            "  -Wwarning   set or reset (with 'no-' prefix) 'warning' (see man page)\n"
            "  -w          disable all warnings\n"
