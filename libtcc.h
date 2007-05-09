@@ -51,10 +51,6 @@ int tcc_add_file(TCCState *s, const char *filename);
    error. */
 int tcc_compile_string(TCCState *s, const char *buf);
 
-/* preprocess a string containing a C source. Return null if
-   error. Returns string allocated with malloc() */
-char *tcc_preprocess_string(TCCState *s, const char *buf);
-
 /*****************************/
 /* linking commands */
 
@@ -64,6 +60,7 @@ char *tcc_preprocess_string(TCCState *s, const char *buf);
 #define TCC_OUTPUT_EXE      1 /* executable file */
 #define TCC_OUTPUT_DLL      2 /* dynamic library */
 #define TCC_OUTPUT_OBJ      3 /* object file */
+#define TCC_OUTPUT_PREPROCESS 4 /* preprocessed file (used internally) */
 int tcc_set_output_type(TCCState *s, int output_type);
 
 #define TCC_OUTPUT_FORMAT_ELF    0 /* default output format: ELF */

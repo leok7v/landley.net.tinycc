@@ -106,11 +106,6 @@ static unsigned char isidnum_table[256];
 /* compile with debug symbol (and use them if error during execution) */
 static int do_debug = 0;
 
-/* print output from preprocessor */
-static int tcc_preprocess = 0;
-static int out_linenum = 1;
-
-
 /* display benchmark infos */
 #if !defined(LIBTCC)
 static int do_bench = 0;
@@ -1705,15 +1700,6 @@ static void free_defines(Sym *b)
     define_stack = b;
 }
 
-/* print line number and file name */
-void changed_file(void)
-{
-    char buf[1024];
-    snprintf(buf,sizeof(buf),"\n# %d \"%s\"\n",file->line_num,file->filename);
-    preprocess_out(buf);
-    out_linenum=file->line_num;
-}
-
 /* label lookup */
 static Sym *label_find(int v)
 {
@@ -2135,9 +2121,6 @@ static void preprocess(int is_bof)
             }
             tok_flags |= TOK_FLAG_BOF | TOK_FLAG_BOL;
             ch = file->buf_ptr[0];
-
-	    if (tcc_preprocess)
-	        changed_file();
             goto the_end;
         }
         break;
@@ -2738,8 +2721,6 @@ static inline void next_nomacro1(void)
                 tcc_close(file);
                 s1->include_stack_ptr--;
                 file = *s1->include_stack_ptr;
-		if (tcc_preprocess)
-		    changed_file();
                 p = file->buf_ptr;
                 goto redo_no_start;
             }
@@ -8480,44 +8461,6 @@ static void preprocess_init(TCCState *s1)
     s1->pack_stack_ptr = s1->pack_stack;
 }
 
-/* print define stack until top reaches 'b' */
-static void print_defines(Sym *b)
-{
-    TokenString str;
-    Sym *nested_list;
-    Sym *top;
-    struct macro_level *ml;
-    int tok;
-
-    top = define_stack;
-    while (top != b) {
-        tok = top->v;
-        if (tok >= TOK_IDENT && tok < tok_ident) {
-            tok_str_new(&str);
-            nested_list = NULL;
-            ml = NULL;
-            if (macro_subst_tok(&str, &nested_list, top, &ml) == 0) {
-                int t, *stri;
-                CValue cval;
-                preprocess_out("#define ");
-                preprocess_out(get_tok_str(tok,NULL));
-
-                tok_str_add(&str, 0);
-	    
-                stri=str.str;
-                for (;;) {
-                    TOK_GET(t, stri, cval);
-                    if (!t) break;
-                    preprocess_out(" ");
-                    preprocess_out(get_tok_str(t, &cval));
-                }
-                preprocess_out("\n");
-            }
-        }
-        top = top->prev;
-    }
-}
-
 /* compile the C file opened in 'file'. Return non zero if errors. */
 static int tcc_compile(TCCState *s1)
 {
@@ -8587,9 +8530,6 @@ static int tcc_compile(TCCState *s1)
 
     define_start = define_stack;
 
-    if (tcc_preprocess)
-        changed_file();
-      
     if (setjmp(s1->error_jmp_buf) == 0) {
         s1->nb_errors = 0;
         s1->error_set_jmp_enabled = 1;
@@ -8597,61 +8537,71 @@ static int tcc_compile(TCCState *s1)
         ch = file->buf_ptr[0];
         tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
         parse_flags = PARSE_FLAG_PREPROCESS | PARSE_FLAG_TOK_NUM;
+        next();
+        decl(VT_CONST);
+        if (tok != TOK_EOF) expect("declaration");
 
-        if (tcc_preprocess) {
-            for(;;) {
-                next();
-                while(out_linenum<file->line_num) {
-                    preprocess_out("\n");
-                    out_linenum++;
-                }
-                if (tok==TOK_EOF) break;
-                preprocess_out(get_tok_str(tok, &tokc));
-                preprocess_out(" ");
-            }
-        } else {
-            next();
-            decl(VT_CONST);
-            if (tok != TOK_EOF) expect("declaration");
-
-            /* end of translation unit info */
-            if (do_debug) {
-                put_stabs_r(NULL, N_SO, 0, 0, text_section->data_offset,
-                            text_section, section_sym);
-            }
+        /* end of translation unit info */
+        if (do_debug) {
+            put_stabs_r(NULL, N_SO, 0, 0, text_section->data_offset,
+                        text_section, section_sym);
         }
     }
     s1->error_set_jmp_enabled = 0;
-
-    if (tcc_preprocess) print_defines(define_start);
 
     /* reset define stack, but leave -Dsymbols (may be incorrect if
        they are undefined) */
     free_defines(define_start); 
 
-    if (!tcc_preprocess) gen_inline_functions();
+    gen_inline_functions();
 
     sym_pop(&global_stack, NULL);
 
     return s1->nb_errors != 0 ? -1 : 0;
 }
 
-#ifdef LIBTCC
-char *tcc_preprocess_string(TCCState *s, const char *buf)
+/* Preprocess the current file */
+/* XXX: add line and file infos, add options to preserve spaces */
+static int tcc_preprocess(TCCState *s1)
 {
-    cstr_new(&preprocess_output);
-    tcc_preprocess=1;
-    int res=tcc_compile_string(s, buf);
-    tcc_preprocess=0;
-    if (res) {
-      cstr_free(&preprocess_output);
-      return 0;
-    }
-    char *ret=tcc_realloc(preprocess_output.data, preprocess_output.size+1);
-    ret[preprocess_output.size]=0;
-    return ret;
-}  
+    Sym *define_start;
+    int last_is_space;
 
+    preprocess_init(s1);
+
+    define_start = define_stack;
+
+    ch = file->buf_ptr[0];
+    tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
+    parse_flags = PARSE_FLAG_ASM_COMMENTS | PARSE_FLAG_PREPROCESS |
+        PARSE_FLAG_LINEFEED;
+    last_is_space = 1;
+    next();
+    for(;;) {
+        if (tok == TOK_EOF)
+            break;
+        if (!last_is_space) {
+            fputc(' ', s1->outfile);
+        }
+        fputs(get_tok_str(tok, &tokc), s1->outfile);
+        if (tok == TOK_LINEFEED) {
+            last_is_space = 1;
+            /* XXX: suppress that hack */
+            parse_flags &= ~PARSE_FLAG_LINEFEED;
+            next();
+            parse_flags |= PARSE_FLAG_LINEFEED;
+        } else {
+            last_is_space = 0;
+            next();
+        }
+    }
+
+    free_defines(define_start);
+
+    return 0;
+}
+
+#ifdef LIBTCC
 int tcc_compile_string(TCCState *s, const char *str)
 {
     BufferedFile bf1, *bf = &bf1;
@@ -9059,7 +9009,8 @@ static int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
         goto fail1;
     }
 
-    if (!ext || !strcmp(ext, "c")) {
+    if (flags & AFF_PREPROCESS) ret = tcc_preprocess(s1);
+    else if (!ext || !strcmp(ext, "c")) {
         /* C file assumed */
         ret = tcc_compile(s1);
     } else 
@@ -9379,7 +9330,7 @@ static int64_t getclock_us(void)
 
 void help(void)
 {
-    printf("tcc version " TCC_VERSION " - Tiny C Compiler - Copyright (C) 2001-2005 Fabrice Bellard\n"
+    printf("tcc version " TCC_VERSION " - Tiny C Compiler - Copyright (C) 2001-2006 Fabrice Bellard\n"
            "usage: tcc [-v] [-c] [-o outfile] [-Bdir] [-bench] [-Idir] [-Dsym[=val]] [-Usym]\n"
            "           [-Wwarn] [-g] [-b] [-bt N] [-Ldir] [-llib] [-shared] [-static]\n"
            "           [infile1 infile2...] [-run infile args...]\n"
@@ -9398,7 +9349,7 @@ void help(void)
            "  -Idir       add include path 'dir'\n"
            "  -Dsym[=val] define 'sym' with value 'val'\n"
            "  -Usym       undefine 'sym'\n"
-           "  -E          precompile only - output to stdout\n"
+           "  -E          preprocess only\n"
            "Linker options:\n"
            "  -Ldir       add library path 'dir'\n"
            "  -llib       link with dynamic or static library 'lib'\n"
@@ -9608,8 +9559,8 @@ int parse_args(TCCState *s, int argc, char **argv)
                 }
                 break;
             case TCC_OPTION_E:
-	        tcc_preprocess = 1;
-	        break;
+                output_type = TCC_OUTPUT_PREPROCESS;
+                break;
             case TCC_OPTION_U:
                 tcc_undefine_symbol(s, optarg);
                 break;
@@ -9738,7 +9689,7 @@ int main(int argc, char **argv)
 {
     int i;
     TCCState *s;
-    int nb_objfiles, ret = 0, optind;
+    int nb_objfiles, ret, optind;
     char objfilename[1024];
     int64_t start_time = 0;
 
@@ -9794,8 +9745,14 @@ int main(int argc, char **argv)
         if (nb_libraries != 0)
             error("cannot specify libraries with -c");
     }
-    
-    if (output_type != TCC_OUTPUT_MEMORY) {
+
+    if (output_type == TCC_OUTPUT_PREPROCESS) {
+        if (!outfile) s->outfile = stdout;
+        else {
+            s->outfile = fopen(outfile, "wb");
+            if (!s->outfile) error("could not open '%s'", outfile);
+        }
+    } else if (output_type != TCC_OUTPUT_MEMORY) {
         if (!outfile) {
     /* compute default outfile name */
             pstrcpy(objfilename, sizeof(objfilename) - 1, 
@@ -9830,14 +9787,15 @@ int main(int argc, char **argv)
         const char *filename;
 
         filename = files[i];
-        if (filename[0] == '-') {
+        if (output_type == TCC_OUTPUT_PREPROCESS) {
+            tcc_add_file_internal(s, filename,
+                                  AFF_PRINT_ERROR | AFF_PREPROCESS);
+        } else if (filename[0] == '-') {
             if (tcc_add_library(s, filename + 2) < 0)
                 error("cannot find %s", filename);
-        } else {
-            if (tcc_add_file(s, filename) < 0) {
-                ret = 1;
-                goto the_end;
-            }
+        } else if (tcc_add_file(s, filename) < 0) {
+            ret = 1;
+            goto the_end;
         }
     }
 
@@ -9857,19 +9815,20 @@ int main(int argc, char **argv)
                total_bytes / total_time / 1000000.0); 
     }
 
-    if (!tcc_preprocess) {
-      if (s->output_type == TCC_OUTPUT_MEMORY) {
+    if (s->output_type == TCC_OUTPUT_PREPROCESS) {
+        if (outfile) fclose(s->outfile);
+        ret = 0;
+    } else if (s->output_type == TCC_OUTPUT_MEMORY) {
         ret = tcc_run(s, argc - optind, argv + optind);
-      } else
+    } else
 #ifdef TCC_TARGET_PE
-	if (s->output_type != TCC_OUTPUT_OBJ) {
-	  ret = tcc_output_pe(s, outfile);
-	} else
+    if (s->output_type != TCC_OUTPUT_OBJ) {
+        ret = tcc_output_pe(s, outfile);
+    } else
 #endif
-        {
-	    tcc_output_file(s, outfile);
-	    ret = 0;
-        }
+    {
+        tcc_output_file(s, outfile);
+        ret = 0;
     }
 the_end:
     /* XXX: cannot do it with bound checking because of the malloc hooks */

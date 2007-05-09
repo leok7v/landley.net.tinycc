@@ -323,14 +323,6 @@ typedef struct CachedInclude {
  
 #define SYM_POOL_NB (8192 / sizeof(Sym))
 
-#ifdef LIBTCC
-/* buffer for output to memory buffer */
-static CString preprocess_output;
-#define preprocess_out(s) cstr_cat(&preprocess_output, s)
-#else
-#define preprocess_out(s) fputs(s,stdout)
-#endif
-
 struct TCCState {
     int output_type;
  
@@ -424,6 +416,9 @@ struct TCCState {
     /* pack stack */
     int pack_stack[PACK_STACK_SIZE];
     int *pack_stack_ptr;
+
+    /* output file for preprocessing */
+    FILE *outfile;
 };
 
 /* The current value can be: */
@@ -763,6 +758,7 @@ static int tcc_add_dll(TCCState *s, const char *filename, int flags);
 
 #define AFF_PRINT_ERROR     0x0001 /* print error if file not found */
 #define AFF_REFERENCED_DLL  0x0002 /* load a referenced dll from another dll */
+#define AFF_PREPROCESS      0x0004 /* preprocess file */
 static int tcc_add_file_internal(TCCState *s, const char *filename, int flags);
 
 /* tcccoff.c */
