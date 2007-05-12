@@ -2,8 +2,6 @@
  * TCC auto test program
  */
 #include "config.h"
-#include <alloca.h>
-
 
 #if GCC_MAJOR >= 3
 
@@ -76,7 +74,6 @@ void stdarg_test(void);
 void whitespace_test(void);
 void relocation_test(void);
 void old_style_function(void);
-void alloca_test(void);
 void sizeof_test(void);
 void typeof_test(void);
 void local_label_test(void);
@@ -540,7 +537,6 @@ int main(int argc, char **argv)
     whitespace_test();
     relocation_test();
     old_style_function();
-    alloca_test();
     sizeof_test();
     typeof_test();
     statement_expr_test();
@@ -1892,37 +1888,6 @@ void old_style_function(void)
     decl_func1(NULL);
     decl_func2(NULL);
 }
-
-
-void alloca_test1()
-{
- char *p = alloca(1);
- *p = 0;
-}
-
-void alloca_test2()
-{
- char *p = alloca(2000);
- p += 2000;
- p--;
- *p = 0;
-}
-
-void alloca_test()
-{
-  char *p = alloca(16);
-  strcpy(p,"123456789012345");
-  printf("p is %s\n", p);
-
-  char *demo = "This is a test.  This is only a test.\n";
-
-  /* Test alloca embedded in a larger expression */
-  printf("Test: %s\n", strcpy(alloca(strlen(demo)+1),demo) );
-
-  alloca_test2();
-  alloca_test1();
-}
-
 
 void sizeof_test(void)
 {
