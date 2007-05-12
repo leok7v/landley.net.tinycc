@@ -618,7 +618,7 @@ static int tcc_assemble_internal(TCCState *s1, int do_preprocess)
     /* XXX: undefine C labels */
 
     ch = file->buf_ptr[0];
-    tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
+    next_tok_flags = TOK_FLAG_BOW | TOK_FLAG_BOL | TOK_FLAG_BOF;
     parse_flags = PARSE_FLAG_ASM_COMMENTS;
     if (do_preprocess)
         parse_flags |= PARSE_FLAG_PREPROCESS;

@@ -121,7 +121,7 @@ typedef int BOOL;
 
 #define TOK_HASH_SIZE       8192 /* must be a power of two */
 #define TOK_ALLOC_INCR      512  /* must be a power of two */
-#define TOK_MAX_SIZE        4 /* token max size in int unit when stored in string */
+#define TOK_MAX_SIZE        5 /* token max size in int unit when stored in string */
 
 /* token symbol management */
 typedef struct TokenSym {
@@ -310,9 +310,10 @@ typedef struct CachedInclude {
 #define CACHED_INCLUDES_HASH_SIZE 512
 
 /* additional information about token */
-#define TOK_FLAG_BOL   0x0001 /* beginning of line before */
-#define TOK_FLAG_BOF   0x0002 /* beginning of file before */
-#define TOK_FLAG_ENDIF 0x0004 /* a endif was found matching starting #ifdef */
+#define TOK_FLAG_BOW   0x0001 /* beginning of word before */
+#define TOK_FLAG_BOL   0x0002 /* beginning of line before */
+#define TOK_FLAG_BOF   0x0004 /* beginning of file before */
+#define TOK_FLAG_ENDIF 0x0008 /* a endif was found matching starting #ifdef */
 
 #define PARSE_FLAG_PREPROCESS 0x0001 /* activate preprocessing */
 #define PARSE_FLAG_TOK_NUM    0x0002 /* return numbers instead of TOK_PPNUM */
