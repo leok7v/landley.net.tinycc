@@ -38,7 +38,7 @@ static CType func_old_type;
 static int do_bounds_check = 0;
 
 #ifdef TCC_TARGET_I386
-#include "i386-gen.c"
+#include "i386/i386-gen.c"
 #endif
 
 #ifdef TCC_TARGET_ARM
@@ -8676,7 +8676,7 @@ void tcc_undefine_symbol(TCCState *s1, const char *sym)
 #ifdef CONFIG_TCC_ASM
 
 #ifdef TCC_TARGET_I386
-#include "i386-asm.c"
+#include "i386/i386-asm.c"
 #endif
 #include "tccasm.c"
 

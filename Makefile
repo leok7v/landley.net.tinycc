@@ -136,11 +136,11 @@ ex3: ex3.c
 
 # Host Tiny C Compiler
 ifdef CONFIG_WIN32
-tcc$(EXESUF): tcc.c i386-gen.c tccelf.c tccasm.c i386-asm.c tcctok.h libtcc.h i386-asm.h win32/tccpe.c
+tcc$(EXESUF): tcc.c i386/* tccelf.c tccasm.c tcctok.h libtcc.h win32/tccpe.c
 	$(CC) $(CFLAGS) -DTCC_TARGET_PE -o $@ $< $(LIBS)
 else
 ifeq ($(ARCH),i386)
-tcc$(EXESUF): tcc.c i386-gen.c tccelf.c tccasm.c i386-asm.c tcctok.h libtcc.h i386-asm.h
+tcc$(EXESUF): tcc.c i386/* tccelf.c tccasm.c tcctok.h libtcc.h
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 endif
 ifeq ($(ARCH),arm)
@@ -150,7 +150,7 @@ endif
 endif
 
 # Cross Tiny C Compilers
-i386-tcc$(EXESUF): tcc.c i386-gen.c tccelf.c tccasm.c i386-asm.c tcctok.h libtcc.h i386-asm.h
+i386-tcc$(EXESUF): tcc.c i386/* tccelf.c tccasm.c tcctok.h libtcc.h
 	$(CC) $(CFLAGS) -o $@ $< $(LIBS)
 
 c67-tcc$(EXESUF): tcc.c c67-gen.c tccelf.c tccasm.c tcctok.h libtcc.h tcccoff.c
@@ -159,7 +159,7 @@ c67-tcc$(EXESUF): tcc.c c67-gen.c tccelf.c tccasm.c tcctok.h libtcc.h tcccoff.c
 arm-tcc$(EXESUF): tcc.c arm-gen.c tccelf.c tccasm.c tcctok.h libtcc.h
 	$(CC) $(CFLAGS) -DTCC_TARGET_ARM -DTCC_ARM_EABI -o $@ $< $(LIBS)
 
-i386-win32-tcc$(EXESUF): tcc.c i386-gen.c tccelf.c tccasm.c i386-asm.c tcctok.h libtcc.h i386-asm.h win32/tccpe.c
+i386-win32-tcc$(EXESUF): tcc.c i386/* tccelf.c tccasm.c tcctok.h libtcc.h win32/tccpe.c
 	$(CC) $(CFLAGS) -DTCC_TARGET_PE -o $@ $< $(LIBS)
 
 # windows utilities
@@ -234,7 +234,7 @@ libinstall: libtcc.a
 	mkdir -p "$(includedir)"
 	$(INSTALL) -m644 libtcc.h "$(includedir)"
 
-libtcc.o: tcc.c i386-gen.c Makefile
+libtcc.o: tcc.c i386/i386-gen.c Makefile
 	$(CC) $(CFLAGS) -DLIBTCC -c -o $@ $<
 
 libtcc.a: libtcc.o 
