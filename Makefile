@@ -220,7 +220,7 @@ endif
 clean:
 	rm -f *~ *.o *.a tcc tcc.1 tcct tcc_g tcctest.ref *.bin *.i ex2 \
            core gmon.out test.out test.ref a.out tcc_p \
-           *.exe *.lib tcc.pod libtcc_test \
+           *.exe *.lib tcc.pod libtcc_test i386/*.o \
            tcctest[1234] test[1234].out $(PROGS) win32/lib/*.o
 
 distclean: clean
