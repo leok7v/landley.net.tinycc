@@ -46,7 +46,7 @@ endif
 endif
 
 # run local version of tcc with local libraries and includes
-TCC=./tcc -B. -I.
+TCC=./tcc -B. -I./include -I.
 
 all: $(PROGS) libtcc1.a $(BCHECK_O) libtcc.a libtcc_test$(EXESUF) \
      tcc-doc.html tcc.1
@@ -173,6 +173,9 @@ LIBTCC1_OBJS=$(addprefix win32/lib/, crt1.o wincrt1.o dllcrt1.o dllmain.o chkstk
 LIBTCC1_CC=./tcc.exe -Bwin32
 else
 LIBTCC1_OBJS=libtcc1.o
+ifeq ($(ARCH),i386)
+LIBTCC1_OBJS+=i386/alloca86.o i386/bound-alloca86.o
+endif
 LIBTCC1_CC=$(CC)
 endif
 

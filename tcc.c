@@ -445,6 +445,7 @@ static void put_extern_sym2(Sym *sym, Section *section,
             case TOK_memset:
             case TOK_strlen:
             case TOK_strcpy:
+            case TOK_alloca:
                 strcpy(buf, "__bound_");
                 strcat(buf, name);
                 name = buf;

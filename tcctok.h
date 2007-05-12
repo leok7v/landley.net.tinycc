@@ -130,7 +130,7 @@
      DEF(TOK_memcpy, "memcpy")
      DEF(TOK_memset, "memset")
 #endif
-     DEF(TOK_alloca, "alloca")
+     DEF(TOK_alloca, "_alloca_tcc")
      DEF(TOK___divdi3, "__divdi3")
      DEF(TOK___moddi3, "__moddi3")
      DEF(TOK___udivdi3, "__udivdi3")
