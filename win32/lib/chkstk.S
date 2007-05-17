@@ -6,6 +6,8 @@
 
 __chkstk:
 	xchg    (%esp), %ebp   // store ebp, get ret.addr
+	mov     (%ebp), %eax   // get stacksize
+	lea     4(%ebp), %ebp  // skip it
 	push    %ebp           // push ret.addr
 	lea     4(%esp), %ebp  // setup frame ptr
 	push    %ecx           // save ecx
