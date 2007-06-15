@@ -7371,6 +7371,9 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
         int v1, v2;
         if (!case_sym)
             expect("switch");
+        /* since a case is like a label, we must skip it with a jmp */
+        b = gjmp(0);
+    next_case:
         next();
         v1 = expr_const();
         v2 = v1;
@@ -7380,24 +7383,26 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             if (v2 < v1)
                 warning("empty case range");
         }
-        /* since a case is like a label, we must skip it with a jmp */
-        b = gjmp(0);
         gsym(*case_sym);
         vseti(case_reg, 0);
         vpushi(v1);
         if (v1 == v2) {
             gen_op(TOK_EQ);
-            *case_sym = gtst(1, 0);
+            *case_sym = 0;
         } else {
             gen_op(TOK_GE);
             *case_sym = gtst(1, 0);
             vseti(case_reg, 0);
             vpushi(v2);
             gen_op(TOK_LE);
-            *case_sym = gtst(1, *case_sym);
         }
-        gsym(b);
         skip(':');
+        if (tok == TOK_CASE) {
+            b = gtst(0, b);
+            goto next_case;
+        }
+        *case_sym = gtst(1, *case_sym);
+        gsym(b);
         is_expr = 0;
         goto block_after_label;
     } else 
