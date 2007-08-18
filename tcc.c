@@ -6482,7 +6482,7 @@ static void unary(void)
            there and in function calls. */
         /* arrays can also be used although they are not lvalues */
         if ((vtop->type.t & VT_BTYPE) != VT_FUNC &&
-            !(vtop->type.t & VT_ARRAY))
+            !(vtop->type.t & VT_ARRAY) && !(vtop->type.t & VT_LLOCAL))
             test_lvalue();
         mk_pointer(&vtop->type);
         gaddrof();
