@@ -2173,3 +2173,6 @@ void const_warn_test(void)
 {
     const_func(1);
 }
+
+// Make sure compound literals work outside functions.
+struct point { int X; int Y; } *test = &((struct point){1,1});
