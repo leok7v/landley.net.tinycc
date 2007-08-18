@@ -9845,8 +9845,7 @@ int main(int argc, char **argv)
     } else
 #endif
     {
-        tcc_output_file(s, outfile);
-        ret = 0;
+        ret = tcc_output_file(s, outfile) ? 1 : 0;
     }
 the_end:
     /* XXX: cannot do it with bound checking because of the malloc hooks */
