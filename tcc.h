@@ -650,7 +650,7 @@ int __stdcall VirtualProtect(void*,int,int,int*);
   #define strtof (float)strtod
   #define strtoll (long long)strtol
 #endif
-#elif defined(TCC_UCLIBC) || defined(__FreeBSD__)
+#elif defined(TCC_UCLIBC) || defined(__FreeBSD__) || defined(__DragonFly__)
 /* currently incorrect */
 static inline long double strtold(const char *nptr, char **endptr)
 {
