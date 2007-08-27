@@ -5,7 +5,10 @@ include config.mak
 
 CFLAGS+=-g -Wall -fsigned-char -Os
 ifndef CONFIG_WIN32
-LIBS=-ldl -lm
+LIBS=-lm
+ifndef CONFIG_NOLDL
+LIBS+=-ldl
+endif
 BCHECK_O=bcheck.o
 endif
 CFLAGS_P=$(CFLAGS) -pg -static -DCONFIG_TCC_STATIC

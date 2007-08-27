@@ -68,6 +68,9 @@ case $targetos in
 MINGW32*)
 mingw32="yes"
 ;;
+DragonFly)
+noldl="yes"
+;;
 *) ;;
 esac
 
@@ -301,6 +304,9 @@ elif test "$cpu" = "alpha" ; then
 else
   echo "Unsupported CPU"
   exit 1
+fi
+if test "$noldl" = "yes" ; then
+  echo "CONFIG_NOLDL=yes" >> config.mak
 fi
 if test "$mingw32" = "yes" ; then
   echo "CONFIG_WIN32=yes" >> config.mak
