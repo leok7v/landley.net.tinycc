@@ -42,7 +42,6 @@
 #include <sys/timeb.h>
 #else
 #include <sys/time.h>
-#include <sys/ucontext.h>
 #include <sys/mman.h>
 #endif
 
