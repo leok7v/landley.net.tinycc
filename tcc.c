@@ -9374,7 +9374,7 @@ void help(void)
            "  -shared     generate a shared library\n"
            "  -static     static linking\n"
            "  -rdynamic   export all global symbols to dynamic linker\n"
-           "  -r          relocatable output\n"
+           "  -r          output relocatable .o file\n"
            "Debugger options:\n"
            "  -g          generate runtime debug info\n"
 #ifdef CONFIG_TCC_BCHECK
@@ -9625,7 +9625,7 @@ int parse_args(TCCState *s, int argc, char **argv)
             case TCC_OPTION_r:
                 /* generate a .o merging several output files */
                 reloc_output = 1;
-                if (!output_type) output_type = TCC_OUTPUT_OBJ;
+                output_type = TCC_OUTPUT_OBJ;
                 break;
             case TCC_OPTION_nostdinc:
                 s->nostdinc = 1;
