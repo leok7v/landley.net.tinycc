@@ -8770,7 +8770,7 @@ int tcc_relocate(TCCState *s1)
             (SHF_ALLOC | SHF_EXECINSTR)) {
 #ifdef WIN32
             {
-                DWORD old_protect;
+                int old_protect;
                 VirtualProtect(s->data, s->data_offset,
                                PAGE_EXECUTE_READWRITE, &old_protect);
             }
