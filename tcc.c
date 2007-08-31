@@ -9625,7 +9625,7 @@ int parse_args(TCCState *s, int argc, char **argv)
             case TCC_OPTION_r:
                 /* generate a .o merging several output files */
                 reloc_output = 1;
-                output_type = TCC_OUTPUT_OBJ;
+                if (!output_type) output_type = TCC_OUTPUT_OBJ;
                 break;
             case TCC_OPTION_nostdinc:
                 s->nostdinc = 1;
