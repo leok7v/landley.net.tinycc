@@ -71,6 +71,9 @@ mingw32="yes"
 DragonFly)
 noldl="yes"
 ;;
+OpenBSD)
+noldl="yes"
+;;
 *) ;;
 esac
 
