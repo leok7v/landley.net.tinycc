@@ -14,12 +14,10 @@ endif
 CFLAGS_P=$(CFLAGS) -pg -static -DCONFIG_TCC_STATIC
 LIBS_P=
 
-CFLAGS+=-mpreferred-stack-boundary=2
-ifeq ($(GCC_MAJOR),2)
-CFLAGS+=-m386 -malign-functions=0
-else
-CFLAGS+=-march=i386 -falign-functions=0 -fno-strict-aliasing
-endif
+#CFLAGS+=-mpreferred-stack-boundary=2 -falign-functions=0
+#ifneq ($(GCC_MAJOR),2)
+CFLAGS+=-fno-strict-aliasing
+#endif
 
 DISAS=objdump -d
 INSTALL=install
