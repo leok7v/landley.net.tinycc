@@ -2176,3 +2176,11 @@ void const_warn_test(void)
 
 // Make sure compound literals work outside functions.
 struct point { int X; int Y; } *test = &((struct point){1,1});
+
+
+// Make sure \garbage isn't an error in #ifdefs.
+#ifdef NOT_DEFINED
+#  include <windows.h>
+#  include <gl\glaux.h>
+#endif
+
