@@ -1149,6 +1149,7 @@ void cast_test()
     unsigned b,d;
     short s;
     double g = 0.1;
+    char *data = "\x34\x34\x12";
 
     printf("cast_test:\n");
     a = 0xfffff;
@@ -1211,6 +1212,10 @@ void cast_test()
     printf("0x%x == 0xfffff000\n", a);
     a = (signed char)0xf0f0;
     printf("0x%x == 0xfffffff0\n", a);
+
+    // Casting between pointers of different sizes.
+    s = *(short*)&data[1];
+    printf("0x%x == 0x1234 (or 0x3412)\n", s);
 }
 
 /* initializers tests */

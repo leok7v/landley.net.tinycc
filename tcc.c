@@ -5135,6 +5135,11 @@ static void gen_cast(CType *type)
                the lvalue already contains the real type size (see
                VT_LVAL_xxx constants) */
         }
+    } else if ((dbt & VT_BTYPE) == VT_PTR && !(vtop->r & VT_LVAL)) {
+        /* if we are casting between pointer types,
+           we must update the VT_LVAL_xxx size */
+        vtop->r = (vtop->r & ~VT_LVAL_TYPE)
+                  | (lvalue_type(type->ref->type.t) & VT_LVAL_TYPE);
     }
     vtop->type = *type;
 }
