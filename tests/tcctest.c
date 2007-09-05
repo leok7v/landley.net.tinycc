@@ -2069,6 +2069,12 @@ static __inline__ unsigned long long inc64(unsigned long long a)
 
 unsigned int set;
 
+int asm_func(int *x)
+{
+  asm("xorl %0,%0":"=r"(*x));
+  return *x;
+}
+
 void asm_test(void)
 {
     char buf[128];
@@ -2077,6 +2083,8 @@ void asm_test(void)
     printf("inline asm:\n");
     /* test the no operand case */
     asm volatile ("xorl %eax, %eax");
+
+    printf("%d\n",asm_func(&val));
 
     memcpy1(buf, "hello", 6);
     strncat1(buf, " worldXXXXX", 3);
