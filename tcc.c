@@ -4728,7 +4728,8 @@ static void check_comparison_pointer_types(SValue *p1, SValue *p2, int op)
     bt2 = type2->t & VT_BTYPE;
     /* accept comparison between pointer and integer with a warning */
     if ((is_integer_btype(bt1) || is_integer_btype(bt2)) && op != '-') {
-        warning("comparison between pointer and integer");
+        if (op != TOK_LOR && op != TOK_LAND )
+            warning("comparison between pointer and integer");
         return;
     }
 
