@@ -794,6 +794,10 @@ void struct_test()
 {
     struct1 *s;
     union union2 u;
+    struct foo {
+        int a;
+        void *b[];
+    };
 
     printf("struct:\n");
     printf("sizes: %d %d %d %d\n",
@@ -833,6 +837,9 @@ void struct_test()
     /* empty structures (GCC extension) */
     printf("sizeof(struct empty) = %d\n", sizeof(struct empty));
     printf("alignof(struct empty) = %d\n", __alignof__(struct empty));
+
+    // Struct with zero size member.
+    printf("sizeof(struct foo)=%d\n", sizeof(struct foo));
 }
 
 /* XXX: depend on endianness */
@@ -2183,4 +2190,3 @@ struct point { int X; int Y; } *test = &((struct point){1,1});
 #  include <windows.h>
 #  include <gl\glaux.h>
 #endif
-

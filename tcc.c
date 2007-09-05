@@ -5849,7 +5849,8 @@ static void struct_decl(CType *type, int u)
                             if (a == TOK_STRUCT) {
                                 c = (c + align - 1) & -align;
                                 offset = c;
-                                c += size;
+                                if (size > 0)
+                                    c += size;
                             } else {
                                 offset = 0;
                                 if (size > c)
