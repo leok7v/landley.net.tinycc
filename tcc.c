@@ -4774,7 +4774,7 @@ void gen_op(int op)
     if (bt1 == VT_PTR || bt2 == VT_PTR) {
         /* at least one operand is a pointer */
         /* relationnal op: must be both pointers */
-        if (op >= TOK_ULT && op <= TOK_GT) {
+        if (op >= TOK_ULT && op <= TOK_LOR) {
             check_comparison_pointer_types(vtop - 1, vtop, op);
             /* pointers are handled are unsigned */
             t = VT_INT | VT_UNSIGNED;
