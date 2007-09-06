@@ -4520,9 +4520,14 @@ void gen_opic(int op)
 
     v1 = vtop - 1;
     v2 = vtop;
-    /* currently, we cannot do computations with forward symbols */
-    c1 = (v1->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
-    c2 = (v2->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
+
+    /* For forward symbols we can only &&, || or == NULL */
+    fc = VT_SYM;
+    if (op == TOK_EQ && (v1->c.i == 0 || v2->c.i == 0)) fc = 0;
+    if (op == TOK_LAND || op == TOK_LOR) fc = 0;
+    c1 = (v1->r & (VT_VALMASK | VT_LVAL | fc)) == VT_CONST;
+    c2 = (v2->r & (VT_VALMASK | VT_LVAL | fc)) == VT_CONST;
+
     if (c1 && c2) {
         fc = v2->c.i;
         switch(op) {
@@ -4769,7 +4774,7 @@ void gen_op(int op)
     t2 = vtop[0].type.t;
     bt1 = t1 & VT_BTYPE;
     bt2 = t2 & VT_BTYPE;
-        
+
     if (bt1 == VT_PTR || bt2 == VT_PTR) {
         /* at least one operand is a pointer */
         /* relationnal op: must be both pointers */
