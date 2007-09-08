@@ -2266,7 +2266,7 @@ static int ld_next(TCCState *s1, char *name, int name_size)
     char *q;
 
  redo:
-    switch(ch) {
+    switch(fch) {
     case ' ':
     case '\t':
     case '\f':
@@ -2277,9 +2277,9 @@ static int ld_next(TCCState *s1, char *name, int name_size)
         goto redo;
     case '/':
         minp();
-        if (ch == '*') {
+        if (fch == '*') {
             file->buf_ptr = parse_comment(file->buf_ptr);
-            ch = file->buf_ptr[0];
+            fch = file->buf_ptr[0];
             goto redo;
         } else {
             q = name;
@@ -2297,13 +2297,13 @@ static int ld_next(TCCState *s1, char *name, int name_size)
         q = name;
     parse_name:
         for(;;) {
-            if (!((ch >= 'a' && ch <= 'z') ||
-                  (ch >= 'A' && ch <= 'Z') ||
-                  (ch >= '0' && ch <= '9') ||
-                  strchr("/.-_+=$:\\,~", ch)))
+            if (!((fch >= 'a' && fch <= 'z') ||
+                  (fch >= 'A' && fch <= 'Z') ||
+                  (fch >= '0' && fch <= '9') ||
+                  strchr("/.-_+=$:\\,~", fch)))
                 break;
             if ((q - name) < name_size - 1) {
-                *q++ = ch;
+                *q++ = fch;
             }
             minp();
         }
@@ -2314,7 +2314,7 @@ static int ld_next(TCCState *s1, char *name, int name_size)
         c = LD_TOK_EOF;
         break;
     default:
-        c = ch;
+        c = fch;
         inp();
         break;
     }
@@ -2370,8 +2370,8 @@ static int tcc_load_ldscript(TCCState *s1)
     char filename[1024];
     int t, ret;
     
-    ch = file->buf_ptr[0];
-    ch = handle_eob();
+    //fch = file->buf_ptr[0];
+    fch = handle_eob();
     for(;;) {
         t = ld_next(s1, cmd, sizeof(cmd));
         if (t == LD_TOK_EOF)

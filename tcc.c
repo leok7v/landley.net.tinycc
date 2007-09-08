@@ -51,7 +51,7 @@ static int do_bounds_check = 0;
 
 /* parser */
 static struct BufferedFile *file;
-static int ch, tok;
+static int fch, tok;
 static CValue tokc;
 static CString tokcstr; /* current parsed string, if any */
 /* additional informations about token */
@@ -1073,10 +1073,10 @@ static int handle_eob(void)
 /* read next char from current input file and handle end of input buffer */
 static inline void inp(void)
 {
-    ch = *(++(file->buf_ptr));
+    fch = *(++(file->buf_ptr));
     /* end of buffer/file handling */
-    if (ch == CH_EOB)
-        ch = handle_eob();
+    if (fch == CH_EOB)
+        fch = handle_eob();
 }
 
 /* space excluding newline */
@@ -1088,10 +1088,10 @@ static inline int is_space(int ch)
 /* handle '\[\r]\n' */
 static int handle_stray_noerror(void)
 {
-    while (ch == '\\') {
+    while (fch == '\\') {
         inp();
-        while (is_space(ch)) inp();
-        if (ch == '\n') {
+        while (is_space(fch)) inp();
+        if (fch == '\n') {
             file->line_num++;
             inp();
         } else return 1;
@@ -1120,7 +1120,7 @@ static int handle_stray1(uint8_t *p)
     } else {
     parse_stray:
         file->buf_ptr = p;
-        ch = *p;
+        fch = *p;
         handle_stray();
         p = file->buf_ptr;
         c = *p;
@@ -1157,7 +1157,7 @@ static int handle_stray1(uint8_t *p)
 static void minp(void)
 {
     inp();
-    if (ch == '\\') 
+    if (fch == '\\') 
         handle_stray();
 }
 
@@ -1277,7 +1277,7 @@ static uint8_t *parse_comment(uint8_t *p)
 
 static inline void skip_spaces(void)
 {
-    while (is_space(ch))
+    while (is_space(fch))
         cinp();
 }
 
@@ -1376,7 +1376,7 @@ void preprocess_skip(void)
             if (c == CH_EOF) {
                 expect("#endif");
             } else if (c == '\\') {
-                ch = file->buf_ptr[0];
+                fch = file->buf_ptr[0];
                 handle_stray_noerror();
             }
             p = file->buf_ptr;
@@ -1389,12 +1389,12 @@ void preprocess_skip(void)
             /* skip comments */
         case '/':
             file->buf_ptr = p;
-            ch = *p;
+            fch = *p;
             minp();
             p = file->buf_ptr;
-            if (ch == '*') {
+            if (fch == '*') {
                 p = parse_comment(p);
-            } else if (ch == '/') {
+            } else if (fch == '/') {
                 p = parse_line_comment(p);
             }
             break;
@@ -2001,21 +2001,21 @@ static void preprocess(int is_bof)
         break;
     case TOK_INCLUDE:
     case TOK_INCLUDE_NEXT:
-        ch = file->buf_ptr[0];
+        fch = file->buf_ptr[0];
         /* XXX: incorrect if comments : use next_nomacro with a special mode */
         skip_spaces();
-        if (ch == '<') {
+        if (fch == '<') {
             c = '>';
             goto read_name;
-        } else if (ch == '\"') {
-            c = ch;
+        } else if (fch == '\"') {
+            c = fch;
         read_name:
             /* XXX: better stray handling */
             minp();
             q = buf;
-            while (ch != c && ch != '\n' && ch != CH_EOF) {
+            while (fch != c && fch != '\n' && fch != CH_EOF) {
                 if ((q - buf) < sizeof(buf) - 1)
-                    *q++ = ch;
+                    *q++ = fch;
                 minp();
             }
             *q = '\0';
@@ -2122,7 +2122,7 @@ static void preprocess(int is_bof)
                 put_stabs(file->filename, N_BINCL, 0, 0, 0);
             }
             next_tok_flags |= TOK_FLAG_BOW | TOK_FLAG_BOF | TOK_FLAG_BOL;
-            ch = file->buf_ptr[0];
+            fch = file->buf_ptr[0];
             goto the_end;
         }
         break;
@@ -2212,12 +2212,12 @@ static void preprocess(int is_bof)
     case TOK_ERROR:
     case TOK_WARNING:
         c = tok;
-        ch = file->buf_ptr[0];
+        fch = file->buf_ptr[0];
         skip_spaces();
         q = buf;
-        while (ch != '\n' && ch != CH_EOF) {
+        while (fch != '\n' && fch != CH_EOF) {
             if ((q - buf) < sizeof(buf) - 1)
-                *q++ = ch;
+                *q++ = fch;
             minp();
         }
         *q = '\0';
@@ -2689,7 +2689,7 @@ static inline void next_nomacro1(void)
                 goto redo_no_start;
         } else {
             file->buf_ptr = p;
-            ch = *p;
+            fch = *p;
             handle_stray();
             p = file->buf_ptr;
             goto redo_no_start;
@@ -3272,10 +3272,10 @@ static int macro_subst_tok(TokenString *tok_str,
                 }
             } else {
                 /* XXX: incorrect with comments */
-                ch = file->buf_ptr[0];
-                while (is_space(ch) || ch == '\n')
+                fch = file->buf_ptr[0];
+                while (is_space(fch) || fch == '\n')
                     cinp();
-                t = ch;
+                t = fch;
             }
             if (t != '(') /* no macro subst */
                 return -1;
@@ -8562,7 +8562,7 @@ static int tcc_compile(TCCState *s1)
         s1->nb_errors = 0;
         s1->error_set_jmp_enabled = 1;
 
-        ch = file->buf_ptr[0];
+        fch = file->buf_ptr[0];
         next_tok_flags = TOK_FLAG_BOW | TOK_FLAG_BOL | TOK_FLAG_BOF;
         parse_flags = PARSE_FLAG_PREPROCESS | PARSE_FLAG_TOK_NUM;
         next();
@@ -8599,7 +8599,7 @@ static int tcc_preprocess(TCCState *s1)
 
     define_start = define_stack;
 
-    ch = file->buf_ptr[0];
+    fch = file->buf_ptr[0];
     tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF;
     parse_flags = PARSE_FLAG_ASM_COMMENTS | PARSE_FLAG_PREPROCESS |
         PARSE_FLAG_LINEFEED;
@@ -8684,7 +8684,7 @@ void tcc_define_symbol(TCCState *s1, const char *sym, const char *value)
     s1->include_stack_ptr = s1->include_stack;
 
     /* parse with define parser */
-    ch = file->buf_ptr[0];
+    fch = file->buf_ptr[0];
     next_nomacro();
     parse_define();
     file = NULL;
