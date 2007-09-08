@@ -9815,6 +9815,8 @@ int main(int argc, char **argv)
     for(i = 0;i < nb_files; i++) {
         const char *filename;
 
+        next_tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF | TOK_FLAG_BOW;
+
         filename = files[i];
         if (output_type == TCC_OUTPUT_PREPROCESS) {
             tcc_add_file_internal(s, filename,
