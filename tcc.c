@@ -8095,11 +8095,7 @@ static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r,
         }
 
         if (v) {
-            if (scope == VT_CONST) {
-                if (!sym)
-                    goto do_def;
-            } else {
-            do_def:
+            if (scope != VT_CONST || !sym) {
                 sym = sym_push(v, type, r | VT_SYM, 0);
             }
             /* update symbol definition */
