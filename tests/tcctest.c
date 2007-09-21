@@ -2203,3 +2203,7 @@ struct point { int X; int Y; } *test = &((struct point){1,1});
 #  include <windows.h>
 #  include <gl\glaux.h>
 #endif
+
+// Check workaround for a bug in glibc defining something like
+// "int blah[restrict];" which isn't legal syntax.
+#include <regex.h>
