@@ -733,7 +733,7 @@ static void tcc_assemble_inline(TCCState *s1, char *str, int len)
     parse_flags = saved_parse_flags;
     macro_ptr = saved_macro_ptr;
     file = saved_file;
-    tcc_free(bf);
+    free(bf);
 }
 
 /* find a constraint by its number or id (gcc 3 extended
@@ -985,7 +985,7 @@ static void asm_instr(void)
     for(i=0;i<nb_operands;i++) {
         ASMOperand *op;
         op = &operands[i];
-        tcc_free(op->constraint);
+        free(op->constraint);
         vpop();
     }
     cstr_free(&astr1);

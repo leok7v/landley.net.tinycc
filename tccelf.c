@@ -361,7 +361,7 @@ static void sort_syms(TCCState *s1, Section *s)
     
     /* we copy the new symbols to the old */
     memcpy(s->data, new_syms, nb_syms * sizeof(Elf32_Sym));
-    tcc_free(new_syms);
+    free(new_syms);
 
     /* now we modify all the relocations */
     for(i = 1; i < s1->nb_sections; i++) {
@@ -379,7 +379,7 @@ static void sort_syms(TCCState *s1, Section *s)
         }
     }
     
-    tcc_free(old_to_new_syms);
+    free(old_to_new_syms);
 }
 
 /* relocate common symbols in the .bss section */
@@ -1759,10 +1759,10 @@ int tcc_output_file(TCCState *s1, const char *filename)
 
     ret = 0;
  the_end:
-    tcc_free(s1->symtab_to_dynsym);
-    tcc_free(section_order);
-    tcc_free(phdr);
-    tcc_free(s1->got_offsets);
+    free(s1->symtab_to_dynsym);
+    free(section_order);
+    free(phdr);
+    free(s1->got_offsets);
     return ret;
 }
 
@@ -2015,12 +2015,12 @@ static int tcc_load_object_file(TCCState *s1,
     
     ret = 0;
  the_end:
-    tcc_free(symtab);
-    tcc_free(strtab);
-    tcc_free(old_to_new_syms);
-    tcc_free(sm_table);
-    tcc_free(strsec);
-    tcc_free(shdr);
+    free(symtab);
+    free(strtab);
+    free(old_to_new_syms);
+    free(sm_table);
+    free(strsec);
+    free(shdr);
     return ret;
 }
 
@@ -2081,7 +2081,7 @@ static int tcc_load_alacarte(TCCState *s1, int fd, int size)
     } while(bound);
     ret = 0;
  the_end:
-    tcc_free(data);
+    free(data);
     return ret;
 }
 
@@ -2249,10 +2249,10 @@ static int tcc_load_dll(TCCState *s1, int fd, const char *filename, int level)
     }
     ret = 0;
  the_end:
-    tcc_free(dynstr);
-    tcc_free(dynsym);
-    tcc_free(dynamic);
-    tcc_free(shdr);
+    free(dynstr);
+    free(dynsym);
+    free(dynamic);
+    free(shdr);
     return ret;
 }
 

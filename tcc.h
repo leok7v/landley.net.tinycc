@@ -67,8 +67,6 @@
 /* include file debug */
 //#define INC_DEBUG
 
-//#define MEM_DEBUG
-
 /* assembler debug */
 //#define ASM_DEBUG
 

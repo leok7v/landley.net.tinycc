@@ -187,31 +187,10 @@ static int strstart(const char *str, const char *val, const char **ptr)
     return 1;
 }
 
-/* memory management */
-#ifdef MEM_DEBUG
-int mem_cur_size;
-int mem_max_size;
-#endif
-
-static inline void tcc_free(void *ptr)
-{
-#ifdef MEM_DEBUG
-    mem_cur_size -= malloc_usable_size(ptr);
-#endif
-    free(ptr);
-}
-
 static void *tcc_malloc(unsigned long size)
 {
-    void *ptr;
-    ptr = malloc(size);
-    if (!ptr && size)
-        error("memory full");
-#ifdef MEM_DEBUG
-    mem_cur_size += malloc_usable_size(ptr);
-    if (mem_cur_size > mem_max_size)
-        mem_max_size = mem_cur_size;
-#endif
+    void *ptr = malloc(size);
+    if (!ptr && size) error("memory full");
     return ptr;
 }
 
@@ -225,17 +204,8 @@ static void *tcc_mallocz(unsigned long size)
 
 static inline void *tcc_realloc(void *ptr, unsigned long size)
 {
-    void *ptr1;
-#ifdef MEM_DEBUG
-    mem_cur_size -= malloc_usable_size(ptr);
-#endif
-    ptr1 = realloc(ptr, size);
-#ifdef MEM_DEBUG
-    /* NOTE: count not correct if alloc error, but not critical */
-    mem_cur_size += malloc_usable_size(ptr1);
-    if (mem_cur_size > mem_max_size)
-        mem_max_size = mem_cur_size;
-#endif
+    void *ptr1 = realloc(ptr, size);
+    if (!ptr1 && size) error("memory full");
     return ptr1;
 }
 
@@ -247,9 +217,7 @@ static char *tcc_strdup(const char *str)
     return ptr;
 }
 
-#define free(p) use_tcc_free(p)
 #define malloc(s) use_tcc_malloc(s)
-#define realloc(p, s) use_tcc_realloc(p, s)
 
 static void dynarray_add(void ***ptab, int *nb_ptr, void *data)
 {
@@ -342,8 +310,8 @@ Section *new_section(TCCState *s1, const char *name, int sh_type, int sh_flags)
 
 static void free_section(Section *s)
 {
-    tcc_free(s->data);
-    tcc_free(s);
+    free(s->data);
+    free(s);
 }
 
 /* realloc section and set its content to zero */
@@ -748,7 +716,7 @@ static void cstr_new(CString *cstr)
 /* free string and reset it to NULL */
 static void cstr_free(CString *cstr)
 {
-    tcc_free(cstr->data_allocated);
+    free(cstr->data_allocated);
     cstr_new(cstr);
 }
 
@@ -1029,7 +997,7 @@ void tcc_close(BufferedFile *bf)
 {
     total_lines += bf->line_num;
     close(bf->fd);
-    tcc_free(bf);
+    free(bf);
 }
 
 /* fill input buffer and peek next char */
@@ -1489,7 +1457,7 @@ static inline void tok_str_new(TokenString *s)
 
 static void tok_str_free(int *str)
 {
-    tcc_free(str);
+    free(str);
 }
 
 static int *tok_str_realloc(TokenString *s)
@@ -8649,7 +8617,7 @@ int tcc_compile_string(TCCState *s, const char *str)
     
     ret = tcc_compile(s);
     
-    tcc_free(buf);
+    free(buf);
 
     /* currently, no need to close */
     return ret;
@@ -8947,8 +8915,8 @@ void tcc_delete(TCCState *s1)
     /* free tokens */
     n = tok_ident - TOK_IDENT;
     for(i = 0; i < n; i++)
-        tcc_free(table_ident[i]);
-    tcc_free(table_ident);
+        free(table_ident[i]);
+    free(table_ident);
 
     /* free all sections */
 
@@ -8960,32 +8928,32 @@ void tcc_delete(TCCState *s1)
 
     for(i = 1; i < s1->nb_sections; i++)
         free_section(s1->sections[i]);
-    tcc_free(s1->sections);
+    free(s1->sections);
     
     /* free loaded dlls array */
     for(i = 0; i < s1->nb_loaded_dlls; i++)
-        tcc_free(s1->loaded_dlls[i]);
-    tcc_free(s1->loaded_dlls);
+        free(s1->loaded_dlls[i]);
+    free(s1->loaded_dlls);
 
     /* library paths */
     for(i = 0; i < s1->nb_library_paths; i++)
-        tcc_free(s1->library_paths[i]);
-    tcc_free(s1->library_paths);
+        free(s1->library_paths[i]);
+    free(s1->library_paths);
 
     /* cached includes */
     for(i = 0; i < s1->nb_cached_includes; i++)
-        tcc_free(s1->cached_includes[i]);
-    tcc_free(s1->cached_includes);
+        free(s1->cached_includes[i]);
+    free(s1->cached_includes);
 
     for(i = 0; i < s1->nb_include_paths; i++)
-        tcc_free(s1->include_paths[i]);
-    tcc_free(s1->include_paths);
+        free(s1->include_paths[i]);
+    free(s1->include_paths);
 
     for(i = 0; i < s1->nb_sysinclude_paths; i++)
-        tcc_free(s1->sysinclude_paths[i]);
-    tcc_free(s1->sysinclude_paths);
+        free(s1->sysinclude_paths[i]);
+    free(s1->sysinclude_paths);
 
-    tcc_free(s1);
+    free(s1);
 }
 
 int tcc_add_include_path(TCCState *s1, const char *pathname)
@@ -9827,7 +9795,7 @@ int main(int argc, char **argv)
     }
 
     /* free all files */
-    tcc_free(files);
+    free(files);
 
     if (do_bench) {
         double total_time;
@@ -9861,11 +9829,6 @@ the_end:
     if (!do_bounds_check)
         tcc_delete(s);
 
-#ifdef MEM_DEBUG
-    if (do_bench) {
-        printf("memory: %d bytes, max = %d bytes\n", mem_cur_size, mem_max_size);
-    }
-#endif
     return ret;
 }
 
