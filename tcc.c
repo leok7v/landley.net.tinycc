@@ -8308,6 +8308,8 @@ static void decl(int l)
                     func_decl_list(sym);
             }
 
+            /* Open curly bracket here can only be a function body, because
+               struct and union contents are handled by parse_btype() above. */
             if (tok == '{') {
                 if (l == VT_LOCAL)
                     error("cannot use local functions");
@@ -8320,7 +8322,7 @@ static void decl(int l)
                     if (!(sym->v & ~SYM_FIELD))
                        expect("identifier");
                 
-                /* XXX: cannot do better now: convert extern line to static inline */
+                /* XXX: cannot do better now: convert extern inline to static inline */
                 if ((type.t & (VT_EXTERN | VT_INLINE)) == (VT_EXTERN | VT_INLINE))
                     type.t = (type.t & ~VT_EXTERN) | VT_STATIC;
                 
@@ -8390,6 +8392,8 @@ static void decl(int l)
 #endif
                 }
                 break;
+
+            /* If there was no function body, it must be a varaible. */
             } else {
                 if (btype.t & VT_TYPEDEF) {
                     /* save typedefed type  */
@@ -8417,6 +8421,8 @@ static void decl(int l)
                            extern */
                         external_sym(v, &type, r);
                     } else {
+                        int saved_nocode_wanted = nocode_wanted;
+
                         type.t |= (btype.t & VT_STATIC); // Retain "static".
                         if (type.t & VT_STATIC)
                             r |= VT_CONST;
@@ -8424,8 +8430,10 @@ static void decl(int l)
                             r |= l;
                         if (has_init)
                             next();
+                        nocode_wanted = !cur_text_section;
                         decl_initializer_alloc(&type, &ad, r, 
                                                has_init, v, l);
+                        nocode_wanted = saved_nocode_wanted;
                     }
                 }
                 if (tok != ',') {
