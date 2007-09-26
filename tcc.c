@@ -5661,12 +5661,13 @@ static void parse_attribute(AttributeDef *ad)
             if (tcc_state->warn_unsupported)
                 warning("'%s' attribute ignored", get_tok_str(t, NULL));
             /* skip parameters */
-            /* XXX: skip parenthesis too */
             if (tok == '(') {
-                next();
-                while (tok != ')' && tok != -1)
+                int parenthesis = 0;
+                do {
+                    if (tok == '(') parenthesis++;
+                    else if (tok == ')') parenthesis--;
                     next();
-                next();
+                } while (parenthesis && tok != -1);
             }
             break;
         }

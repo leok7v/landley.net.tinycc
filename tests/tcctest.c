@@ -2207,3 +2207,5 @@ struct point { int X; int Y; } *test = &((struct point){1,1});
 // Check workaround for a bug in glibc defining something like
 // "int blah[restrict];" which isn't legal syntax.
 #include <regex.h>
+
+void warn (const char *format, ...) __attribute__((format(printf, (1), (2))));
