@@ -82,7 +82,6 @@ static Section *stab_section, *stabstr_section;
 static int rsym, anon_sym;
 /* expression generation modifiers */
 static int const_wanted; /* true if constant wanted */
-static int nocode_wanted; /* true if no code generation wanted for an expression */
 static int global_expr;  /* true if compound literals must be allocated
                             globally (used during initializers parsing */
 static int last_line_num, last_ind, func_ind; /* debug last line number and pc */
@@ -152,9 +151,8 @@ static char *pstrcpy(char *buf, int buf_size, const char *s)
         q_end = buf + buf_size - 1;
         while (q < q_end) {
             c = *s++;
-            if (c == '\0')
-                break;
             *q++ = c;
+            if (!c) break;
         }
         *q = '\0';
     }
@@ -4199,7 +4197,7 @@ void vpop(void)
     v = vtop->r & VT_VALMASK;
 #ifdef TCC_TARGET_I386
     /* for x86, we need to pop the FP stack */
-    if (v == TREG_ST0 && !nocode_wanted) {
+    if (v == TREG_ST0) {
         o(0xd9dd); /* fstp %st(1) */
     } else
 #endif
@@ -4590,12 +4588,9 @@ void gen_opic(int op)
             vtop->c.i += fc;
         } else {
         general_case:
-            if (!nocode_wanted) {
-                /* call low level op generator */
-                gen_opi(op);
-            } else {
-                vtop--;
-            }
+            /* call low level op generator */
+            if (cur_text_section) gen_opi(op);
+            else vtop--;
         }
     }
 }
@@ -4656,11 +4651,8 @@ void gen_opif(int op)
         vtop--;
     } else {
     general_case:
-        if (!nocode_wanted) {
-            gen_opf(op);
-        } else {
-            vtop--;
-        }
+        if (cur_text_section) gen_opf(op);
+        else vtop--;
     }
 }
 
@@ -4962,7 +4954,7 @@ static void gen_cast(CType *type)
     dbt = type->t & (VT_BTYPE | VT_UNSIGNED);
     sbt = vtop->type.t & (VT_BTYPE | VT_UNSIGNED);
 
-    if (sbt != dbt && !nocode_wanted) {
+    if (sbt != dbt && cur_text_section) {
         sf = is_float(sbt);
         df = is_float(dbt);
         c = (vtop->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
@@ -5441,7 +5433,7 @@ void vstore(void)
         /* if structure, only generate pointer */
         /* structure assignment : generate memcpy */
         /* XXX: optimize if small size */
-        if (!nocode_wanted) {
+        if (cur_text_section) {
             size = type_size(&vtop->type, &align);
 
 #ifdef TCC_ARM_EABI
@@ -5513,7 +5505,7 @@ void vstore(void)
             vswap();
         }
 #endif
-        if (!nocode_wanted) {
+        if (cur_text_section) {
             rc = RC_INT;
             if (is_float(ft))
                 rc = RC_FLOAT;
@@ -6260,7 +6252,7 @@ static void indir(void)
             return;
         expect("pointer");
     }
-    if ((vtop->r & VT_LVAL) && !nocode_wanted)
+    if ((vtop->r & VT_LVAL) && cur_text_section)
         gv(RC_INT);
     vtop->type = *pointed_type(&vtop->type);
     /* Arrays and functions are never lvalues */
@@ -6531,15 +6523,16 @@ static void unary(void)
         break;
     case TOK_builtin_constant_p:
         {
-            int saved_nocode_wanted, res;
+            Section *saved_text_section;
+            int res;
             next();
             skip('(');
-            saved_nocode_wanted = nocode_wanted;
-            nocode_wanted = 1;
+            saved_text_section = cur_text_section;
+            cur_text_section = NULL;
             gexpr();
             res = (vtop->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST;
             vpop();
-            nocode_wanted = saved_nocode_wanted;
+            cur_text_section = saved_text_section;
             skip(')');
             vpushi(res);
         }
@@ -6727,11 +6720,8 @@ static void unary(void)
             if (sa)
                 error("too few arguments to function");
             skip(')');
-            if (!nocode_wanted) {
-                gfunc_call(nb_args);
-            } else {
-                vtop -= (nb_args + 1);
-            }
+            if (cur_text_section) gfunc_call(nb_args);
+            else vtop -= (nb_args + 1);
             /* return value */
             vsetc(&ret.type, ret.r, &ret.c);
             vtop->r2 = ret.r2;
@@ -7065,28 +7055,26 @@ static void gexpr(void)
 /* parse an expression and return its type without any side effect. */
 static void expr_type(CType *type)
 {
-    int saved_nocode_wanted;
+    Section *saved_text_section = cur_text_section;
 
-    saved_nocode_wanted = nocode_wanted;
-    nocode_wanted = 1;
+    cur_text_section = NULL;
     gexpr();
     *type = vtop->type;
     vpop();
-    nocode_wanted = saved_nocode_wanted;
+    cur_text_section = saved_text_section;
 }
 
 /* parse a unary expression and return its type without any side
    effect. */
 static void unary_type(CType *type)
 {
-    int a;
+    Section *saved_text_section = cur_text_section;
 
-    a = nocode_wanted;
-    nocode_wanted = 1;
+    cur_text_section = NULL;
     unary();
     *type = vtop->type;
     vpop();
-    nocode_wanted = a;
+    cur_text_section = saved_text_section;
 }
 
 /* parse a constant expression and return value in vtop.  */
@@ -7617,7 +7605,7 @@ static void init_putv(CType *type, Section *sec, unsigned long c,
         expr_eq();
         break;
     }
-    
+
     dtype = *type;
     dtype.t &= ~VT_CONSTANT; /* need to do that to avoid false warning */
 
@@ -8422,8 +8410,6 @@ static void decl(int l)
                            extern */
                         external_sym(v, &type, r);
                     } else {
-                        int saved_nocode_wanted = nocode_wanted;
-
                         type.t |= (btype.t & VT_STATIC); // Retain "static".
                         if (type.t & VT_STATIC)
                             r |= VT_CONST;
@@ -8431,10 +8417,8 @@ static void decl(int l)
                             r |= l;
                         if (has_init)
                             next();
-                        nocode_wanted = !cur_text_section;
                         decl_initializer_alloc(&type, &ad, r, 
                                                has_init, v, l);
-                        nocode_wanted = saved_nocode_wanted;
                     }
                 }
                 if (tok != ',') {

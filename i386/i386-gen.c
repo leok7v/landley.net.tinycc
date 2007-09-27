@@ -93,6 +93,8 @@ static int func_ret_sub;
 void g(int c)
 {
     int ind1;
+
+    if (!cur_text_section) return;
     ind1 = ind + 1;
     if (ind1 > cur_text_section->data_allocated)
         section_realloc(cur_text_section, ind1);
@@ -120,6 +122,7 @@ void gen_le32(int c)
 void gsym_addr(int t, int a)
 {
     int n, *ptr;
+    if (!cur_text_section) return;
     while (t) {
         ptr = (int *)(cur_text_section->data + t);
         n = *ptr; /* next value */
@@ -142,6 +145,7 @@ static int oad(int c, int s)
 {
     int ind1;
 
+    if (!cur_text_section) return 0;
     o(c);
     ind1 = ind + 4;
     if (ind1 > cur_text_section->data_allocated)
