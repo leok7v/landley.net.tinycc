@@ -4477,32 +4477,35 @@ void gen_opl(int op)
     }
 }
 
-/* handle integer constant optimizations and various machine
-   independent opt */
+/* handle long long constant and various machine independent optimizations */
 void gen_opic(int op)
 {
-    int fc, c1, c2, n;
+    int c1, c2, t1, t2;
     SValue *v1, *v2;
+    long long l1, l2;
 
     v1 = vtop - 1;
     v2 = vtop;
+    t1 = v1->type.t & VT_BTYPE;
+    t2 = v2->type.t & VT_BTYPE;
+    l1 = (t1 == VT_LLONG) ? v1->c.ll : v1->c.i;
+    l2 = (t2 == VT_LLONG) ? v2->c.ll : v2->c.i;
 
-    /* For forward symbols we can only &&, || or == NULL */
-    fc = VT_SYM;
-    if (op == TOK_EQ && (v1->c.i == 0 || v2->c.i == 0)) fc = 0;
-    if (op == TOK_LAND || op == TOK_LOR) fc = 0;
-    c1 = (v1->r & (VT_VALMASK | VT_LVAL | fc)) == VT_CONST;
-    c2 = (v2->r & (VT_VALMASK | VT_LVAL | fc)) == VT_CONST;
+    /* For forward symbols we can only constify &&, || or == NULL */
+    c2 = VT_SYM;
+    if (op == TOK_EQ && (v1->c.ll == 0 || v2->c.ll == 0)) c2 = 0;
+    if (op == TOK_LAND || op == TOK_LOR) c2 = 0;
+    c1 = (v1->r & (VT_VALMASK | VT_LVAL | c2)) == VT_CONST;
+    c2 = (v2->r & (VT_VALMASK | VT_LVAL | c2)) == VT_CONST;
 
     if (c1 && c2) {
-        fc = v2->c.i;
         switch(op) {
-        case '+': v1->c.i += fc; break;
-        case '-': v1->c.i -= fc; break;
-        case '&': v1->c.i &= fc; break;
-        case '^': v1->c.i ^= fc; break;
-        case '|': v1->c.i |= fc; break;
-        case '*': v1->c.i *= fc; break;
+        case '+': l1 += l2; break;
+        case '-': l1 -= l2; break;
+        case '&': l1 &= l2; break;
+        case '^': l1 ^= l2; break;
+        case '|': l1 |= l2; break;
+        case '*': l1 *= l2; break;
 
         case TOK_PDIV:
         case '/':
@@ -4510,38 +4513,39 @@ void gen_opic(int op)
         case TOK_UDIV:
         case TOK_UMOD:
             /* if division by zero, generate explicit division */
-            if (fc == 0) {
+            if (l2 == 0) {
                 if (const_wanted)
                     error("division by zero in constant");
                 goto general_case;
             }
             switch(op) {
-            default: v1->c.i /= fc; break;
-            case '%': v1->c.i %= fc; break;
-            case TOK_UDIV: v1->c.i = (unsigned)v1->c.i / fc; break;
-            case TOK_UMOD: v1->c.i = (unsigned)v1->c.i % fc; break;
+            default: l1 /= l2; break;
+            case '%': l1 %= l2; break;
+            case TOK_UDIV: l1 = (unsigned long long)l1 / l2; break;
+            case TOK_UMOD: l1 = (unsigned long long)l1 % l2; break;
             }
             break;
-        case TOK_SHL: v1->c.i <<= fc; break;
-        case TOK_SHR: v1->c.i = (unsigned)v1->c.i >> fc; break;
-        case TOK_SAR: v1->c.i >>= fc; break;
+        case TOK_SHL: l1 <<= l2; break;
+        case TOK_SHR: l1 = (unsigned long long)l1 >> l2; break;
+        case TOK_SAR: l1 >>= l2; break;
             /* tests */
-        case TOK_ULT: v1->c.i = (unsigned)v1->c.i < (unsigned)fc; break;
-        case TOK_UGE: v1->c.i = (unsigned)v1->c.i >= (unsigned)fc; break;
-        case TOK_EQ: v1->c.i = v1->c.i == fc; break;
-        case TOK_NE: v1->c.i = v1->c.i != fc; break;
-        case TOK_ULE: v1->c.i = (unsigned)v1->c.i <= (unsigned)fc; break;
-        case TOK_UGT: v1->c.i = (unsigned)v1->c.i > (unsigned)fc; break;
-        case TOK_LT: v1->c.i = v1->c.i < fc; break;
-        case TOK_GE: v1->c.i = v1->c.i >= fc; break;
-        case TOK_LE: v1->c.i = v1->c.i <= fc; break;
-        case TOK_GT: v1->c.i = v1->c.i > fc; break;
+        case TOK_ULT: l1 = (unsigned long long)l1 < (unsigned long long)l2; break;
+        case TOK_UGE: l1 = (unsigned long long)l1 >= (unsigned long long)l2; break;
+        case TOK_EQ: l1 = l1 == l2; break;
+        case TOK_NE: l1 = l1 != l2; break;
+        case TOK_ULE: l1 = (unsigned long long)l1 <= (unsigned long long)l2; break;
+        case TOK_UGT: l1 = (unsigned long long)l1 > (unsigned long long)l2; break;
+        case TOK_LT: l1 = l1 < l2; break;
+        case TOK_GE: l1 = l1 >= l2; break;
+        case TOK_LE: l1 = l1 <= l2; break;
+        case TOK_GT: l1 = l1 > l2; break;
             /* logical */
-        case TOK_LAND: v1->c.i = v1->c.i && fc; break;
-        case TOK_LOR: v1->c.i = v1->c.i || fc; break;
+        case TOK_LAND: l1 = l1 && l2; break;
+        case TOK_LOR: l1 = l1 || l2; break;
         default:
             goto general_case;
         }
+        v1->c.ll = l1;
         vtop--;
     } else {
         /* if commutative ops, put c2 as constant */
@@ -4549,27 +4553,28 @@ void gen_opic(int op)
                    op == '|' || op == '*')) {
             vswap();
             swap(&c1, &c2);
+            l2 = l1;
         }
-        fc = vtop->c.i;
+        /* Filter out NOP operations like x*1, x-0, x&-1... */
         if (c2 && (((op == '*' || op == '/' || op == TOK_UDIV || 
                      op == TOK_PDIV) && 
-                    fc == 1) ||
+                    l2 == 1) ||
                    ((op == '+' || op == '-' || op == '|' || op == '^' || 
                      op == TOK_SHL || op == TOK_SHR || op == TOK_SAR) && 
-                    fc == 0) ||
+                    l2 == 0) ||
                    (op == '&' && 
-                    fc == -1))) {
+                    l2 == -1))) {
             /* nothing to do */
             vtop--;
         } else if (c2 && (op == '*' || op == TOK_PDIV || op == TOK_UDIV)) {
             /* try to use shifts instead of muls or divs */
-            if (fc > 0 && (fc & (fc - 1)) == 0) {
-                n = -1;
-                while (fc) {
-                    fc >>= 1;
+            if (l2 > 0 && (l2 & (l2 - 1)) == 0) {
+                int n = -1;
+                while (l2) {
+                    l2 >>= 1;
                     n++;
                 }
-                vtop->c.i = n;
+                vtop->c.ll = n;
                 if (op == '*')
                     op = TOK_SHL;
                 else if (op == TOK_PDIV)
@@ -4583,14 +4588,16 @@ void gen_opic(int op)
                    (VT_CONST | VT_SYM)) {
             /* symbol + constant case */
             if (op == '-')
-                fc = -fc;
+                l2 = -l2;
             vtop--;
-            vtop->c.i += fc;
+            vtop->c.ll += l2;
         } else {
         general_case:
             /* call low level op generator */
-            if (cur_text_section) gen_opi(op);
-            else vtop--;
+            if (cur_text_section) {
+                if (t1 == VT_LLONG|| t2 == VT_LLONG) gen_opl(op);
+                else gen_opi(op);
+            } else vtop--;
         }
     }
 }
@@ -4848,8 +4855,6 @@ void gen_op(int op)
         gen_cast(&type1);
         if (is_float(t))
             gen_opif(op);
-        else if ((t & VT_BTYPE) == VT_LLONG)
-            gen_opl(op);
         else
             gen_opic(op);
         if (op >= TOK_ULT && op <= TOK_GT) {
