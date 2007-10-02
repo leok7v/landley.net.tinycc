@@ -1597,6 +1597,9 @@ void funcptr_test()
 void lloptest(long long a, long long b)
 {
     unsigned long long ua, ub;
+    unsigned long long cc=1LL<<48;
+
+    printf("cc=%Ld\n",cc);
 
     ua = a;
     ub = b;
