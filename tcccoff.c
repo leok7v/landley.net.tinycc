@@ -680,7 +680,7 @@ int tcc_output_coff(TCCState *s1, FILE *f)
 	// then write the strings
 	fwrite(Coff_str_table, i, 1, f);
 
-	tcc_free(Coff_str_table);
+	free(Coff_str_table);
     }
 
     return 0;
@@ -773,7 +773,7 @@ void SortSymbolTable(void)
 	*p++ = NewTable[i];
     }
 
-    tcc_free(NewTable);
+    free(NewTable);
 }
 
 

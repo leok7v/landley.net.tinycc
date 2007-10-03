@@ -445,8 +445,8 @@ ST void dynarray_reset(void ***pp, int *n)
 {
     int i;
     for (i = 0; i < *n; ++i)
-	tcc_free((*pp)[i]);
-    tcc_free(*pp);
+	free((*pp)[i]);
+    free(*pp);
     *pp = NULL;
     *n = 0;
 }
@@ -809,7 +809,7 @@ ST void pe_build_exports(struct pe_info *pe)
 	/* printf("export: %s\n", name); */
     }
     pe->exp_size = pe->thunk->data_offset - pe->exp_offs;
-    tcc_free(sorted);
+    free(sorted);
 }
 
 /* ------------------------------------------------------------- */
