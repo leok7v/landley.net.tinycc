@@ -6131,12 +6131,22 @@ static void post_type(CType *type, AttributeDef *ad)
     } else if (tok == '[') {
         /* array definition */
         next();
-        if (tok == TOK_RESTRICT1) next(); /* Work around bug in glibc regex.h */
+        if (tok == TOK_RESTRICT1) next(); 
         n = -1;
         if (tok != ']') {
-            n = expr_const();
-            if (n < 0)
-                error("invalid array size");    
+            char *message = "invalid array size";
+            expr_const1();
+            /* Conventional constant array? */
+            if ((vtop->r & (VT_VALMASK |VT_LVAL | VT_SYM)) == VT_CONST) {
+                n = vtop->c.i;
+                vpop();
+
+                if (n < 0) error(message);
+            } else if (!local_stack) error(message);
+            else {
+                gen_assign_cast(&int_type);
+                error("dynamic arrays not implemented yet");
+            }
         }
         skip(']');
         /* parse next post type */

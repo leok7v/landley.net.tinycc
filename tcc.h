@@ -158,7 +158,7 @@ typedef union CValue {
     float f;
     int i;
     unsigned int ui;
-    unsigned int ul; /* address (should be unsigned long on 64 bit cpu) */
+    unsigned long ul; /* address (should be unsigned long on 64 bit cpu) */
     long long ll;
     unsigned long long ull;
     struct CString *cstr;
@@ -719,6 +719,7 @@ static int lvalue_type(int t);
 static int parse_btype(CType *type, AttributeDef *ad);
 static void type_decl(CType *type, AttributeDef *ad, int *v, int td);
 static int is_compatible_types(CType *type1, CType *type2);
+static void expr_const1(void);
 
 int ieee_finite(double d);
 void error(const char *fmt, ...);
