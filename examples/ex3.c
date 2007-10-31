@@ -1,4 +1,7 @@
-#include <tcclib.h>
+#include <tinyinc.h>
+
+/* Benchmark: compute the nth Fibonacci number.  No, this is not optimal, it's
+   just for performance comparison purposes. */
 
 int fib(n)
 {

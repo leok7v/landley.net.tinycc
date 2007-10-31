@@ -1,5 +1,8 @@
 #! /usr/bin/tcc -run
-#include <tcclib.h>
+
+/* A small program to print "hello world", using tinyinc.h */
+
+#include <tinyinc.h>
 
 int main() 
 {

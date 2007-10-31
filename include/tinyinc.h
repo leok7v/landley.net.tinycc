@@ -1,11 +1,13 @@
-/* Simple libc header for TCC 
+/* Simple libc header for tinycc, containing the many common symbols.
  * 
- * Add any function you want from the libc there. This file is here
- * only for your convenience so that you do not need to put the whole
- * /usr/include directory on your target system.
+ * Add any function you want below.  This file is here only for your
+ * convenience, so that you do not need to put the whole /usr/include directory
+ * on your target system.
  */
-#ifndef _TCCLIB_H
-#define _TCCLIB_H
+#ifndef _TINYINC_H
+#define _TINYINC_H
+
+/* These are installed by tinycc, not libc. */
 
 #include <stddef.h>
 #include <stdarg.h>

@@ -1,8 +1,9 @@
 #!/usr/bin/tcc -run -L/usr/X11R6/lib -lX11
 #include <stdlib.h>
-/* Yes, TCC can use X11 too ! */
 #include <stdio.h>
 #include <X11/Xlib.h>
+
+/* Demonstrate that tinycc can use X11, even via -run */
 
 int main(int argc, char **argv)
 {

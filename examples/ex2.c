@@ -1,4 +1,8 @@
-#include "tcclib.h"
+#include "tinyinc.h"
+
+/* Benchmark: given a result and a list of numbers, try to add, subtract,
+   multiply, and divide the list of numbers to get the result.  For example,
+   "./ex2 42 7 1 5" should find that 5+1 is 6, and 6*7 is 42. */
 
 #define N 20
 
