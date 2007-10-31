@@ -38,7 +38,7 @@
 <LI><A NAME="TOC20" HREF="#SEC20">5.4 GNU Linker Scripts</A>
 </UL>
 <LI><A NAME="TOC21" HREF="#SEC21">6. TinyCC Memory and Bound checks</A>
-<LI><A NAME="TOC22" HREF="#SEC22">7. The <CODE>libtcc</CODE> library</A>
+<LI><A NAME="TOC22" HREF="#SEC22">7. The <CODE>libtinycc</CODE> library</A>
 <LI><A NAME="TOC23" HREF="#SEC23">8. Developer's guide</A>
 <UL>
 <LI><A NAME="TOC24" HREF="#SEC24">8.1 File reading</A>
@@ -64,42 +64,42 @@
 <H1><A NAME="SEC1" HREF="#TOC1">1. Introduction</A></H1>
 
 <P>
-TinyCC (aka TCC) is a small but hyper fast C compiler. Unlike other C
+Tinycc is a small but hyper fast C compiler. Unlike other C
 compilers, it is meant to be self-relying: you do not need an
-external assembler or linker because TCC does that for you.
+external assembler or linker because tinycc does that for you.
 
 
 <P>
-TCC compiles so <EM>fast</EM> that even for big projects <CODE>Makefile</CODE>s may
+Tinycc compiles so <EM>fast</EM> that even for big projects <CODE>Makefile</CODE>s may
 not be necessary. 
 
 
-<p>TCC not only supports ANSI C, but also most of the
+<p>Tinycc not only supports ANSI C, but also most of the
 <a href=http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1124.pdf>ISO C99</a>
 standard, and many GNUC extensions including inline assembly.</p>
 
 
 <P>
-TCC can also be used to make <EM>C scripts</EM>, i.e. pieces of C source
+Tinycc can also be used to make <EM>C scripts</EM>, i.e. pieces of C source
 that you run as a Perl or Python script. Compilation is so fast that
 your script will be as fast as if it was an executable.
 
 
 <P>
-TCC can also automatically generate memory and bound checks
-(see section <A HREF="#SEC21">6. TinyCC Memory and Bound checks</A>) while allowing all C pointers operations. TCC can do
+Tinycc can also automatically generate memory and bound checks
+(see section <A HREF="#SEC21">6. Tinycc Memory and Bound checks</A>) while allowing all C pointers operations. Tinycc can do
 these checks even if non patched libraries are used.
 
 
 <P>
-With <CODE>libtcc</CODE>, you can use TCC as a backend for dynamic code
-generation (see section <A HREF="#SEC22">7. The <CODE>libtcc</CODE> library</A>).
+With <CODE>libtinycc</CODE>, you can use tinycc as a backend for dynamic code
+generation (see section <A HREF="#SEC22">7. The <CODE>libtinycc</CODE> library</A>).
 
 
 <P>
-TCC mainly supports the i386 target on Linux and Windows. There are alpha
-ports for the ARM (<CODE>arm-tcc</CODE>) and the TMS320C67xx targets
-(<CODE>c67-tcc</CODE>). More information about the ARM port is available at
+Tinycc mainly supports the i386 target on Linux and Windows. There are alpha
+ports for the ARM (<CODE>arm-tinycc</CODE>) and the TMS320C67xx targets
+(<CODE>c67-tinycc</CODE>). More information about the ARM port is available at
 <A HREF="http://lists.gnu.org/archive/html/tinycc-devel/2003-10/msg00044.html">http://lists.gnu.org/archive/html/tinycc-devel/2003-10/msg00044.html</A>.
 
 
@@ -117,11 +117,11 @@ ports for the ARM (<CODE>arm-tcc</CODE>) and the TMS320C67xx targets
 
 
 <PRE>
-usage: tcc [options] [<VAR>infile1</VAR> <VAR>infile2</VAR>...] [<SAMP>`-run'</SAMP> <VAR>infile</VAR> <VAR>args</VAR>...]
+usage: tinycc [options] [<VAR>infile1</VAR> <VAR>infile2</VAR>...] [<SAMP>`-run'</SAMP> <VAR>infile</VAR> <VAR>args</VAR>...]
 </PRE>
 
 <P>
-TCC options are a very much like gcc options. The main difference is that TCC
+Tinycc options are a very much like gcc options. The main difference is that tinycc
 can also execute directly the resulting program and give it runtime
 arguments.
 
@@ -132,45 +132,45 @@ Here are some examples to understand the logic:
 
 <DL COMPACT>
 
-<DT><CODE><SAMP>`tcc -run a.c'</SAMP></CODE>
+<DT><CODE><SAMP>`tinycc -run a.c'</SAMP></CODE>
 <DD>
 Compile <TT>`a.c'</TT> and execute it directly
 
-<DT><CODE><SAMP>`tcc -run a.c arg1'</SAMP></CODE>
+<DT><CODE><SAMP>`tinycc -run a.c arg1'</SAMP></CODE>
 <DD>
 Compile a.c and execute it directly. arg1 is given as first argument to
 the <CODE>main()</CODE> of a.c.
 
-<DT><CODE><SAMP>`tcc a.c -run b.c arg1'</SAMP></CODE>
+<DT><CODE><SAMP>`tinycc a.c -run b.c arg1'</SAMP></CODE>
 <DD>
 Compile <TT>`a.c'</TT> and <TT>`b.c'</TT>, link them together and execute them. arg1 is given
 as first argument to the <CODE>main()</CODE> of the resulting program. Because
 multiple C files are specified, <SAMP>`--'</SAMP> are necessary to clearly separate the
-program arguments from the TCC options.
+program arguments from the tinycc options.
 
-<DT><CODE><SAMP>`tcc -o myprog a.c b.c'</SAMP></CODE>
+<DT><CODE><SAMP>`tinycc -o myprog a.c b.c'</SAMP></CODE>
 <DD>
 Compile <TT>`a.c'</TT> and <TT>`b.c'</TT>, link them and generate the executable <TT>`myprog'</TT>.
 
-<DT><CODE><SAMP>`tcc -o myprog a.o b.o'</SAMP></CODE>
+<DT><CODE><SAMP>`tinycc -o myprog a.o b.o'</SAMP></CODE>
 <DD>
 link <TT>`a.o'</TT> and <TT>`b.o'</TT> together and generate the executable <TT>`myprog'</TT>.
 
-<DT><CODE><SAMP>`tcc -c a.c'</SAMP></CODE>
+<DT><CODE><SAMP>`tinycc -c a.c'</SAMP></CODE>
 <DD>
 Compile <TT>`a.c'</TT> and generate object file <TT>`a.o'</TT>.
 
-<DT><CODE><SAMP>`tcc -c asmfile.S'</SAMP></CODE>
+<DT><CODE><SAMP>`tinycc -c asmfile.S'</SAMP></CODE>
 <DD>
 Preprocess with C preprocess and assemble <TT>`asmfile.S'</TT> and generate
 object file <TT>`asmfile.o'</TT>.
 
-<DT><CODE><SAMP>`tcc -c asmfile.s'</SAMP></CODE>
+<DT><CODE><SAMP>`tinycc -c asmfile.s'</SAMP></CODE>
 <DD>
 Assemble (but not preprocess) <TT>`asmfile.s'</TT> and generate object file
 <TT>`asmfile.o'</TT>.
 
-<DT><CODE><SAMP>`tcc -r -o ab.o a.c b.c'</SAMP></CODE>
+<DT><CODE><SAMP>`tinycc -r -o ab.o a.c b.c'</SAMP></CODE>
 <DD>
 Compile <TT>`a.c'</TT> and <TT>`b.c'</TT>, link them together and generate the object file <TT>`ab.o'</TT>.
 
@@ -181,13 +181,13 @@ Scripting:
 
 
 <P>
-TCC can be invoked from <EM>scripts</EM>, just as shell scripts. You just
-need to add <CODE>#!/usr/local/bin/tcc -run</CODE> at the start of your C source:
+Tinycc can be invoked from <EM>scripts</EM>, just as shell scripts. You just
+need to add <CODE>#!/usr/local/bin/tinycc -run</CODE> at the start of your C source:
 
 
 
 <PRE>
-#!/usr/local/bin/tcc -run
+#!/usr/local/bin/tinycc -run
 #include &#60;stdio.h&#62;
 
 int main() 
@@ -209,7 +209,7 @@ General Options:
 
 <DT><SAMP>`-v'</SAMP>
 <DD>
-Display current TCC version.
+Display current tinycc version.
 
 <DT><SAMP>`-c'</SAMP>
 <DD>
@@ -221,8 +221,8 @@ Put object file, executable, or dll into output file <TT>`outfile'</TT>.
 
 <DT><SAMP>`-Bdir'</SAMP>
 <DD>
-Set the path where the tcc internal libraries can be found (default is
-<TT>`PREFIX/lib/tcc'</TT>).
+Set the path where the tinycc internal libraries can be found (default is
+<TT>`PREFIX/lib/tinycc'</TT>).
 
 <DT><SAMP>`-bench'</SAMP>
 <DD>
@@ -232,19 +232,19 @@ Output compilation statistics.
 <DD>
 Compile file <VAR>source</VAR> and run it with the command line arguments
 <VAR>args</VAR>. In order to be able to give more than one argument to a
-script, several TCC options can be given <EM>after</EM> the
+script, several tinycc options can be given <EM>after</EM> the
 <SAMP>`-run'</SAMP> option, separated by spaces. Example:
 
 
 <PRE>
-tcc "-run -L/usr/X11R6/lib -lX11" ex4.c
+tinycc "-run -L/usr/X11R6/lib -lX11" ex4.c
 </PRE>
 
 In a script, it gives the following header:
 
 
 <PRE>
-#!/usr/local/bin/tcc -run -L/usr/X11R6/lib -lX11
+#!/usr/local/bin/tinycc -run -L/usr/X11R6/lib -lX11
 #include &#60;stdlib.h&#62;
 int main(int argc, char **argv)
 {
@@ -267,7 +267,7 @@ order they are specified.
 
 System include paths are always searched after. The default system
 include paths are: <TT>`/usr/local/include'</TT>, <TT>`/usr/include'</TT>
-and <TT>`PREFIX/lib/tcc/include'</TT>. (<TT>`PREFIX'</TT> is usually
+and <TT>`PREFIX/lib/tinycc/include'</TT>. (<TT>`PREFIX'</TT> is usually
 <TT>`/usr'</TT> or <TT>`/usr/local'</TT>).
 
 <DT><SAMP>`-Dsym[=val]'</SAMP>
@@ -335,7 +335,7 @@ Warn about implicit function declaration.
 
 <DT><SAMP>`-Wunsupported'</SAMP>
 <DD>
-Warn about unsupported GCC features that are ignored by TCC.
+Warn about unsupported GCC features that are ignored by tinycc.
 
 <DT><SAMP>`-Wwrite-strings'</SAMP>
 <DD>
@@ -452,7 +452,7 @@ ignored.
 <H2><A NAME="SEC6" HREF="#TOC6">3.1 ANSI C</A></H2>
 
 <P>
-TCC implements all the ANSI C standard, including structure bit fields
+Tinycc implements all the ANSI C standard, including structure bit fields
 and floating point numbers (<CODE>long double</CODE>, <CODE>double</CODE>, and
 <CODE>float</CODE> fully supported).
 
@@ -461,7 +461,7 @@ and floating point numbers (<CODE>long double</CODE>, <CODE>double</CODE>, and
 
 <H2><A NAME="SEC7" HREF="#TOC7">3.2 ISOC99 extensions</A></H2>
 
-<P>TCC implements many features of the
+<P>Tinycc implements many features of the
 <a href=http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1124.pdf>ISO C99
 standard</a>. Currently missing items are: complex and imaginary numbers and
 variable length arrays.</p>
@@ -548,7 +548,7 @@ is the same as writing
 
 
 <P>
-TCC implements some GNU C extensions:
+Tinycc implements some GNU C extensions:
 
 
 
@@ -695,7 +695,7 @@ return (to);
 </PRE>
 
 <A NAME="IDX11"></A>
-TCC includes its own x86 inline assembler with a <CODE>gas</CODE>-like (GNU
+Tinycc includes its own x86 inline assembler with a <CODE>gas</CODE>-like (GNU
 assembler) syntax. No intermediate files are generated. GCC 3.x named
 operands are supported.
 
@@ -716,7 +716,7 @@ are supported.
 
 <LI><CODE>__TINYC__</CODE> is a predefined macro to <CODE>1</CODE> to
 
-indicate that you use TCC.
+indicate that you use tinycc.
 
 <LI><CODE>#!</CODE> at the start of a line is ignored to allow scripting.
 
@@ -932,7 +932,7 @@ Currently, MMX opcodes are supported but not SSE ones.
 
 
 <P>
-TCC can directly output relocatable ELF files (object files),
+Tinycc can directly output relocatable ELF files (object files),
 executable ELF files and dynamic ELF libraries without relying on an
 external linker.
 
@@ -940,11 +940,11 @@ external linker.
 <P>
 Dynamic ELF libraries can be output but the C compiler does not generate
 position independent code (PIC). It means that the dynamic library
-code generated by TCC cannot be factorized among processes yet.
+code generated by tinycc cannot be factorized among processes yet.
 
 
 <P>
-TCC linker eliminates unreferenced object code in libraries. A single pass is
+Tinycc linker eliminates unreferenced object code in libraries. A single pass is
 done on the object and library list, so the order in which object files and
 libraries are specified is important (same constraint as GNU ld). No grouping
 options (<SAMP>`--start-group'</SAMP> and <SAMP>`--end-group'</SAMP>) are supported.
@@ -955,7 +955,7 @@ options (<SAMP>`--start-group'</SAMP> and <SAMP>`--end-group'</SAMP>) are suppor
 <H2><A NAME="SEC18" HREF="#TOC18">5.2 ELF file loader</A></H2>
 
 <P>
-TCC can load ELF object files, archives (.a files) and dynamic
+Tinycc can load ELF object files, archives (.a files) and dynamic
 libraries (.so).
 
 
@@ -967,13 +967,13 @@ libraries (.so).
 
 
 <P>
-TCC for Windows supports the native Win32 executable file format (PE-i386). It
+Tinycc for Windows supports the native Win32 executable file format (PE-i386). It
 generates both EXE and DLL files. DLL symbols can be imported thru DEF files
 generated with the <CODE>tiny_impdef</CODE> tool.
 
 
 <P>
-Currently TCC for Windows cannot generate nor read PE object files, so ELF
+Currently tinycc for Windows cannot generate nor read PE object files, so ELF
 object files are used for that purpose. It can be a problem if
 interoperability with MSVC is needed. Moreover, no leading underscore is
 currently generated in the ELF symbols.
@@ -994,7 +994,7 @@ currently generated in the ELF symbols.
 <P>
 Because on many Linux systems some dynamic libraries (such as
 <TT>`/usr/lib/libc.so'</TT>) are in fact GNU ld link scripts (horrible!),
-the TCC linker also supports a subset of GNU ld scripts.
+the tinycc linker also supports a subset of GNU ld scripts.
 
 
 <P>
@@ -1108,21 +1108,21 @@ Here are some examples of caught errors:
 
 
 
-<H1><A NAME="SEC22" HREF="#TOC22">7. The <CODE>libtcc</CODE> library</A></H1>
+<H1><A NAME="SEC22" HREF="#TOC22">7. The <CODE>libtinycc</CODE> library</A></H1>
 
 <P>
-The <CODE>libtcc</CODE> library enables you to use TCC as a backend for
+The <CODE>libtinycc</CODE> library enables you to use tinycc as a backend for
 dynamic code generation. 
 
 
 <P>
-Read the <TT>`libtcc.h'</TT> to have an overview of the API. Read
-<TT>`libtcc_test.c'</TT> to have a very simple example.
+Read the <TT>`libtinycc.h'</TT> to have an overview of the API. Read
+<TT>`libtinycc_test.c'</TT> to have a very simple example.
 
 
 <P>
 The idea consists in giving a C string containing the program you want
-to compile directly to <CODE>libtcc</CODE>. Then you can access to any global
+to compile directly to <CODE>libtinycc</CODE>. Then you can access to any global
 symbol (function or variable) defined.
 
 
@@ -1131,8 +1131,8 @@ symbol (function or variable) defined.
 <H1><A NAME="SEC23" HREF="#TOC23">8. Developer's guide</A></H1>
 
 <P>
-This chapter gives some hints to understand how TCC works. You can skip
-it if you do not intend to modify the TCC code.
+This chapter gives some hints to understand how tinycc works. You can skip
+it if you do not intend to modify the tinycc code.
 
 
 
@@ -1141,8 +1141,8 @@ it if you do not intend to modify the TCC code.
 
 <P>
 The <CODE>BufferedFile</CODE> structure contains the context needed to read a
-file, including the current line number. <CODE>tcc_open()</CODE> opens a new
-file and <CODE>tcc_close()</CODE> closes it. <CODE>inp()</CODE> returns the next
+file, including the current line number. <CODE>tinycc_open()</CODE> opens a new
+file and <CODE>tinycc_close()</CODE> closes it. <CODE>inp()</CODE> returns the next
 character.
 
 
@@ -1191,7 +1191,7 @@ reverse order, a first pass is done to reverse the argument order.
 
 <P>
 The types are stored in a single 'int' variable. It was choosen in the
-first stages of development when tcc was much simpler. Now, it may not
+first stages of development when tinycc was much simpler. Now, it may not
 be the best solution.
 
 
@@ -1384,14 +1384,14 @@ contain the exported symbols (currently only used for debugging).
 <H3><A NAME="SEC31" HREF="#TOC31">8.7.1 Introduction</A></H3>
 
 <P>
-The TCC code generator directly generates linked binary code in one
+The tinycc code generator directly generates linked binary code in one
 pass. It is rather unusual these days (see gcc for example which
 generates text assembly), but it can be very fast and surprisingly
 little complicated.
 
 
 <P>
-The TCC code generator is register based. Optimization is only done at
+The tinycc code generator is register based. Optimization is only done at
 the expression level. No intermediate representation of expression is
 kept except the current values stored in the <EM>value stack</EM>.
 
@@ -1482,7 +1482,7 @@ an assignment). It means that the value stored is actually a pointer to
 the wanted value. 
 
 Understanding the use <CODE>VT_LVAL</CODE> is very important if you want to
-understand how TCC works.
+understand how tinycc works.
 
 <DT><CODE>VT_LVAL_BYTE</CODE>
 <DD>
