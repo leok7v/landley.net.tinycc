@@ -3,7 +3,7 @@
  * 
  *  Copyright (c) 2002 Fabrice Bellard
  *
- *  Licensed under LGPL v2.1, see file COPYING in this tarball.
+ *  Licensed under GPLv2, see file LICENSE in this tarball.
  */
 
 /* number of available registers */
