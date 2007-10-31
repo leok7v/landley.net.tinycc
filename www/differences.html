@@ -1,0 +1,79 @@
+<html>
+<title>Differences between tcc and gcc</title>
+<body>
+
+<p>Some differences stem from tcc being unfinished.  Others are inherent
+in the wildly different compiler implementations.</p>
+
+<hr>
+<p>TCC is a simple translator, converting C source into the equivalent object
+code.  The main goals of tcc are:</p>
+
+<ul>
+<li>Speed of compilation.</li>
+<li>Simplicity of implementation</li>
+<li>Correct implementation of <a href=http://web.archive.org/web/20050207010641/http://dev.unicals.com/papers/c99-draft.html>the C99 specification</a> (plus any compiler extensions required to compile an unmodified Linux Kernel)</li>
+</ul>
+
+<p>The third goal remains a work in progress.</p>
+
+<p>Note that optimized output is _not_ one of these goals.  As a simple
+translator, TCC does not optimize the resulting binaries much.  TCC's output is
+generally about twice the size of what a compiler like icc or gcc would
+produce.  We have some simple optimizations like constant propogation,
+and hope to add dead code elimination, but there's no "intermediate format"
+allowing major rearrangements of the code.</p>
+
+<p>If somebody wanted to implement an optimizer for tcc, we'd be happy to take
+it as long as it was cleanly separated from the rest of the code.  However, if
+you want a big and complicated compiler, there are plenty out there already.</p>
+
+<hr>
+<p>TCC is a single self-contained program.  It does not use an external linker,
+but produces ELF files directly from C source and ELF file inputs such as
+shared libraries.</p>
+
+<p>In theory, four packages (uClibc, tcc, busybox, and the Linux kernel)
+could provide a complete self-bootstrapping development environment.  (In
+practice, we're still working on tcc.)</p>
+
+<p>Piotr Skamruk points out that if you want assembly output, you can use
+objdump, ala:</p>
+
+<pre>
+  tcc -c somefile.c
+  objdump -dtsr somefile.o
+</pre>
+
+<hr>
+<p>Function argument evaluation order is explicitly undefined (c99 spec
+section 3.19 #2).  TCC evaluates function arguments first to last.  Some
+compilers (like gcc) evaluate function arguments last to first.</p>
+
+<p>The following program would produce different output in tcc and gcc:</p>
+
+<pre>
+#include <stdio.h>
+
+int woot(int a)
+{
+  printf("a=%d\n",a);
+  return a;
+}
+
+int main(int argc, char *argv[])
+{
+  printf("%d %d %d",woot(1),woot(2),woot(3));
+
+  return 0;
+}
+</pre>
+</hr>
+<hr>
+<p>TCC's error checking isn't as elaborate as some compilers.  Try a project
+like <a href=http://www.splint.org/>splint</a> or
+<a href=http://www.kernel.org/pub/software/devel/sparse/>sparse</a> if
+you want lots of warnings.</p>
+</hr>
+</body>
+</html>
