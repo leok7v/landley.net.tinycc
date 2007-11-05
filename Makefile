@@ -3,7 +3,8 @@
 #
 include config.mak
 
-CFLAGS+=-g -Wall -fsigned-char -Os
+CFLAGS+=-g -Wall -fsigned-char -Os -fno-strict-aliasing
+
 ifndef CONFIG_WIN32
 LIBS=-lm
 ifndef CONFIG_NOLDL
@@ -11,15 +12,7 @@ LIBS+=-ldl
 endif
 BCHECK_O=bcheck.o
 endif
-CFLAGS_P=$(CFLAGS) -pg -static -DCONFIG_TCC_STATIC
-LIBS_P=
 
-#CFLAGS+=-mpreferred-stack-boundary=2 -falign-functions=0
-#ifneq ($(GCC_MAJOR),2)
-CFLAGS+=-fno-strict-aliasing
-#endif
-
-DISAS=objdump -d
 INSTALL=install
 
 ifdef CONFIG_WIN32
@@ -229,7 +222,7 @@ distclean: clean
 
 # profiling version
 tcc_p: tcc.c Makefile
-	$(CC) $(CFLAGS_P) -o $@ $< $(LIBS_P)
+	$(CC) $(CFLAGS) -pg -static -DCONFIG_TCC_STATIC -o $@ $<
 
 # libtcc generation and example
 libinstall: libtcc.a 
@@ -250,15 +243,6 @@ libtcc_test$(EXESUF): tests/libtcc_test.c libtcc.a
 libtest: libtcc_test
 	./libtcc_test
 
-# targets for development
-
-%.bin: %.c tcc
-	$(TCC) -g -o $@ $<
-	$(DISAS) $@
-
-instr: instr.o
-	objdump -d instr.o
-
 # tiny assembler testing
 
 asmtest.ref: asmtest.S
@@ -267,8 +251,6 @@ asmtest.ref: asmtest.S
 
 # XXX: we compute tcc.c to go faster during development !
 asmtest.out: asmtest.S tcc
-#	./tcc tcc.c -c asmtest.S
-#asmtest.out: asmtest.S tcc
 	./tcc -c asmtest.S
 	objdump -D asmtest.o > $@
 
