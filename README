@@ -1,91 +1,169 @@
-Tiny C Compiler - C Scripting Everywhere - The Smallest ANSI C compiler
------------------------------------------------------------------------
+What is tinycc:
+---------------
 
-Features:
---------
+Tinycc is a small, simple, and fast single-pass C compiler.  It converts
+ISO C99 source directly to machine language, with only the most basic
+optimizations.  Tinycc can produce native ELF executables and libraries as
+fast as Perl or Python interpreters produce bytecode, and the result is a
+real executable which requires no interpreter.
 
-- SMALL! You can compile and execute C code everywhere, for example on
-  rescue disks.
+Tinycc can be used to turn C into a scripting language: simply add the line
+"#!/usr/bin/tinycc -run" to the start of a C source file, set the executable
+bit, and run your source code directly from the command line.  (You can even
+add libraries to link against after -run, to use things like zlib or x11.
+For an example of this, see ex4.c in the examples directory.)
 
-- FAST! tcc generates optimized x86 code. No byte code
-  overhead. Compile, assemble and link about 7 times faster than 'gcc
-  -O0'.
+Tinycc is a single self-contained executable, acting as both a C99 compiler and
+ELF linker, totalling about 100k.  When paired with a small C library (such as
+uClibc or klibc) a complete development environment can fit in under a megabyte.
+This means that resource constrained environments (such as embedded systems,
+rescue disks, and initramfs) can afford to include a C compiler.
 
-- UNLIMITED! Any C dynamic library can be used directly. TCC is
-  heading torward full ISOC99 compliance. TCC can of course compile
-  itself.
+Tinycc is a fully functional C compiler, supporting C99 and several gcc
+extensions, plus full debug info (-g) and an optional memory and bounds
+checker.  Developing C code with tinycc doesn't even require a makefile,
+because recompiling most projects from scratch takes (at most) a few seconds.
 
-- SAFE! tcc includes an optional memory and bound checker. Bound
-  checked code can be mixed freely with standard code.
+Tinycc can currently produce Linux executables for i386 and ARM targets,
+Windows executables for i386, and COFF executables for C67 (TMS320C67x).
+More are planned.
 
-- Compile and execute C source directly. No linking or assembly
-  necessary. Full C preprocessor included. 
-
-- C script supported : just add '#!/usr/bin/tcc -run' at the first
-  line of your C source, and execute it directly from the command
-  line.
-
-Documentation:
+Installation:
 -------------
 
-1) Installation on a i386 Linux host (for Windows read win32/readme.txt)
+To build and install tinycc on a Linux host:
 
-   ./configure
-   make
-   make test
-   make install
+   Compile:      ./make
+   Test:         ./make --test
+   Install:      ./make --install /usr/bin
+   More options: ./make --help
 
-By default, tcc is installed in /usr/bin.
-./configure --help  shows configuration options.
+To build on a Windows host, read win32/readme.txt
 
+Using tinycc:
+-------------
 
-2) Introduction
+Run tinycc with no arguments to see built-in help.  A web page with more
+extensive documentation is available as www/tinycc-docs.html in this tarball.
 
-We assume here that you know ANSI C. Look at the example ex1.c to know
-what the programs look like.
+Tinycc compiles ANSI C programs, based on the ISO C99 standard with some
+extensions for compatability with gcc.  The command line arguments are
+specified by Posix for the "c99" utility.
 
-The include file <tcclib.h> can be used if you want a small basic libc
-include support (especially useful for floppy disks). Of course, you
-can also use standard headers, although they are slower to compile.
+This means the options -c, -o, -E, -I, -D, -U, -L, -l, -shared, -static, -g,
+-W, -f, and more usually work like you'd expect.  For compatability with other
+compilers, unknown options to -O, -W, and -f are ignored by default.  Many
+packages will build just by specifying the environment variable "CC=tinycc".
 
-You can begin your C script with '#!/usr/bin/tcc -run' on the first
-line and set its execute bits (chmod a+x your_script). Then, you can
-launch the C code like a shell or perl script :-) The command line
-arguments are put in 'argc' and 'argv' of the function main(), as in
-ANSI C.
+The include file <tinyinc.h> contains small basic libc include support without
+copying the entire /usr/include directory.
 
-3) Examples
+Note that the -run option (for C scripting) only compiles a single C file.
+Any additional arguments after that wind up in argc and argv[] as command line
+arguments to main().
 
-examples/ex1.c: simplest example (hello world). Can also be launched directly
-as a script: './ex1.c'.
+Several example programs are available in the examples directory.
 
-examples/ex2.c: more complicated example: find a number with the four
-operations given a list of numbers (benchmark).
+Standards:
+----------
 
-examples/ex3.c: compute fibonacci numbers (benchmark).
+A more or less final draft of the ISO C99 standard is available at:
 
-examples/ex4.c: more complicated: X11 program. Very complicated test in fact
-because standard headers are being used !
+  http://www.open-std.org/jtc1/sc22/wg14/www/docs/n1124.pdf
 
-examples/ex5.c: 'hello world' with standard glibc headers.
+The Open Group Base Specifications Issue 6 (also known as Single Unix
+Specification version 3, also known as POSIX) definition for the c99
+command:
 
-tcc.c: TCC can of course compile itself. Used to check the code
-generator.
+  http://www.opengroup.org/onlinepubs/000095399/utilities/c99.html
 
-tests/tcctest.c: auto test for TCC which tests many subtle possible bugs.
-Used when doing 'make test'.
+Cross compiling:
+----------------
 
-4) Full Documentation
+Tinycc treats cross compiling as nothing special, because it isn't.
 
-Please read tcc-doc.html for more information.
+A compiler is a program that reads input files and produces output files.
+So is a docbook to pdf converter.  In addition to the files listed on the
+command line, a compiler takes lots of implicit input from various search
+paths (#include files, libraries, etc).  Again, so does a docbook to pdf
+converter (fonts, style sheets, etc).
 
-Additional information is available for the Windows port in
-win32/readme.txt.
+Compilers produce runnable programs.  So do text processing utilities like
+sed, awk, and vi when they create shell scripts (or perl, or python).
+
+Selecting the various target platforms tinycc can produce output for is
+about as important as telling a program that reads docbook whether it
+should produce html, pdf, or man page output.  It's not a big deal.
+
+Some insane build systems force you to specify what host the resulting program
+should run on.  That's none of its business.  The compiler you build the
+project with determines where the output runs, and everything else (word
+size, endianness, etc) of the running program can be determined from that.
+
+If you want to build a compiler that runs on a different system than you're
+building on, build twice.  First build a cross compiler that targets the
+system it should run on, and then build the compiler with that cross compiler.
+
+  ./make
+  ./make --install
+  ./make --clean
+  CC=arm-tinycc ./make
+
+The "arm-tinycc" in the 
+
+When you build tinycc, the host machine the compiler runs on 
+
+are not the only programs that produce executable code that runs
+on the s
+Whether or not the output of the compiler runs on the same machine as the
+compiler itself does is a coincidence.
+
+Tinycc treats cross compiling as normal.
+
+A compiler that outputs code that runs on the same machine as the compiler is
+a native compiler.  This is essentially a coincidence.
 
 License:
 -------
 
-TCC is distributed under the GNU Lesser General Public License (see
-COPYING file).
+Tinycc is distributed under GPL version 2.  (This is a specific version of
+the GPL, included in the file LICENSE in this tarball.  It may not be
+distributed under later versions.)
 
-Fabrice Bellard.
+The license on tinycc does not apply to output files produced by tinycc (which
+are under whatever licenses the corresponding source files were under), nor
+does it affect the header files in the include directory (look up "Scenes a
+Faire" and the merger doctrine).
+
+History:
+--------
+
+http://fabrice.bellard.free.fr/otcc
+
+In 2002, Fabrice Bellard created the Obfuscated Tiny C Compiler (otcc)
+as an entry into the Obfuscated C Code contest.  His entry was a compiler for
+a subset of C that could recompile itself, and which fit in 2048 bytes of
+source code.  (He won "best abuse of the rules".)
+
+http://fabrice.bellard.free.fr/tcc/
+
+After the contest, Fabrice un-obfuscated OTCC and fleshed it out
+towards full ISO C99 compliance.  This was TCC, the Tiny C Compiler.  TCC
+remained an active project for over two years, producing several interesting
+results such as tccboot (http://fabrice.bellard.free.fr/tcc/tccboot.html).
+
+The TCC project stalled in early 2005, when another project of Fabrice's (qemu)
+began to take up all of Fabrice's time.
+
+http://landley.net/code/tinycc
+
+In late 2006, Rob Landley cloned the dormant TCC repository in Mercurial,
+and started collecting unapplied patches and fixing outstanding bugs.  This
+was an unofficial fork of the TCC project, because although Fabrice recognized
+the stalled nature of TCC and offered to hand it off to a new maintainer, he
+insisted development remain centered around the old CVS repository.
+
+After a year of maintaining a fork, Rob decided to make it a real project.
+This involved changing the name (from tcc to tinycc), setting up a new mailing
+list (tinycc@landley.net), and taking advantage of the LGPL v2.1's relicensing
+clause to convert the project's license to GPL version 2.
