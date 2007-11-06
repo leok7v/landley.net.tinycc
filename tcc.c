@@ -114,8 +114,8 @@ static const char **rt_bound_error_msg;
 /* XXX: get rid of this ASAP */
 static struct TCCState *tcc_state;
 
-/* give the path of the tcc libraries */
-static const char *tcc_lib_path = CONFIG_TCCDIR;
+/* give the path of the compiler's libraries */
+static const char *cc_lib_path = CC_LIB_PATH;
 
 
 /********************************************************/
@@ -8866,7 +8866,7 @@ TCCState *tcc_new(void)
 #ifdef TCC_TARGET_PE
     {
         char buf[1024];
-        snprintf(buf, sizeof(buf), "%s/lib", tcc_lib_path);
+        snprintf(buf, sizeof(buf), "%s/lib", cc_lib_path);
         tcc_add_library_path(s, buf);
     }
 #else
@@ -9167,10 +9167,10 @@ int tcc_set_output_type(TCCState *s, int output_type)
         tcc_add_sysinclude_path(s, "/usr/local/include");
         tcc_add_sysinclude_path(s, "/usr/include");
 #endif
-        snprintf(buf, sizeof(buf), "%s/include", tcc_lib_path);
+        snprintf(buf, sizeof(buf), "%s/include", cc_lib_path);
         tcc_add_sysinclude_path(s, buf);
 #ifdef TCC_TARGET_PE
-        snprintf(buf, sizeof(buf), "%s/include/winapi", tcc_lib_path);
+        snprintf(buf, sizeof(buf), "%s/include/winapi", cc_lib_path);
         tcc_add_sysinclude_path(s, buf);
 #endif
     }
@@ -9323,7 +9323,7 @@ static int64_t getclock_us(void)
 
 void help(void)
 {
-    printf("tcc version " TCC_VERSION " - Tiny C Compiler - Copyright (C) 2001-2006 Fabrice Bellard\n"
+    printf("tinycc version " TINYCC_VERSION " - Tiny C Compiler - Copyright (C) 2001-2006 Fabrice Bellard\n"
            "usage: tcc [-v] [-c] [-o outfile] [-Bdir] [-bench] [-Idir] [-Dsym[=val]] [-Usym]\n"
            "           [-Wwarn] [-g] [-b] [-bt N] [-Ldir] [-llib] [-shared] [-static]\n"
            "           [infile1 infile2...] [-run infile args...]\n"
@@ -9562,7 +9562,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                 break;
             case TCC_OPTION_B:
                 /* set tcc utilities path (mainly for tcc development) */
-                tcc_lib_path = optarg;
+                cc_lib_path = optarg;
                 break;
             case TCC_OPTION_l:
                 dynarray_add((void ***)&files, &nb_files, r);
@@ -9624,7 +9624,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                 }
                 break;
             case TCC_OPTION_v:
-                printf("tcc version %s\n", TCC_VERSION);
+                printf("tinycc version %s\n", TINYCC_VERSION);
                 exit(0);
             case TCC_OPTION_f:
                 if (tcc_set_flag(s, optarg, 1) < 0 && s->warn_unsupported)
@@ -9701,7 +9701,7 @@ int main(int argc, char **argv)
             ++d;
         }
         *p = '\0';
-        tcc_lib_path = path;
+        cc_lib_path = path;
     }
 #endif
 
@@ -9719,7 +9719,7 @@ int main(int argc, char **argv)
 
     if (print_search_dirs) {
         /* enough for Linux kernel */
-        printf("install: %s/\n", tcc_lib_path);
+        printf("install: %s/\n", cc_lib_path);
         return 0;
     }
 

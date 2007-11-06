@@ -994,7 +994,7 @@ static void tcc_add_runtime(TCCState *s1)
                     ELF32_ST_INFO(STB_GLOBAL, STT_NOTYPE), 0,
                     bounds_section->sh_num, "__bounds_start");
         /* add bound check code */
-        snprintf(buf, sizeof(buf), "%s/%s", tcc_lib_path, "bcheck.o");
+        snprintf(buf, sizeof(buf), "%s/%s", cc_lib_path, "bcheck.o");
         tcc_add_file(s1, buf);
 #ifdef TCC_TARGET_I386
         if (s1->output_type != TCC_OUTPUT_MEMORY) {
@@ -1014,7 +1014,7 @@ static void tcc_add_runtime(TCCState *s1)
     if (!s1->nostdlib) {
         tcc_add_library(s1, "c");
 
-        snprintf(buf, sizeof(buf), "%s/%s", tcc_lib_path, "libtcc1.a");
+        snprintf(buf, sizeof(buf), "%s/%s", cc_lib_path, "libtcc1.a");
         tcc_add_file(s1, buf);
     }
     /* add crt end if not memory output */

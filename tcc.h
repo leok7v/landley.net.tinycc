@@ -7,7 +7,6 @@
  *  Licensed under GPLv2, see file LICENSE in this tarball.
  */
 #define _GNU_SOURCE
-#include "config.h"
 
 #ifdef CONFIG_TCCBOOT
 
