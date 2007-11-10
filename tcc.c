@@ -443,11 +443,6 @@ static inline int isnum(int c)
     return c >= '0' && c <= '9';
 }
 
-static inline int isoct(int c)
-{
-    return c >= '0' && c <= '7';
-}
-
 static inline int toup(int c)
 {
     if (c >= 'a' && c <= 'z')
@@ -2197,7 +2192,7 @@ static void preprocess(int is_bof)
 /* evaluate escape codes in a string. */
 static void parse_escape_string(CString *outstr, const uint8_t *buf, int is_long)
 {
-    int c, n;
+    int c, n, i;
     const uint8_t *p;
 
     p = buf;
@@ -2206,27 +2201,14 @@ static void parse_escape_string(CString *outstr, const uint8_t *buf, int is_long
         if (c == '\0')
             break;
         if (c == '\\') {
-            p++;
-            /* escape */
-            c = *p;
+            /* at most three octal digits */
+            for (i = c = 0; i<3; i++) {
+                n = *(++p);
+                if (n<0 || n>7) break;
+                n = c*8+n-'0';
+            }
+            if (i) goto add_char_nonext;
             switch(c) {
-            case '0': case '1': case '2': case '3':
-            case '4': case '5': case '6': case '7':
-                /* at most three octal digits */
-                n = c - '0';
-                p++;
-                c = *p;
-                if (isoct(c)) {
-                    n = n * 8 + c - '0';
-                    p++;
-                    c = *p;
-                    if (isoct(c)) {
-                        n = n * 8 + c - '0';
-                        p++;
-                    }
-                }
-                c = n;
-                goto add_char_nonext;
             case 'x':
             case 'u':
             case 'U':
@@ -2355,7 +2337,7 @@ void parse_number(const char *p)
     }
     /* parse all digits. cannot check octal numbers at this stage
        because of floating point constants */
-    while (1) {
+    for (;;) {
         if (ch >= 'a' && ch <= 'f')
             t = ch - 'a' + 10;
         else if (ch >= 'A' && ch <= 'F')
@@ -2411,7 +2393,7 @@ void parse_number(const char *p)
                         t = t - 'a' + 10;
                     } else if (t >= 'A' && t <= 'F') {
                         t = t - 'A' + 10;
-                    } else if (t >= '0' && t <= '9') {
+                    } else if (isnum(t)) {
                         t = t - '0';
                     } else {
                         break;
@@ -2434,9 +2416,9 @@ void parse_number(const char *p)
                 s = -1;
                 ch = *p++;
             }
-            if (ch < '0' || ch > '9')
+            if (!isnum(ch))
                 expect("exponent digits");
-            while (ch >= '0' && ch <= '9') {
+            while (isnum(ch)) {
                 exp_val = exp_val * 10 + ch - '0';
                 ch = *p++;
             }
