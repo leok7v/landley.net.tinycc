@@ -1064,7 +1064,7 @@ static void tcc_add_linker_symbols(TCCState *s1)
                 ch = *p;
                 if (!ch)
                     break;
-                if (!isid(ch) && !isnum(ch))
+                if (!isidnum_table[ch])
                     goto next_sec;
                 p++;
             }

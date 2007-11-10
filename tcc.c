@@ -88,7 +88,7 @@ static Sym *sym_free_first;
 static SValue vstack[VSTACK_SIZE];
 /* some predefined types */
 static CType int_type;
-/* true if isid(c) || isnum(c) */
+/* Whether each char is a C identifier and/or number */
 static unsigned char isidnum_table[256];
 
 /* compile with debug symbol (and use them if error during execution) */
@@ -436,13 +436,6 @@ static void greloc(Section *s, Sym *sym, unsigned long offset, int type)
         put_extern_sym(sym, NULL, 0, 0);
     /* now we can add ELF relocation info */
     put_elf_reloc(symtab_section, s, offset, type, sym->c);
-}
-
-static inline int isid(int c)
-{
-    return (c >= 'a' && c <= 'z') ||
-        (c >= 'A' && c <= 'Z') ||
-        c == '_';
 }
 
 static inline int isnum(int c)
@@ -2814,7 +2807,7 @@ static inline void next_nomacro1(void)
             t = c;
             cstr_ccat(&tokcstr, c);
             PEEKC(c, p);
-            if (!(isnum(c) || isid(c) || c == '.' ||
+            if (!(isidnum_table[c] || c == '.' ||
                   ((c == '+' || c == '-') && 
                    (t == 'e' || t == 'E' || t == 'p' || t == 'P'))))
                 break;
@@ -3386,7 +3379,7 @@ static inline int *macro_twosharps(const int *macro_str)
                                 if (c == '\0')
                                     break;
                                 p++;
-                                if (!isnum(c) && !isid(c))
+                                if (!isidnum_table[c])
                                     goto error_pasting;
                             }
                         }
@@ -8789,6 +8782,8 @@ int tcc_run(TCCState *s1, int argc, char **argv)
     return (*prog_main)(argc, argv);
 }
 
+// Initialize tcc state
+
 TCCState *tcc_new(void)
 {
     const char *p, *r;
@@ -8796,15 +8791,13 @@ TCCState *tcc_new(void)
     TokenSym *ts;
     int i, c;
 
-    s = tcc_mallocz(sizeof(TCCState));
-    if (!s)
-        return NULL;
-    tcc_state = s;
-    s->output_type = TCC_OUTPUT_MEMORY;
+    s = tcc_state = tcc_mallocz(sizeof(TCCState));
+    tcc_state->output_type = TCC_OUTPUT_MEMORY;
 
-    /* init isid table */
+    /* init isidnum table */
     for(i=0;i<256;i++)
-        isidnum_table[i] = isid(i) || isnum(i);
+        isidnum_table[i] = (i >= 'a' && i <= 'z') || (i >= 'A' && i <= 'Z')
+            || i == '_' || isnum(i);
 
     /* add all tokens */
     table_ident = NULL;
