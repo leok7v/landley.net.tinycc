@@ -174,32 +174,30 @@ static int strstart(const char *str, const char *val, const char **ptr)
     return 1;
 }
 
-static void *tcc_malloc(unsigned long size)
+static void *xmalloc(unsigned long size)
 {
     void *ptr = malloc(size);
     if (!ptr && size) error("memory full");
     return ptr;
 }
 
-static void *tcc_mallocz(unsigned long size)
+static void *xzmalloc(unsigned long size)
 {
-    void *ptr;
-    ptr = tcc_malloc(size);
+    void *ptr = xmalloc(size);
     memset(ptr, 0, size);
     return ptr;
 }
 
-static inline void *tcc_realloc(void *ptr, unsigned long size)
+static inline void *xrealloc(void *ptr, unsigned long size)
 {
     void *ptr1 = realloc(ptr, size);
     if (!ptr1 && size) error("memory full");
     return ptr1;
 }
 
-static char *tcc_strdup(const char *str)
+static char *xstrdup(const char *str)
 {
-    char *ptr;
-    ptr = tcc_malloc(strlen(str) + 1);
+    char *ptr = xmalloc(strlen(str) + 1);
     strcpy(ptr, str);
     return ptr;
 }
@@ -219,22 +217,20 @@ static void dynarray_add(void ***ptab, int *nb_ptr, void *data)
             nb_alloc = 1;
         else
             nb_alloc = nb * 2;
-        pp = tcc_realloc(pp, nb_alloc * sizeof(void *));
-        if (!pp)
-            error("memory full");
+        pp = xrealloc(pp, nb_alloc * sizeof(void *));
         *ptab = pp;
     }
     pp[nb++] = data;
     *nb_ptr = nb;
 }
 
-/* symbol allocator */
+/* Allocate a batch of new symbol structures. */
 static Sym *__sym_malloc(void)
 {
     Sym *sym_pool, *sym, *last_sym;
     int i;
 
-    sym_pool = tcc_malloc(SYM_POOL_NB * sizeof(Sym));
+    sym_pool = xmalloc(SYM_POOL_NB * sizeof(Sym));
 
     last_sym = sym_free_first;
     sym = sym_pool;
@@ -247,6 +243,8 @@ static Sym *__sym_malloc(void)
     return last_sym;
 }
 
+// Allocate a symbol structure by popping most recently freed one off a linked
+// list, and malloc() a bunch of new ones at once if the list is empty.
 static inline Sym *sym_malloc(void)
 {
     Sym *sym;
@@ -256,6 +254,8 @@ static inline Sym *sym_malloc(void)
     sym_free_first = sym->next;
     return sym;
 }
+
+// Push symbol onto the free list.
 
 static inline void sym_free(Sym *sym)
 {
@@ -267,7 +267,7 @@ Section *new_section(TCCState *s1, const char *name, int sh_type, int sh_flags)
 {
     Section *sec;
 
-    sec = tcc_mallocz(sizeof(Section) + strlen(name));
+    sec = xzmalloc(sizeof(Section) + strlen(name));
     strcpy(sec->name, name);
     sec->sh_type = sh_type;
     sec->sh_flags = sh_flags;
@@ -312,9 +312,7 @@ static void section_realloc(Section *sec, unsigned long new_size)
         size = 1;
     while (size < new_size)
         size = size * 2;
-    data = tcc_realloc(sec->data, size);
-    if (!data)
-        error("memory full");
+    data = xrealloc(sec->data, size);
     memset(data + sec->data_allocated, 0, size - sec->data_allocated);
     sec->data = data;
     sec->data_allocated = size;
@@ -581,13 +579,11 @@ static TokenSym *tok_alloc_new(TokenSym **pts, const char *str, int len)
     /* expand token table if needed */
     i = tok_ident - TOK_IDENT;
     if ((i % TOK_ALLOC_INCR) == 0) {
-        ptable = tcc_realloc(table_ident, (i + TOK_ALLOC_INCR) * sizeof(TokenSym *));
-        if (!ptable)
-            error("memory full");
+        ptable = xrealloc(table_ident, (i + TOK_ALLOC_INCR) * sizeof(TokenSym *));
         table_ident = ptable;
     }
 
-    ts = tcc_malloc(sizeof(TokenSym) + len);
+    ts = xmalloc(sizeof(TokenSym) + len);
     table_ident[i] = ts;
     ts->tok = tok_ident++;
     ts->sym_define = NULL;
@@ -641,9 +637,7 @@ static void cstr_realloc(CString *cstr, int new_size)
         size = 8; /* no need to allocate a too small first string */
     while (size < new_size)
         size = size * 2;
-    data = tcc_realloc(cstr->data_allocated, size);
-    if (!data)
-        error("memory full");
+    data = xrealloc(cstr->data_allocated, size);
     cstr->data_allocated = data;
     cstr->size_allocated = size;
     cstr->data = data;
@@ -947,11 +941,7 @@ BufferedFile *tcc_open(TCCState *s1, const char *filename)
     fd = open(filename, O_RDONLY | O_BINARY);
     if (fd < 0)
         return NULL;
-    bf = tcc_malloc(sizeof(BufferedFile));
-    if (!bf) {
-        close(fd);
-        return NULL;
-    }
+    bf = xmalloc(sizeof(BufferedFile));
     bf->fd = fd;
     bf->buf_ptr = bf->buffer;
     bf->buf_end = bf->buffer;
@@ -1444,9 +1434,7 @@ static int *tok_str_realloc(TokenString *s)
     } else {
         len = s->allocated_len * 2;
     }
-    str = tcc_realloc(s->str, len * sizeof(int));
-    if (!str)
-        error("memory full");
+    str = xrealloc(s->str, len * sizeof(int));
     s->allocated_len = len;
     s->str = str;
     return str;
@@ -1854,9 +1842,7 @@ static inline void add_cached_include(TCCState *s1, int type,
 #ifdef INC_DEBUG
     printf("adding cached '%s' %s\n", filename, get_tok_str(ifndef_macro, NULL));
 #endif
-    e = tcc_malloc(sizeof(CachedInclude) + strlen(filename));
-    if (!e)
-        return;
+    e = xmalloc(sizeof(CachedInclude) + strlen(filename));
     e->type = type;
     strcpy(e->filename, filename);
     e->ifndef_macro = ifndef_macro;
@@ -8579,9 +8565,7 @@ int tcc_compile_string(TCCState *s, const char *str)
     bf->fd = -1;
     /* XXX: avoid copying */
     len = strlen(str);
-    buf = tcc_malloc(len + 1);
-    if (!buf)
-        return -1;
+    buf = xmalloc(len + 1);
     memcpy(buf, str, len);
     buf[len] = CH_EOB;
     bf->buf_ptr = buf;
@@ -8695,7 +8679,7 @@ int tcc_relocate(TCCState *s1)
         s = s1->sections[i];
         if (s->sh_flags & SHF_ALLOC) {
             if (s->sh_type == SHT_NOBITS)
-                s->data = tcc_mallocz(s->data_offset);
+                s->data = xzmalloc(s->data_offset);
             s->sh_addr = (unsigned long)s->data;
         }
     }
@@ -8773,7 +8757,7 @@ TCCState *tcc_new(void)
     TokenSym *ts;
     int i, c;
 
-    s = tcc_state = tcc_mallocz(sizeof(TCCState));
+    s = tcc_state = xzmalloc(sizeof(TCCState));
     tcc_state->output_type = TCC_OUTPUT_MEMORY;
 
     /* init isidnum table */
@@ -8935,7 +8919,7 @@ int tcc_add_include_path(TCCState *s1, const char *pathname)
 {
     char *pathname1;
     
-    pathname1 = tcc_strdup(pathname);
+    pathname1 = xstrdup(pathname);
     dynarray_add((void ***)&s1->include_paths, &s1->nb_include_paths, pathname1);
     return 0;
 }
@@ -8944,7 +8928,7 @@ int tcc_add_sysinclude_path(TCCState *s1, const char *pathname)
 {
     char *pathname1;
     
-    pathname1 = tcc_strdup(pathname);
+    pathname1 = xstrdup(pathname);
     dynarray_add((void ***)&s1->sysinclude_paths, &s1->nb_sysinclude_paths, pathname1);
     return 0;
 }
@@ -9073,7 +9057,7 @@ int tcc_add_library_path(TCCState *s, const char *pathname)
 {
     char *pathname1;
     
-    pathname1 = tcc_strdup(pathname);
+    pathname1 = xstrdup(pathname);
     dynarray_add((void ***)&s->library_paths, &s->nb_library_paths, pathname1);
     return 0;
 }
@@ -9431,7 +9415,7 @@ static int expand_args(char ***pargv, const char *str)
         while (*str != '\0' && !is_space(*str))
             str++;
         len = str - s1;
-        arg = tcc_malloc(len + 1);
+        arg = xmalloc(len + 1);
         memcpy(arg, s1, len);
         arg[len] = '\0';
         dynarray_add((void ***)&argv, &argc, arg);

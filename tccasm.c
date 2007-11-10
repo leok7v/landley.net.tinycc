@@ -700,8 +700,7 @@ static void tcc_assemble_inline(TCCState *s1, char *str, int len)
     BufferedFile *bf, *saved_file;
     int saved_parse_flags, *saved_macro_ptr;
 
-    bf = tcc_malloc(sizeof(BufferedFile));
-    memset(bf, 0, sizeof(BufferedFile));
+    bf = xzmalloc(sizeof(BufferedFile));
     bf->fd = -1;
     bf->buf_ptr = str;
     bf->buf_end = str + len;
@@ -831,7 +830,7 @@ static void parse_asm_operands(ASMOperand *operands, int *nb_operands_ptr,
             }
             if (tok != TOK_STR)
                 expect("string constant");
-            op->constraint = tcc_malloc(tokc.cstr->size);
+            op->constraint = xmalloc(tokc.cstr->size);
             strcpy(op->constraint, tokc.cstr->data);
             next();
             skip('(');

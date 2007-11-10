@@ -321,8 +321,8 @@ static void sort_syms(TCCState *s1, Section *s)
     int type, sym_index;
 
     nb_syms = s->data_offset / sizeof(Elf32_Sym);
-    new_syms = tcc_malloc(nb_syms * sizeof(Elf32_Sym));
-    old_to_new_syms = tcc_malloc(nb_syms * sizeof(int));
+    new_syms = xmalloc(nb_syms * sizeof(Elf32_Sym));
+    old_to_new_syms = xmalloc(nb_syms * sizeof(int));
 
     /* first pass for local symbols */
     p = (Elf32_Sym *)s->data;
@@ -664,9 +664,7 @@ static void put_got_offset(TCCState *s1, int index, unsigned long val)
         n = 1;
         while (index >= n)
             n *= 2;
-        tab = tcc_realloc(s1->got_offsets, n * sizeof(unsigned long));
-        if (!tab)
-            error("memory full");
+        tab = xrealloc(s1->got_offsets, n * sizeof(unsigned long));
         s1->got_offsets = tab;
         memset(s1->got_offsets + s1->nb_got_offsets, 0,
                (n - s1->nb_got_offsets) * sizeof(unsigned long));
@@ -1274,7 +1272,7 @@ int tcc_output_file(TCCState *s1, const char *filename)
                 int nb_syms;
                 /* shared library case : we simply export all the global symbols */
                 nb_syms = symtab_section->data_offset / sizeof(Elf32_Sym);
-                s1->symtab_to_dynsym = tcc_mallocz(sizeof(int) * nb_syms);
+                s1->symtab_to_dynsym = xzmalloc(sizeof(int) * nb_syms);
                 for(sym = (Elf32_Sym *)symtab_section->data + 1; 
                     sym < sym_end;
                     sym++) {
@@ -1322,7 +1320,7 @@ int tcc_output_file(TCCState *s1, const char *filename)
     shnum = s1->nb_sections;
 
     /* this array is used to reorder sections in the output file */
-    section_order = tcc_malloc(sizeof(int) * shnum);
+    section_order = xmalloc(sizeof(int) * shnum);
     section_order[0] = 0;
     sh_order_index = 1;
     
@@ -1366,7 +1364,7 @@ int tcc_output_file(TCCState *s1, const char *filename)
     }
 
     /* allocate program segment headers */
-    phdr = tcc_mallocz(phnum * sizeof(Elf32_Phdr));
+    phdr = xzmalloc(phnum * sizeof(Elf32_Phdr));
         
     if (s1->output_format == TCC_OUTPUT_FORMAT_ELF) {
         file_offset = sizeof(Elf32_Ehdr) + phnum * sizeof(Elf32_Phdr);
@@ -1758,7 +1756,7 @@ static void *load_data(int fd, unsigned long file_offset, unsigned long size)
 {
     void *data;
 
-    data = tcc_malloc(size);
+    data = xmalloc(size);
     lseek(fd, file_offset, SEEK_SET);
     read(fd, data, size);
     return data;
@@ -1807,7 +1805,7 @@ static int tcc_load_object_file(TCCState *s1,
     /* read sections */
     shdr = load_data(fd, file_offset + ehdr.e_shoff, 
                      sizeof(Elf32_Shdr) * ehdr.e_shnum);
-    sm_table = tcc_mallocz(sizeof(SectionMergeInfo) * ehdr.e_shnum);
+    sm_table = xzmalloc(sizeof(SectionMergeInfo) * ehdr.e_shnum);
     
     /* load section names */
     sh = &shdr[ehdr.e_shstrndx];
@@ -1925,7 +1923,7 @@ static int tcc_load_object_file(TCCState *s1,
     sm = sm_table;
 
     /* resolve symbols */
-    old_to_new_syms = tcc_mallocz(nb_syms * sizeof(int));
+    old_to_new_syms = xzmalloc(nb_syms * sizeof(int));
 
     sym = symtab + 1;
     for(i = 1; i < nb_syms; i++, sym++) {
@@ -2038,7 +2036,7 @@ static int tcc_load_alacarte(TCCState *s1, int fd, int size)
     const uint8_t *ar_index;
     Elf32_Sym *sym;
 
-    data = tcc_malloc(size);
+    data = xmalloc(size);
     if (read(fd, data, size) != size)
         goto fail;
     nsyms = get_be32(data);
@@ -2201,7 +2199,7 @@ static int tcc_load_dll(TCCState *s1, int fd, const char *filename, int level)
     //    printf("loading dll '%s'\n", soname);
 
     /* add the dll and its level */
-    dllref = tcc_malloc(sizeof(DLLReference) + strlen(soname));
+    dllref = xmalloc(sizeof(DLLReference) + strlen(soname));
     dllref->level = level;
     strcpy(dllref->name, soname);
     dynarray_add((void ***)&s1->loaded_dlls, &s1->nb_loaded_dlls, dllref);
