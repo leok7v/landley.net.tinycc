@@ -11,6 +11,8 @@
 [ -z "$CFLAGS" ] && CFLAGS="-g -Wall -fsigned-char -Os -fno-strict-aliasing"
 [ -z "$LIBS" ] && LIBS="-lm -ldl"
 [ -z "$ARCH" ] && ARCH="i386 arm c67 win32"
+[ -z "$TINYCC_LIBS" ] && TINYCC_LIBS=/lib
+[ -z "$TINYCC_INCLUDES" ] && TINYCC_INCLUDES=/usr/include
 
 TINYCC_VERSION=1.2.3
 
@@ -35,10 +37,10 @@ fi
 if [ "$1" == "--clean" ]
 then
   # Need to figure out how much of this is needed...
-  rm -f *~ *.o *.a tinycc tinycc_unstripped tinycc.1 tcct tcc_g tcctest.ref
-        *.bin *.i ex2 core gmon.out test.out test.ref a.out tcc_p \
-           *.exe *.lib tcc.pod libtcc_test i386/*.o \
-           tcctest[1234] test[1234].out tcc win32/lib/*.o
+  rm -f *~ *.o *.a *-tinycc *-tinycc_unstripped tinycc.1 tcct tcc_g \
+        tcctest.ref *.bin *.i ex2 core gmon.out test.out test.ref a.out tcc_p \
+        *.exe *.lib tcc.pod libtcc_test i386/*.o \
+        tcctest[1234] test[1234].out tcc win32/lib/*.o
   exit 0
 fi
 
@@ -50,8 +52,10 @@ do
 
   [ "$1" == "--fast" ] && [ "$i" != "$HOST" ] && continue
 
-  $CC $CFLAGS $LIBS -DTCC_TARGET_$i '-DCC_LIB_PATH="/blah"' \
-    -DTINYCC_VERSION='"'$TINYCC_VERSION'"' \
+  $CC $CFLAGS $LIBS -DTCC_TARGET_$i \
+    '-DCC_LIB_PATH="'"$TINYCC_LIBS"'"' \
+    '-DTINYCC_INCLUDES="'"$TINYCC_INCLUDES"'"' \
+    '-DTINYCC_VERSION="'"$TINYCC_VERSION"'"' \
     -o ${i}-tinycc_unstripped tcc.c &&
   $STRIP ${i}-tinycc_unstripped -o ${i}-tinycc
   [ $? -ne 0 ] && exit 1
