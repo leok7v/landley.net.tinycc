@@ -122,8 +122,10 @@ typedef struct TokenSym {
 
 #ifdef TCC_TARGET_PE
 typedef unsigned short nwchar_t;
+#define LIB_PATH_SEPCHAR ';'
 #else
 typedef int nwchar_t;
+#define LIB_PATH_SEPCHAR ':'
 #endif
 
 typedef struct CString {

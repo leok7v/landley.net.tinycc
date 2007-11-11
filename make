@@ -11,7 +11,8 @@
 [ -z "$CFLAGS" ] && CFLAGS="-g -Wall -fsigned-char -Os -fno-strict-aliasing"
 [ -z "$LIBS" ] && LIBS="-lm -ldl"
 [ -z "$ARCH" ] && ARCH="i386 arm c67 win32"
-[ -z "$TINYCC_LIBS" ] && TINYCC_LIBS=/lib
+[ -z "$CC_LIB_PATH" ] && CC_LIB_PATH=/usr/lib/tcc
+[ -z "$TINYCC_LIBS" ] && TINYCC_LIBS="/usr/local/lib:/usr/lib:/lib"
 [ -z "$TINYCC_INCLUDES" ] && TINYCC_INCLUDES=/usr/include
 
 TINYCC_VERSION=1.2.3
@@ -53,7 +54,8 @@ do
   [ "$1" == "--fast" ] && [ "$i" != "$HOST" ] && continue
 
   $CC $CFLAGS $LIBS -DTCC_TARGET_$i \
-    '-DCC_LIB_PATH="'"$TINYCC_LIBS"'"' \
+    '-DCC_LIB_PATH="'"$CC_LIB_PATH"'"' \
+    '-DTINYCC_LIBS="'"$TINYCC_LIBS"'"' \
     '-DTINYCC_INCLUDES="'"$TINYCC_INCLUDES"'"' \
     '-DTINYCC_VERSION="'"$TINYCC_VERSION"'"' \
     -o ${i}-tinycc_unstripped tcc.c &&
@@ -70,10 +72,10 @@ do
 
   if [ -f $i/alloca.S ]
   then
-    ./$i-tinycc TCC=./tcc -B. -I./include -I. -c -o libtinycc1.o libtinycc1.c &&
-    $CC -c -o alloca.o $i/alloca.S &&
-    $CC -c -o bound-alloca.o $i/bound-alloca.S &&
-    $AR rcs libtcc-${i}.a libtcc1.o alloca.o bound-alloca.o
+    ./$i-tinycc $DOLOCAL -o libtinycc1.o -c libtinycc1.c &&
+    ./$i-tinycc $DOLOCAL -o alloca.o -c $i/alloca.S &&
+    ./$i-tinycc $DOLOCAL -o bound-alloca.o -c $i/bound-alloca.S &&
+    $AR rcs libtinycc-${i}.a libtinycc1.o alloca.o bound-alloca.o
   fi
 done
 

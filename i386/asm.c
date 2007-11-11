@@ -155,7 +155,7 @@ static const ASMInstr asm_instrs[] = {
 #define DEF_ASM_OP1(name, opcode, group, instr_type, op0) { TOK_ASM_ ## name, opcode, (instr_type | group << OPC_GROUP_SHIFT), 1, { op0 }},
 #define DEF_ASM_OP2(name, opcode, group, instr_type, op0, op1) { TOK_ASM_ ## name, opcode, (instr_type | group << OPC_GROUP_SHIFT), 2, { op0, op1 }},
 #define DEF_ASM_OP3(name, opcode, group, instr_type, op0, op1, op2) { TOK_ASM_ ## name, opcode, (instr_type | group << OPC_GROUP_SHIFT), 3, { op0, op1, op2 }},
-#include "i386-asm.h"
+#include "asm.h"
 
     /* last operation */
     { 0, },
@@ -168,7 +168,7 @@ static const uint16_t op0_codes[] = {
 #define DEF_ASM_OP1(name, opcode, group, instr_type, op0)
 #define DEF_ASM_OP2(name, opcode, group, instr_type, op0, op1)
 #define DEF_ASM_OP3(name, opcode, group, instr_type, op0, op1, op2)
-#include "i386-asm.h"
+#include "asm.h"
 };
 
 static inline int get_reg_shift(TCCState *s1)

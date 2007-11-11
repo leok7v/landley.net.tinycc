@@ -27,11 +27,11 @@ static CType func_old_type;
 static int do_bounds_check = 0;
 
 #ifdef TCC_TARGET_I386
-#include "i386/i386-gen.c"
+#include "i386/gen.c"
 #endif
 
 #ifdef TCC_TARGET_ARM
-#include "arm-gen.c"
+#include "arm/gen.c"
 #endif
 
 #ifdef TCC_TARGET_C67
@@ -8628,7 +8628,7 @@ void tcc_undefine_symbol(TCCState *s1, const char *sym)
 #ifdef CONFIG_TCC_ASM
 
 #ifdef TCC_TARGET_I386
-#include "i386/i386-asm.c"
+#include "i386/asm.c"
 #endif
 #include "tccasm.c"
 
@@ -8748,6 +8748,25 @@ int tcc_run(TCCState *s1, int argc, char **argv)
     return (*prog_main)(argc, argv);
 }
 
+int add_library_path(TCCState *s, const char *pathname)
+{
+    const char *c = pathname;
+
+    for (;;) {
+        if (!*c || *c==LIB_PATH_SEPCHAR) {
+            int len = c-pathname;
+            char *c2 = xmalloc(len+1);
+
+            strncpy(c2, pathname, len);
+            c2[len] = 0;
+            pathname += len+1;
+            dynarray_add((void ***)&s->library_paths, &s->nb_library_paths, c2);
+        }
+        if (!*c++) break;
+    }
+    return 0;
+}
+
 // Initialize tcc state
 
 TCCState *tcc_new(void)
@@ -8815,23 +8834,19 @@ TCCState *tcc_new(void)
     /* tiny C & gcc defines */
     tcc_define_symbol(s, "__SIZE_TYPE__", "unsigned int");
     tcc_define_symbol(s, "__PTRDIFF_TYPE__", "int");
+
+    /* wchar type and default library paths */
 #ifdef TCC_TARGET_PE
     tcc_define_symbol(s, "__WCHAR_TYPE__", "unsigned short");
-#else
-    tcc_define_symbol(s, "__WCHAR_TYPE__", "int");
-#endif
     
-    /* default library paths */
-#ifdef TCC_TARGET_PE
     {
         char buf[1024];
         snprintf(buf, sizeof(buf), "%s/lib", cc_lib_path);
-        tcc_add_library_path(s, buf);
+        add_library_path(s, buf);
     }
 #else
-    tcc_add_library_path(s, "/usr/local/lib");
-    tcc_add_library_path(s, "/usr/lib");
-    tcc_add_library_path(s, "/lib");
+    add_library_path(s, TINYCC_LIBS);
+    tcc_define_symbol(s, "__WCHAR_TYPE__", "int");
 #endif
 
     /* no section zero */
@@ -9053,15 +9068,6 @@ int tcc_add_file(TCCState *s, const char *filename)
     return tcc_add_file_internal(s, filename, AFF_PRINT_ERROR);
 }
 
-int tcc_add_library_path(TCCState *s, const char *pathname)
-{
-    char *pathname1;
-    
-    pathname1 = xstrdup(pathname);
-    dynarray_add((void ***)&s->library_paths, &s->nb_library_paths, pathname1);
-    return 0;
-}
-
 /* find and load a dll. Return non zero if not found */
 /* XXX: add '-rpath' option support ? */
 static int tcc_add_dll(TCCState *s, const char *filename, int flags)
@@ -9125,13 +9131,11 @@ int tcc_set_output_type(TCCState *s, int output_type)
 #ifndef TCC_TARGET_PE
         tcc_add_sysinclude_path(s, "/usr/local/include");
         tcc_add_sysinclude_path(s, "/usr/include");
-#endif
-        snprintf(buf, sizeof(buf), "%s/include", cc_lib_path);
-        tcc_add_sysinclude_path(s, buf);
-#ifdef TCC_TARGET_PE
         snprintf(buf, sizeof(buf), "%s/include/winapi", cc_lib_path);
         tcc_add_sysinclude_path(s, buf);
 #endif
+        snprintf(buf, sizeof(buf), "%s/include", cc_lib_path);
+        tcc_add_sysinclude_path(s, buf);
     }
 
     /* if bound checking, then add corresponding sections */
@@ -9517,7 +9521,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                 tcc_undefine_symbol(s, optarg);
                 break;
             case TCC_OPTION_L:
-                tcc_add_library_path(s, optarg);
+                add_library_path(s, optarg);
                 break;
             case TCC_OPTION_B:
                 /* set tcc utilities path (mainly for tcc development) */

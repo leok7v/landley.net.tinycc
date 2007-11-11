@@ -444,7 +444,7 @@
 #define DEF_ASM_OP1(name, opcode, group, instr_type, op0)
 #define DEF_ASM_OP2(name, opcode, group, instr_type, op0, op1)
 #define DEF_ASM_OP3(name, opcode, group, instr_type, op0, op1, op2)
-#include "i386/i386-asm.h"
+#include "i386/asm.h"
 
 #define ALT(x)
 #define DEF_ASM_OP0(name, opcode)
@@ -452,6 +452,6 @@
 #define DEF_ASM_OP1(name, opcode, group, instr_type, op0) DEF_ASM(name)
 #define DEF_ASM_OP2(name, opcode, group, instr_type, op0, op1) DEF_ASM(name)
 #define DEF_ASM_OP3(name, opcode, group, instr_type, op0, op1, op2) DEF_ASM(name)
-#include "i386/i386-asm.h"
+#include "i386/asm.h"
 
 #endif
