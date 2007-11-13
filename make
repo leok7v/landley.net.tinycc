@@ -13,7 +13,8 @@
 [ -z "$ARCH" ] && ARCH="i386 arm c67 win32"
 [ -z "$CC_LIB_PATH" ] && CC_LIB_PATH=/usr/lib/tcc
 [ -z "$TINYCC_LIBS" ] && TINYCC_LIBS="/usr/local/lib:/usr/lib:/lib"
-[ -z "$TINYCC_INCLUDES" ] && TINYCC_INCLUDES=/usr/include
+[ -z "$TINYCC_INCLUDES" ] && TINYCC_INCLUDES=/usr/include:/usr/local/include
+[ -z "$TINYCC_CRTPATH" ] && TINYCC_CRTPATH="/usr/lib"
 
 TINYCC_VERSION=1.2.3
 
@@ -55,6 +56,7 @@ do
 
   $CC $CFLAGS $LIBS -DTCC_TARGET_$i \
     '-DCC_LIB_PATH="'"$CC_LIB_PATH"'"' \
+    '-DTINYCC_CRTPATH="'"$TINYCC_CRTPATH"'"' \
     '-DTINYCC_LIBS="'"$TINYCC_LIBS"'"' \
     '-DTINYCC_INCLUDES="'"$TINYCC_INCLUDES"'"' \
     '-DTINYCC_VERSION="'"$TINYCC_VERSION"'"' \

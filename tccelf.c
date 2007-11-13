@@ -1008,16 +1008,13 @@ static void tcc_add_runtime(TCCState *s1)
 #endif
     }
 #endif
-    /* add libc */
+    // add libc
     if (!s1->nostdlib) {
         tcc_add_library(s1, "c");
-
-        snprintf(buf, sizeof(buf), "%s/%s", cc_lib_path, "libtcc1.a");
-        tcc_add_file(s1, buf);
-    }
-    /* add crt end if not memory output */
-    if (s1->output_type != TCC_OUTPUT_MEMORY && !s1->nostdlib) {
-        tcc_add_file(s1, CONFIG_TCC_CRT_PREFIX "/crtn.o");
+        tcc_add_library(s1, "tinycc");
+      // add crt end if not memory output
+      if (s1->output_type != TCC_OUTPUT_MEMORY)
+          tcc_add_file(s1, TINYCC_CRTPATH "/crtn.o");
     }
 }
 

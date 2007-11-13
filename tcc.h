@@ -94,10 +94,6 @@
 #define true 1
 typedef int BOOL;
 
-/* path to find crt1.o, crti.o and crtn.o. Only needed when generating
-   executables or dlls */
-#define CONFIG_TCC_CRT_PREFIX "/usr/lib"
-
 #define INCLUDE_STACK_SIZE  32
 #define IFDEF_STACK_SIZE    64
 #define VSTACK_SIZE         256

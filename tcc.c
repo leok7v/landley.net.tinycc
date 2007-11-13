@@ -9170,10 +9170,11 @@ int tcc_set_output_type(TCCState *s, int output_type)
     /* add libc crt1/crti objects */
 #ifndef TCC_TARGET_PE
     if ((output_type == TCC_OUTPUT_EXE || output_type == TCC_OUTPUT_DLL) &&
-        !s->nostdlib) {
+        !s->nostdlib)
+    {
         if (output_type != TCC_OUTPUT_DLL)
-            tcc_add_file(s, CONFIG_TCC_CRT_PREFIX "/crt1.o");
-        tcc_add_file(s, CONFIG_TCC_CRT_PREFIX "/crti.o");
+            tcc_add_file(s, TINYCC_CRTPATH "/crt1.o");
+        tcc_add_file(s, TINYCC_CRTPATH "/crti.o");
     }
 #endif
     return 0;
