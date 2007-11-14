@@ -2164,7 +2164,8 @@ static void preprocess(int is_bof)
                to emulate cpp behaviour */
         } else {
             if (!(saved_parse_flags & PARSE_FLAG_ASM_COMMENTS))
-                error("invalid preprocessing directive #%s", get_tok_str(tok, &tokc));
+                warning("Ignoring unknown preprocessing directive #%s",
+                        get_tok_str(tok, &tokc));
         }
         break;
     }
