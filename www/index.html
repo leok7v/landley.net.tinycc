@@ -1,4 +1,6 @@
-<title>Rob's TCC fork</title>
+<!--#include file="header.html" -->
+
+<title>Tiny C Compiler</title>
 
 <h2><b>News</b></h2>
 <h2><b>November 14, 2007</b></h2>
@@ -15,7 +17,7 @@ else's project.</p>
 info, see the mailing list.</p>
 
 <h2><b>October 27, 2007</b></h2>
-<p>De-abandoned project.  Ok, I've been working on this darn unofficial fork
+<p>Started new project.  Ok, I've been working on this darn unofficial fork
 on and off for a year, and it's time to decide if I'm doing it or not.  I'm
 doing it.</p>
 
@@ -31,42 +33,24 @@ And, of course, itself.</p>
 <p>There's still a _lot_ of work left to be done, but that's just a matter of
 doing it.</p>
 
-<h2><b>October 4, 2007</b></h2>
-<p>Abandoned project.  (See <a href=/notes-2007.html#04-10-2007>blog</a>.)</p>
-
-<h2><b>August 18, 2007</b></h2>
-<p>Started work on a <a href=differences.html>list of
-differences between tcc and gcc</a>.  It's about time to start thinking of
-another release...</p>
-
-<h2><b>May 10, 2007</b></h2>
-<p>Added a <a href=bugs>bugs directory</a> containing little
-C files that each demonstrate an unfixed bug in tcc.</p>
-
-<h2><b>April 29, 2007</b></h2>
-<p>Ok, I put out <a href=downloads>a release</a>.  It works
-for me.  It's <a href=http://landley.net/hg/tinycc?cl=431>mercurial
-changeset 431</a>.</p>
+<a href=old-news.html>Click here for older news.</a>
 
 <hr>
 <h2><b>About</b></h2>
 
-<p>This is a rampantly unofficial fork of <a href=http://fabrice.bellard.free.fr/tcc>Fabrice Bellard's Tiny C Compiler</a>.
-These days Fabrice's attention is taken up by <a href=http://qemu.org>QEMU</a>,
-and the original TCC project is stalled.</a>
+<p>This is a small, simple, and fast single pass C compiler.  It produces
+executable code directly from C source, with no intermediate steps.  It
+understands almost all of the C99 standard, plus several extensions from
+gcc.</p>
 
-<p><a href=http://lists.gnu.org/archive/html/tinycc-devel/2006-09/msg00024.html>Fabrice put out a request for a new maintainer in 2006</a>, but
-he insisted that the project continue using the obsolete CVS repository format,
-and stay hosted on Savannah.  This didn't interest me, but tcc itself does,
-my <a href=/hg/tinycc>mercurial repository</a> is public, and I take patches.</p>
+<p>Tinycc can produce ELF executables (and .o files, and shared libraries)
+for x86, arm, and c67 processors.  It can also run C code directly, as
+a scripting language, via the "#!/usr/bin/tinycc -run" construct.</p>
 
-<p>What discussion there is still takes place on
-<a href=http://lists.nongnu.org/mailman/listinfo/tinycc-devel>the old tcc
-list</a>.  In addition, I hang out on #firmware on freenode, and my bouts of
-fiddling with tcc are documented in <a href=/notes.html>my development
-blog</a>.</p>
+<p>Tinycc already builds a working version of itself.  The current goal is
+to implement enough features to build an unmodified Linux kernel,
+uClibc, and BusyBox (or toybox) to create a small self-bootstrapping
+Linux system in only four packages.  (See the <a href=/code/firmware>Firmware
+Linux</a> project for details.)</p>
 
-<p>Someday, I'd like to get <a href=/code/firmware>Firmware Linux</a>
-down to just four packages: linux, uClibc, toybox, and tinycc.  This means
-tinycc has to be able to build the other three, and there's work to be done
-there...</p>
+<!--#include file="footer.html" -->
