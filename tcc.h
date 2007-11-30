@@ -46,7 +46,7 @@
 #define O_BINARY 0
 #endif
 
-#include "libtcc.h"
+#include "libtinycc.h"
 
 /* parser debug */
 //#define PARSE_DEBUG

@@ -115,7 +115,7 @@ static const char **rt_bound_error_msg;
 static struct TCCState *tcc_state;
 
 /* give the path of the compiler's libraries */
-static const char *cc_lib_path = CC_LIB_PATH;
+static const char *cc_lib_path = CC_LIBPATH;
 
 
 /********************************************************/
@@ -202,8 +202,6 @@ static char *xstrdup(const char *str)
     return ptr;
 }
 
-#define malloc(s) use_tcc_malloc(s)
-
 static void dynarray_add(void ***ptab, int *nb_ptr, void *data)
 {
     int nb, nb_alloc;
@@ -244,7 +242,7 @@ static Sym *__sym_malloc(void)
 }
 
 // Allocate a symbol structure by popping most recently freed one off a linked
-// list, and malloc() a bunch of new ones at once if the list is empty.
+// list, and xmalloc() a bunch of new ones at once if the list is empty.
 static inline Sym *sym_malloc(void)
 {
     Sym *sym;
@@ -8846,7 +8844,7 @@ TCCState *tcc_new(void)
         add_library_path(s, buf);
     }
 #else
-    add_library_path(s, TINYCC_LIBS);
+    add_library_path(s, TINYCC_LIBDIR);
     tcc_define_symbol(s, "__WCHAR_TYPE__", "int");
 #endif
 
@@ -9129,12 +9127,8 @@ int tcc_set_output_type(TCCState *s, int output_type)
 
         /* default include paths */
         /* XXX: reverse order needed if -isystem support */
-#ifndef TCC_TARGET_PE
         tcc_add_sysinclude_path(s, "/usr/local/include");
         tcc_add_sysinclude_path(s, "/usr/include");
-        snprintf(buf, sizeof(buf), "%s/include/winapi", cc_lib_path);
-        tcc_add_sysinclude_path(s, buf);
-#endif
         snprintf(buf, sizeof(buf), "%s/include", cc_lib_path);
         tcc_add_sysinclude_path(s, buf);
     }
@@ -9174,8 +9168,8 @@ int tcc_set_output_type(TCCState *s, int output_type)
         !s->nostdlib)
     {
         if (output_type != TCC_OUTPUT_DLL)
-            tcc_add_file(s, TINYCC_CRTPATH "/crt1.o");
-        tcc_add_file(s, TINYCC_CRTPATH "/crti.o");
+            tcc_add_file(s, CC_CRTDIR "/crt1.o");
+        tcc_add_file(s, CC_CRTDIR "/crti.o");
     }
 #endif
     return 0;

@@ -1014,7 +1014,7 @@ static void tcc_add_runtime(TCCState *s1)
         tcc_add_library(s1, "tinycc");
       // add crt end if not memory output
       if (s1->output_type != TCC_OUTPUT_MEMORY)
-          tcc_add_file(s1, TINYCC_CRTPATH "/crtn.o");
+          tcc_add_file(s1, CC_CRTDIR "/crtn.o");
     }
 }
 
