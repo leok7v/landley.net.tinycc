@@ -307,6 +307,11 @@ typedef struct CachedInclude {
  
 #define SYM_POOL_NB (8192 / sizeof(Sym))
 
+struct dynarray {
+    char **data;
+    int len;
+};
+
 struct TCCState {
     int output_type;
  
@@ -314,28 +319,37 @@ struct TCCState {
     int *ifdef_stack_ptr;
 
     /* include file handling */
+    //struct dynarray include_paths;
     char **include_paths;
     int nb_include_paths;
+
+    //struct dynarray sysinclude_paths;
     char **sysinclude_paths;
     int nb_sysinclude_paths;
+
+    //struct dynarray cached_includes;
     CachedInclude **cached_includes;
     int nb_cached_includes;
 
-    char **library_paths;
-    int nb_library_paths;
+    struct dynarray library_paths;
+    //char **library_paths;
+    //int nb_library_paths;
 
     /* array of all loaded dlls (including those referenced by loaded
        dlls) */
+    //struct dynarray loaded_dlls;
     DLLReference **loaded_dlls;
     int nb_loaded_dlls;
 
     /* sections */
+    //struct dynarray sections;
     Section **sections;
     int nb_sections; /* number of sections, including first dummy section */
 
     /* got handling */
     Section *got;
     Section *plt;
+    //struct dynarray got_offsets;
     unsigned long *got_offsets;
     int nb_got_offsets;
     /* give the correspondance from symtab indexes to dynsym indexes */

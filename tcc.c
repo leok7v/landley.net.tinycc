@@ -8747,7 +8747,7 @@ int tcc_run(TCCState *s1, int argc, char **argv)
     return (*prog_main)(argc, argv);
 }
 
-int add_library_path(TCCState *s, const char *pathname)
+void add_dynarray_path(TCCState *s, const char *pathname, struct dynarray *dd)
 {
     const char *c = pathname;
 
@@ -8759,11 +8759,10 @@ int add_library_path(TCCState *s, const char *pathname)
             strncpy(c2, pathname, len);
             c2[len] = 0;
             pathname += len+1;
-            dynarray_add((void ***)&s->library_paths, &s->nb_library_paths, c2);
+            dynarray_add((void ***)&dd->data, &dd->len, c2);
         }
         if (!*c++) break;
     }
-    return 0;
 }
 
 // Initialize tcc state
@@ -8841,10 +8840,10 @@ TCCState *tcc_new(void)
     {
         char buf[1024];
         snprintf(buf, sizeof(buf), "%s/lib", cc_lib_path);
-        add_library_path(s, buf);
+        add_dynarray_path(s, buf, &(s->library_paths));
     }
 #else
-    add_library_path(s, TINYCC_LIBDIR);
+    add_dynarray_path(s, TINYCC_LIBDIR, &(s->library_paths));
     tcc_define_symbol(s, "__WCHAR_TYPE__", "int");
 #endif
 
@@ -8909,9 +8908,9 @@ void tcc_delete(TCCState *s1)
     free(s1->loaded_dlls);
 
     /* library paths */
-    for(i = 0; i < s1->nb_library_paths; i++)
-        free(s1->library_paths[i]);
-    free(s1->library_paths);
+    for(i = 0; i < s1->library_paths.len; i++)
+        free(s1->library_paths.data[i]);
+    free(s1->library_paths.data);
 
     /* cached includes */
     for(i = 0; i < s1->nb_cached_includes; i++)
@@ -9074,9 +9073,9 @@ static int tcc_add_dll(TCCState *s, const char *filename, int flags)
     char buf[1024];
     int i;
 
-    for(i = 0; i < s->nb_library_paths; i++) {
+    for(i = 0; i < s->library_paths.len; i++) {
         snprintf(buf, sizeof(buf), "%s/%s", 
-                 s->library_paths[i], filename);
+                 s->library_paths.data[i], filename);
         if (tcc_add_file_internal(s, buf, flags) == 0)
             return 0;
     }
@@ -9101,9 +9100,9 @@ int tcc_add_library(TCCState *s, const char *libraryname)
     }
 
     /* then we look for the static library */
-    for(i = 0; i < s->nb_library_paths; i++) {
+    for(i = 0; i < s->library_paths.len; i++) {
         snprintf(buf, sizeof(buf), "%s/lib%s.a", 
-                 s->library_paths[i], libraryname);
+                 s->library_paths.data[i], libraryname);
         if (tcc_add_file_internal(s, buf, 0) == 0)
             return 0;
     }
@@ -9517,7 +9516,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                 tcc_undefine_symbol(s, optarg);
                 break;
             case TCC_OPTION_L:
-                add_library_path(s, optarg);
+                add_dynarray_path(s, optarg, &(s->library_paths));
                 break;
             case TCC_OPTION_B:
                 /* set tcc utilities path (mainly for tcc development) */
