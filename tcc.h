@@ -319,21 +319,14 @@ struct TCCState {
     int *ifdef_stack_ptr;
 
     /* include file handling */
-    //struct dynarray include_paths;
-    char **include_paths;
-    int nb_include_paths;
-
-    //struct dynarray sysinclude_paths;
-    char **sysinclude_paths;
-    int nb_sysinclude_paths;
+    struct dynarray include_paths;
+    struct dynarray sysinclude_paths;
 
     //struct dynarray cached_includes;
     CachedInclude **cached_includes;
     int nb_cached_includes;
 
     struct dynarray library_paths;
-    //char **library_paths;
-    //int nb_library_paths;
 
     /* array of all loaded dlls (including those referenced by loaded
        dlls) */

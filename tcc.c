@@ -2014,13 +2014,13 @@ static void preprocess(int is_bof)
             if (s1->include_stack_ptr >= s1->include_stack + INCLUDE_STACK_SIZE)
                 error("#include recursion too deep");
             /* now search in all the include paths */
-            n = s1->nb_include_paths + s1->nb_sysinclude_paths;
+            n = s1->include_paths.len + s1->sysinclude_paths.len;
             for(i = 0; i < n; i++) {
                 const char *path;
-                if (i < s1->nb_include_paths)
-                    path = s1->include_paths[i];
+                if (i < s1->include_paths.len)
+                    path = s1->include_paths.data[i];
                 else
-                    path = s1->sysinclude_paths[i - s1->nb_include_paths];
+                    path = s1->sysinclude_paths.data[i - s1->include_paths.len];
                 pstrcpy(buf1, sizeof(buf1), path);
                 pstrcat(buf1, sizeof(buf1), "/");
                 pstrcat(buf1, sizeof(buf1), buf);
@@ -8917,33 +8917,15 @@ void tcc_delete(TCCState *s1)
         free(s1->cached_includes[i]);
     free(s1->cached_includes);
 
-    for(i = 0; i < s1->nb_include_paths; i++)
-        free(s1->include_paths[i]);
-    free(s1->include_paths);
+    for(i = 0; i < s1->include_paths.len; i++)
+        free(s1->include_paths.data[i]);
+    free(s1->include_paths.data);
 
-    for(i = 0; i < s1->nb_sysinclude_paths; i++)
-        free(s1->sysinclude_paths[i]);
-    free(s1->sysinclude_paths);
+    for(i = 0; i < s1->sysinclude_paths.len; i++)
+        free(s1->sysinclude_paths.data[i]);
+    free(s1->sysinclude_paths.data);
 
     free(s1);
-}
-
-int tcc_add_include_path(TCCState *s1, const char *pathname)
-{
-    char *pathname1;
-    
-    pathname1 = xstrdup(pathname);
-    dynarray_add((void ***)&s1->include_paths, &s1->nb_include_paths, pathname1);
-    return 0;
-}
-
-int tcc_add_sysinclude_path(TCCState *s1, const char *pathname)
-{
-    char *pathname1;
-    
-    pathname1 = xstrdup(pathname);
-    dynarray_add((void ***)&s1->sysinclude_paths, &s1->nb_sysinclude_paths, pathname1);
-    return 0;
 }
 
 static int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
@@ -9126,10 +9108,10 @@ int tcc_set_output_type(TCCState *s, int output_type)
 
         /* default include paths */
         /* XXX: reverse order needed if -isystem support */
-        tcc_add_sysinclude_path(s, "/usr/local/include");
-        tcc_add_sysinclude_path(s, "/usr/include");
+        add_dynarray_path(s, "/usr/local/include:/usr/include",
+            &(s->sysinclude_paths));
         snprintf(buf, sizeof(buf), "%s/include", cc_lib_path);
-        tcc_add_sysinclude_path(s, buf);
+        add_dynarray_path(s, buf, &(s->sysinclude_paths));
     }
 
     /* if bound checking, then add corresponding sections */
@@ -9494,8 +9476,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                 help();
                 exit(1);
             case TCC_OPTION_I:
-                if (tcc_add_include_path(s, optarg) < 0)
-                    error("too many include paths");
+                add_dynarray_path(s, optarg, &(s->include_paths));
                 break;
             case TCC_OPTION_D:
                 {
