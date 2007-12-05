@@ -364,6 +364,9 @@ struct TCCState {
     /* if true, all symbols are exported */
     int rdynamic;
 
+    /* if true, describe each room as you enter it, unless it contains a grue */
+    int verbose;
+
     /* if true, only link in referenced objects from archive */
     int alacarte_link;
 

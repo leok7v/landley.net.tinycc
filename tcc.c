@@ -2017,6 +2017,9 @@ static void preprocess(int is_bof)
             n = s1->include_paths.len + s1->sysinclude_paths.len;
             for(i = 0; i < n; i++) {
                 const char *path;
+                int verbose = s1->verbose;
+
+                verbose -= (s1->include_stack_ptr != s1->include_stack);
                 if (i < s1->include_paths.len)
                     path = s1->include_paths.data[i];
                 else
@@ -2025,6 +2028,8 @@ static void preprocess(int is_bof)
                 pstrcat(buf1, sizeof(buf1), "/");
                 pstrcat(buf1, sizeof(buf1), buf);
                 f = tcc_open(s1, buf1);
+                if (verbose > !f)
+                    printf("#%s '%s'\n", f ? "include" : "checked", buf1);
                 if (f) {
                     if (tok == TOK_INCLUDE_NEXT)
                         tok = TOK_INCLUDE;
@@ -8941,6 +8946,8 @@ static int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
     /* open the file */
     saved_file = file;
     file = tcc_open(s1, filename);
+    if (s1->verbose > !file)
+        printf("%s file '%s'\n", file ? "Read" : "Tried", filename);
     if (!file) {
         if (flags & AFF_PRINT_ERROR) {
             error_noabort("file '%s' not found", filename);
@@ -9259,15 +9266,21 @@ static int64_t getclock_us(void)
 #endif
 }
 
-void help(void)
+void show_version(void)
 {
-    printf("tinycc version " TINYCC_VERSION " - Tiny C Compiler - Copyright (C) 2001-2006 Fabrice Bellard\n"
+    printf("tinycc version " TINYCC_VERSION "\n");
+}
+
+void help(TCCState *s)
+{
+    show_version();
+    printf("Tiny C Compiler - Copyright (C) 2001-2006 Fabrice Bellard, 2007 Rob Landley\n"
            "usage: tcc [-v] [-c] [-o outfile] [-Bdir] [-bench] [-Idir] [-Dsym[=val]] [-Usym]\n"
            "           [-Wwarn] [-g] [-b] [-bt N] [-Ldir] [-llib] [-shared] [-static]\n"
            "           [infile1 infile2...] [-run infile args...]\n"
            "\n"
            "General options:\n"
-           "  -v          display current version\n"
+           "  -v          Verbose compile, repeat for more verbosity\n"
            "  -c          compile only - generate an object file\n"
            "  -o outfile  set output filename\n"
            "  -Bdir       set tcc internal library path\n"
@@ -9420,10 +9433,10 @@ int parse_args(TCCState *s, int argc, char **argv)
     optind = 0;
     while (1) {
         if (optind >= argc) {
-            if (nb_files == 0 && !print_search_dirs)
-                goto show_help;
-            else
-                break;
+            if (nb_files == 0 && !print_search_dirs) {
+                if (!s->verbose) help(s);
+                exit(1);
+            } else break;
         }
         r = argv[optind++];
         if (r[0] != '-') {
@@ -9462,15 +9475,16 @@ int parse_args(TCCState *s, int argc, char **argv)
                     optarg = argv[optind++];
                 }
             } else {
-                if (*r1 != '\0')
-                    goto show_help;
+                if (*r1 != '\0') {
+                    help(s);
+                    exit(1);
+                }
                 optarg = NULL;
             }
                 
             switch(popt->index) {
             case TCC_OPTION_HELP:
-            show_help:
-                help();
+                help(s);
                 exit(1);
             case TCC_OPTION_I:
                 add_dynarray_path(s, optarg, &(s->include_paths));
@@ -9560,8 +9574,8 @@ int parse_args(TCCState *s, int argc, char **argv)
                 }
                 break;
             case TCC_OPTION_v:
-                printf("tinycc version %s\n", TINYCC_VERSION);
-                exit(0);
+                if (!s->verbose++) show_version();
+                break;
             case TCC_OPTION_f:
                 if (tcc_set_flag(s, optarg, 1) < 0 && s->warn_unsupported)
                     goto unsupported_option;
