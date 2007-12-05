@@ -9669,20 +9669,20 @@ int main(int argc, char **argv)
 
     optind = parse_args(s, argc - 1, argv + 1) + 1;
 
+    /* Just enough for the Linux kernel, which is hardwired to use a directory
+       named "include" beneath this output value for the compiler headers.*/
     if (print_search_dirs) {
-        /* enough for Linux kernel */
         printf("install: %s/\n", tinycc_path);
         return 0;
     }
 
     nb_objfiles = nb_files - nb_libraries;
 
-    /* if outfile provided without other options, we output an
-       executable */
+    // if outfile provided without other options, we output an executable
     if (outfile && s->output_type == TCC_OUTPUT_MEMORY)
         s->output_type = TCC_OUTPUT_EXE;
 
-    /* check -c consistency : only single file handled. XXX: checks file type */
+    // check -c consistency : only single file handled. XXX: checks file type
     if (s->output_type == TCC_OUTPUT_OBJ && !reloc_output) {
         /* accepts only a single input file */
         if (nb_objfiles != 1)
