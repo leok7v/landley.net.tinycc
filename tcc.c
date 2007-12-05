@@ -115,7 +115,7 @@ static const char **rt_bound_error_msg;
 static struct TCCState *tcc_state;
 
 /* give the path of the compiler's libraries */
-static const char *cc_lib_path = CC_LIBPATH;
+static const char *tinycc_path;
 
 
 /********************************************************/
@@ -8836,17 +8836,10 @@ TCCState *tcc_new(void)
     /* wchar type and default library paths */
 #ifdef TCC_TARGET_PE
     tcc_define_symbol(s, "__WCHAR_TYPE__", "unsigned short");
-    
-    {
-        char buf[1024];
-        snprintf(buf, sizeof(buf), "%s/lib", cc_lib_path);
-        add_dynarray_path(s, buf, &(s->library_paths));
-    }
 #else
-    add_dynarray_path(s, TINYCC_LIBDIR, &(s->library_paths));
     tcc_define_symbol(s, "__WCHAR_TYPE__", "int");
 #endif
-
+    
     /* no section zero */
     dynarray_add((void ***)&s->sections, &s->nb_sections, NULL);
 
@@ -9099,10 +9092,8 @@ int tcc_add_symbol(TCCState *s, const char *name, unsigned long val)
     return 0;
 }
 
-int tcc_set_output_type(TCCState *s, int output_type)
+int init_output_type(TCCState *s)
 {
-    s->output_type = output_type;
-
     if (!s->nostdinc) {
         char buf[1024];
 
@@ -9110,8 +9101,15 @@ int tcc_set_output_type(TCCState *s, int output_type)
         /* XXX: reverse order needed if -isystem support */
         add_dynarray_path(s, "/usr/local/include:/usr/include",
             &(s->sysinclude_paths));
-        snprintf(buf, sizeof(buf), "%s/include", cc_lib_path);
+        snprintf(buf, sizeof(buf), "%s/include", tinycc_path);
         add_dynarray_path(s, buf, &(s->sysinclude_paths));
+    }
+
+    if (!s->nostdlib) {
+        char buf[1024];
+        snprintf(buf, sizeof(buf), "%s/lib", tinycc_path);
+        add_dynarray_path(s, buf, &(s->library_paths));
+        add_dynarray_path(s, CC_LIBPATH, &(s->library_paths));
     }
 
     /* if bound checking, then add corresponding sections */
@@ -9145,10 +9143,10 @@ int tcc_set_output_type(TCCState *s, int output_type)
 
     /* add libc crt1/crti objects */
 #ifndef TCC_TARGET_PE
-    if ((output_type == TCC_OUTPUT_EXE || output_type == TCC_OUTPUT_DLL) &&
-        !s->nostdlib)
+    if ((s->output_type == TCC_OUTPUT_EXE || s->output_type == TCC_OUTPUT_DLL)
+        && !s->nostdlib)
     {
-        if (output_type != TCC_OUTPUT_DLL)
+        if (s->output_type != TCC_OUTPUT_DLL)
             tcc_add_file(s, CC_CRTDIR "/crt1.o");
         tcc_add_file(s, CC_CRTDIR "/crti.o");
     }
@@ -9409,7 +9407,6 @@ static char **files;
 static int nb_files, nb_libraries;
 static int multiple_files;
 static int print_search_dirs;
-static int output_type;
 static int reloc_output;
 static const char *outfile;
 
@@ -9491,7 +9488,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                 }
                 break;
             case TCC_OPTION_E:
-                output_type = TCC_OUTPUT_PREPROCESS;
+                s->output_type = TCC_OUTPUT_PREPROCESS;
                 break;
             case TCC_OPTION_U:
                 tcc_undefine_symbol(s, optarg);
@@ -9501,7 +9498,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                 break;
             case TCC_OPTION_B:
                 /* set tcc utilities path (mainly for tcc development) */
-                cc_lib_path = optarg;
+                tinycc_path = optarg;
                 break;
             case TCC_OPTION_l:
                 dynarray_add((void ***)&files, &nb_files, r);
@@ -9524,13 +9521,13 @@ int parse_args(TCCState *s, int argc, char **argv)
                 break;
             case TCC_OPTION_c:
                 multiple_files = 1;
-                output_type = TCC_OUTPUT_OBJ;
+                s->output_type = TCC_OUTPUT_OBJ;
                 break;
             case TCC_OPTION_static:
                 s->static_link = 1;
                 break;
             case TCC_OPTION_shared:
-                output_type = TCC_OUTPUT_DLL;
+                s->output_type = TCC_OUTPUT_DLL;
                 break;
             case TCC_OPTION_o:
                 multiple_files = 1;
@@ -9539,7 +9536,7 @@ int parse_args(TCCState *s, int argc, char **argv)
             case TCC_OPTION_r:
                 /* generate a .o merging several output files */
                 reloc_output = 1;
-                output_type = TCC_OUTPUT_OBJ;
+                s->output_type = TCC_OUTPUT_OBJ;
                 break;
             case TCC_OPTION_nostdinc:
                 s->nostdinc = 1;
@@ -9559,7 +9556,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                         parse_args(s, argc1, argv1);
                     }
                     multiple_files = 0;
-                    output_type = TCC_OUTPUT_MEMORY;
+                    s->output_type = TCC_OUTPUT_MEMORY;
                 }
                 break;
             case TCC_OPTION_v:
@@ -9625,6 +9622,16 @@ int main(int argc, char **argv)
     char objfilename[1024];
     int64_t start_time = 0;
 
+    s = tcc_new();
+    s->output_type = TCC_OUTPUT_EXE;
+    outfile = NULL;
+    multiple_files = 1;
+    files = NULL;
+    nb_files = 0;
+    nb_libraries = 0;
+    reloc_output = 0;
+    print_search_dirs = 0;
+
 #ifdef WIN32
     /* on win32, we suppose the lib and includes are at the location
        of 'tcc.exe' */
@@ -9640,25 +9647,17 @@ int main(int argc, char **argv)
             ++d;
         }
         *p = '\0';
-        cc_lib_path = path;
+        tinycc_path = path;
     }
+#else
+    tinycc_path = TINYCC_LIBDIR;
 #endif
-
-    s = tcc_new();
-    output_type = TCC_OUTPUT_EXE;
-    outfile = NULL;
-    multiple_files = 1;
-    files = NULL;
-    nb_files = 0;
-    nb_libraries = 0;
-    reloc_output = 0;
-    print_search_dirs = 0;
 
     optind = parse_args(s, argc - 1, argv + 1) + 1;
 
     if (print_search_dirs) {
         /* enough for Linux kernel */
-        printf("install: %s/\n", cc_lib_path);
+        printf("install: %s/\n", tinycc_path);
         return 0;
     }
 
@@ -9666,11 +9665,11 @@ int main(int argc, char **argv)
 
     /* if outfile provided without other options, we output an
        executable */
-    if (outfile && output_type == TCC_OUTPUT_MEMORY)
-        output_type = TCC_OUTPUT_EXE;
+    if (outfile && s->output_type == TCC_OUTPUT_MEMORY)
+        s->output_type = TCC_OUTPUT_EXE;
 
     /* check -c consistency : only single file handled. XXX: checks file type */
-    if (output_type == TCC_OUTPUT_OBJ && !reloc_output) {
+    if (s->output_type == TCC_OUTPUT_OBJ && !reloc_output) {
         /* accepts only a single input file */
         if (nb_objfiles != 1)
             error("cannot specify multiple files with -c");
@@ -9678,22 +9677,22 @@ int main(int argc, char **argv)
             error("cannot specify libraries with -c");
     }
 
-    if (output_type == TCC_OUTPUT_PREPROCESS) {
+    if (s->output_type == TCC_OUTPUT_PREPROCESS) {
         if (!outfile) s->outfile = stdout;
         else {
             s->outfile = fopen(outfile, "wb");
             if (!s->outfile) error("could not open '%s'", outfile);
         }
-    } else if (output_type != TCC_OUTPUT_MEMORY) {
+    } else if (s->output_type != TCC_OUTPUT_MEMORY) {
         if (!outfile) {
     /* compute default outfile name */
             pstrcpy(objfilename, sizeof(objfilename) - 1, 
                     /* strip path */
                     tcc_basename(files[0]));
 #ifdef TCC_TARGET_PE
-            pe_guess_outfile(objfilename, output_type);
+            pe_guess_outfile(objfilename, s->output_type);
 #else
-            if (output_type == TCC_OUTPUT_OBJ && !reloc_output) {
+            if (s->output_type == TCC_OUTPUT_OBJ && !reloc_output) {
                 char *ext = strrchr(objfilename, '.');
             if (!ext)
                 goto default_outfile;
@@ -9712,7 +9711,7 @@ int main(int argc, char **argv)
         start_time = getclock_us();
     }
 
-    tcc_set_output_type(s, output_type);
+    init_output_type(s);
 
     /* compile or add each files or library */
     for(i = 0;i < nb_files; i++) {
@@ -9721,7 +9720,7 @@ int main(int argc, char **argv)
         next_tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF | TOK_FLAG_BOW;
 
         filename = files[i];
-        if (output_type == TCC_OUTPUT_PREPROCESS) {
+        if (s->output_type == TCC_OUTPUT_PREPROCESS) {
             tcc_add_file_internal(s, filename,
                                   AFF_PRINT_ERROR | AFF_PREPROCESS);
         } else if (filename[0] == '-') {
