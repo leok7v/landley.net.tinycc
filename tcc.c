@@ -2194,7 +2194,7 @@ static void parse_escape_string(CString *outstr, const uint8_t *buf, int is_long
             /* at most three octal digits */
             for (i = c = 0; i<3; i++) {
                 n = *(++p);
-                if (n<0 || n>7) break;
+                if (n<'0' || n>'7') break;
                 n = c*8+n-'0';
             }
             if (i) goto add_char_nonext;
