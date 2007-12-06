@@ -8,6 +8,11 @@
  */
 #define _GNU_SOURCE
 
+// Macros to convert incoming config macros to strings.
+
+#define TOSTR(x) TOSTR2(x)
+#define TOSTR2(x) #x
+
 #ifdef CONFIG_TCCBOOT
 
 #include "tccboot.h"
