@@ -16,13 +16,13 @@ function build()
   # Build tinycc with a specific architecture and search paths.
 
   $DEBUG $CC tcc.c -o ${TARGET}-tinycc_unstripped $CFLAGS $LIBS \
-    "-DTINYCC_TARGET_$1" \
-    "-DTINYCC_TARGET=$1" \
-    '-DTINYCC_VERSION="'"$TINYCC_VERSION"'"' \
-    '-DTINYCC_LIBDIR="'"$TINYCC_LIBDIR"'"' \
-    '-DCC_CRTDIR="'"$CC_CRTDIR"'"' \
-    '-DCC_LIBPATH="'"$CC_LIBPATH"'"' \
-    '-DCC_HEADERPATH="'"$CC_HEADERPATH"'"' &&
+    -DTINYCC_TARGET_$1 \
+    -DTINYCC_TARGET=$1 \
+    -DTINYCC_VERSION=$TINYCC_VERSION \
+    -DTINYCC_LIBDIR=$TINYCC_LIBDIR \
+    -DCC_CRTDIR=$CC_CRTDIR \
+    -DCC_LIBPATH=$CC_LIBPATH \
+    -DCC_HEADERPATH=$CC_HEADERPATH &&
   $DEBUG $STRIP ${TARGET}-tinycc_unstripped -o ${TARGET}-tinycc
   [ $? -ne 0 ] && exit 1
 

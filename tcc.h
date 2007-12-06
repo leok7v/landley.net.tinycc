@@ -8,8 +8,8 @@
  */
 #define _GNU_SOURCE
 
-// Macros to convert incoming config macros to strings.
-
+// Macros to convert configuration data to strings.  One evaluates the config
+// data as a macro, the other converts it to a string.
 #define TOSTR(x) TOSTR2(x)
 #define TOSTR2(x) #x
 

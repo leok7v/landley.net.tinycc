@@ -9116,7 +9116,7 @@ int init_output_type(TCCState *s)
         char buf[1024];
         snprintf(buf, sizeof(buf), "%s/lib", tinycc_path);
         add_dynarray_path(s, buf, &(s->library_paths));
-        add_dynarray_path(s, CC_LIBPATH, &(s->library_paths));
+        add_dynarray_path(s, TOSTR(CC_LIBPATH), &(s->library_paths));
     }
 
     /* if bound checking, then add corresponding sections */
@@ -9154,8 +9154,8 @@ int init_output_type(TCCState *s)
         && !s->nostdlib)
     {
         if (s->output_type != TCC_OUTPUT_DLL)
-            tcc_add_file(s, CC_CRTDIR "/crt1.o");
-        tcc_add_file(s, CC_CRTDIR "/crti.o");
+            tcc_add_file(s, TOSTR(CC_CRTDIR) "/crt1.o");
+        tcc_add_file(s, TOSTR(CC_CRTDIR) "/crti.o");
     }
 #endif
     return 0;
@@ -9268,7 +9268,7 @@ static int64_t getclock_us(void)
 
 void show_version(void)
 {
-    printf("tinycc version " TINYCC_VERSION "\n");
+    printf("tinycc version " TOSTR(TINYCC_VERSION) "\n");
 }
 
 void help(TCCState *s)
@@ -9664,7 +9664,7 @@ int main(int argc, char **argv)
         tinycc_path = path;
     }
 #else
-    tinycc_path = TINYCC_LIBDIR;
+    tinycc_path = TOSTR(TINYCC_LIBDIR);
 #endif
 
     optind = parse_args(s, argc - 1, argv + 1) + 1;
