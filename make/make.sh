@@ -15,32 +15,33 @@ function build()
 
   # Build tinycc with a specific architecture and search paths.
 
-  $DEBUG $CC tcc.c -o ${TARGET}-tinycc_unstripped $CFLAGS $LIBS \
+  $DEBUG $CC tcc.c -o $1-tinycc_unstripped $CFLAGS $LIBS \
     -DTINYCC_TARGET_$1 \
-    -DTINYCC_TARGET=$1 \
-    -DTINYCC_VERSION=$TINYCC_VERSION \
-    -DTINYCC_LIBDIR=$TINYCC_LIBDIR \
-    -DCC_CRTDIR=$CC_CRTDIR \
-    -DCC_LIBPATH=$CC_LIBPATH \
-    -DCC_HEADERPATH=$CC_HEADERPATH &&
-  $DEBUG $STRIP ${TARGET}-tinycc_unstripped -o ${TARGET}-tinycc
+    -DTINYCC_TARGET='"'$1'"' \
+    -DTINYCC_VERSION='"'$TINYCC_VERSION'"' \
+    -DTINYCC_LIBDIR='"'$TINYCC_LIBDIR'"' \
+    -DCC_CRTDIR='"'$CC_CRTDIR'"' \
+    -DCC_LIBPATH='"'$CC_LIBPATH'"' \
+    -DCC_HEADERPATH='"'$CC_HEADERPATH'"' &&
+  $DEBUG $STRIP $1-tinycc_unstripped -o $1-tinycc
   [ $? -ne 0 ] && exit 1
 
   # If this would be a native compiler for this host, create "tinycc" symlink
   if [ "$1" == "$HOST" ]
   then
     $DEBUG rm -f tinycc
-    $DEBUG ln -s ${TARGET}-tinycc tinycc
+    $DEBUG ln -s $1-tinycc tinycc
   fi
 
   # Build libtinycc1.a
 
-  if [ -f $TARGET/alloca.S ]
+  if [ -f $1/alloca.S ]
   then
-    $DEBUG ./$TARGET-tinycc $DOLOCAL -o libtinycc1.o -c libtinycc1.c &&
-    $DEBUG ./$TARGET-tinycc $DOLOCAL -o alloca.o -c $TARGET/alloca.S &&
-    $DEBUG ./$TARGET-tinycc $DOLOCAL -o bound-alloca.o -c $TARGET/bound-alloca.S &&
-    $DEBUG $AR rcs libtinycc-${TARGET}.a libtinycc1.o alloca.o bound-alloca.o
+    $DEBUG mkdir -p lib/$1
+    $DEBUG ./$1-tinycc $DOLOCAL -o libtinycc1-$1.o -c libtinycc1.c &&
+    $DEBUG ./$1-tinycc $DOLOCAL -o alloca-$1.o -c $1/alloca.S &&
+    $DEBUG ./$1-tinycc $DOLOCAL -o bound-alloca-$1.o -c $1/bound-alloca.S &&
+    $DEBUG $AR rcs libtinycc-$1.a {libtinycc1,alloca,bound-alloca}-$1.o
   fi
 }
 
