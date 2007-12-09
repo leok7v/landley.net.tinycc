@@ -2192,10 +2192,12 @@ static void parse_escape_string(CString *outstr, const uint8_t *buf, int is_long
             break;
         if (c == '\\') {
             /* at most three octal digits */
+            p++;
             for (i = c = 0; i<3; i++) {
-                n = *(++p);
+                n = *p;
                 if (n<'0' || n>'7') break;
-                n = c*8+n-'0';
+                p++;
+                c = c*8+n-'0';
             }
             if (i) goto add_char_nonext;
             switch(*p) {
