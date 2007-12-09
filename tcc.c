@@ -2200,7 +2200,7 @@ static void parse_escape_string(CString *outstr, const uint8_t *buf, int is_long
                 c = c*8+n-'0';
             }
             if (i) goto add_char_nonext;
-            switch(*p) {
+            switch(c = *p) {
             case 'x':
             case 'u':
             case 'U':
