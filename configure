@@ -11,32 +11,31 @@
 [ -z "$CFLAGS" ] && CFLAGS="-g -Wall -fsigned-char -Os -fno-strict-aliasing"
 [ -z "$LIBS" ] && LIBS="-lm -ldl"
 [ -z "$HOST" ] && HOST=$(uname -m | sed 's/i.86/i686/')
+[ -z "$PREFIX" ] && PREFIX=/usr/local
+
+
 
 # Set the compiler's search/install paths.
 
-if [ "$HOST" == "x86_64" ] && [ TARGET="i386" ]
-then
-  LIB="lib32"
-else
-  LIB="lib"
-fi
+# i386 runs on an x86-64 host, but the library paths are abnormal.
 
-# Directory for tinycc libraries (such as libtinycc.a)
-[ -z "$TINYCC_LIBDIR" ] && TINYCC_LIBDIR=/usr/tinycc/lib
-# Directory for tinycc headers (varargs.h and such)
-[ -z "$TINYCC_HEADERDIR" ] && TINYCC_HEADERDIR=/usr/tinycc/include
+LIB="lib"
+[ "$HOST" == "x86_64" ] && [ TARGET="i386" ] && LIB="lib32"
+
+# Directory for tinycc libraries (such as libtinycc.a) and headers (stdarg.h)
+[ -z "$TINYCC_INSTALLDIR" ] && TINYCC_INSTALLDIR="$PREFIX"/tinycc
 # Where should the linker look for C runtime files (crt1.o, crti.o, crtn.o)
 [ -z "$CC_CRTDIR" ] && CC_CRTDIR="/usr/$LIB"
 # Path to search for system libraries.
 [ -z "$CC_LIBPATH" ] && CC_LIBPATH="/usr/local/$LIB:/usr/$LIB:/$LIB"
 # Path to search for system #include files.
-[ -z "$CC_HEADERPATH" ] && CC_HEADERPATH="$TINYCC_HEADERDIR":/usr/include:/usr/local/include
+[ -z "$CC_HEADERPATH" ] && CC_HEADERPATH="/usr/include:/usr/local/include"
 
 # For ./configure -v display all the variables we just set.
 
 if [ "$1" == "-v" ]
 then
-  for i in CC AR STRIP LIBSUF EXESUF CFLAGS LIBS HOST TINYCC_LIBDIR TINYCC_HEADERDIR CC_CRTDIR CC_LIBPATH CC_HEADERPATH
+  for i in CC AR STRIP LIBSUF EXESUF CFLAGS LIBS HOST PREFIX TINYCC_INSTALLDIR CC_CRTDIR CC_LIBPATH CC_HEADERPATH TARGET
   do
     echo -n "$i="
     eval 'echo "$'$i'"'

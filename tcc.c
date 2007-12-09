@@ -9664,7 +9664,7 @@ int main(int argc, char **argv)
         tinycc_path = path;
     }
 #else
-    tinycc_path = TINYCC_LIBDIR;
+    tinycc_path = TINYCC_INSTALLDIR;
 #endif
 
     optind = parse_args(s, argc - 1, argv + 1) + 1;

@@ -2,15 +2,17 @@
 
 source ./configure
 
-# Install libraries
+if [ -z "$TINYCC_INSTALLDIR" ]
+then
+  No TINYCC_INSTALLDIR
+  exit 1
+fi
 
-mkdir -p "$TINYCC_LIBDIR"
-cp libtinycc-*.a "$TINYCC_LIBDIR"
+# Install libraries and headers
 
-# Install headers
-
-mkdir -p "$TINYCC_HEADERDIR"
-cp include/* "$TINYCC_HEADERDIR"
+$DEBUG mkdir -p "$TINYCC_INSTALLDIR"/{lib,include} &&
+$DEBUG cp libtinycc-*.a "$TINYCC_INSTALLDIR"/lib &&
+$DEBUG cp include/* "$TINYCC_INSTALLDIR"/include &&
 
 # Install binaries
-cp *-tinycc /usr/local/bin
+$DEBUG cp *-tinycc /usr/local/bin
