@@ -1,5 +1,5 @@
 /*
- * TCC auto test program
+ * Tinycc auto test program
  */
 //#include "config.h"
 
@@ -24,23 +24,23 @@
 
 /* test various include syntaxes */
 
-#define TCCLIB_INC <tcclib.h>
-#define TCCLIB_INC1 <tcclib
-#define TCCLIB_INC2 h>
-#define TCCLIB_INC3 "tcclib"
+#define TINYCCLIB_INC <tinyinc.h>
+#define TINYCCLIB_INC1 <tinyinc
+#define TINYCCLIB_INC2 h>
+#define TINYCCLIB_INC3 "tinyinc"
 
-#include TCCLIB_INC
+#include TINYCCLIB_INC
 
-#include TCCLIB_INC1.TCCLIB_INC2
+#include TINYCCLIB_INC1.TINYCCLIB_INC2
 
-#include TCCLIB_INC1.h>
+#include TINYCCLIB_INC1.h>
 
 /* gcc 3.2 does not accept that (bug ?) */
-//#include TCCLIB_INC3 ".h"
+//#include TINYCCLIB_INC3 ".h"
 
-#include <tcclib.h>
+#include <tinyinc.h>
 
-#include "tcclib.h"
+#include "tinyinc.h"
 
 void string_test();
 void expr_test();
@@ -658,7 +658,7 @@ void expr_test()
            isid('('));
 
     {
-        /* Check that tcc saves registers before a conditional jump */
+        /* Check that tinycc saves registers before a conditional jump */
         /* Addresses bug "grischka case_2" */
         struct test_str { int a, b, c; };
         struct test_str t1 = {0,0,0};
@@ -673,7 +673,7 @@ void expr_test()
         p1->c = !f || isid(0);
         printf("case_2.2: Expect 0 1 1 -> %d %d %d\n", p1->a, p1->b, p1->c);
 
-        /* This will crash old versions of tcc during compilation: */
+        /* This will crash old versions of tinycc during compilation: */
         p2->b = (f==1) && isid(0);
         printf("case_2.1AND: Expect 0 1 0 -> %d %d %d\n", p2->a, p2->b, p2->c);
         p2->b = (!(f==1)) && isid(0);
@@ -1182,7 +1182,7 @@ void cast_test()
     printf("((unsigned)(char)0x%08x) = 0x%08x\n", b, d);
 
     /* Try casting pointer to short or _Bool (grishka case_6.1). This
-     * is lossy, so tcc will print a warning.  This capability is needed
+     * is lossy, so tinycc will print a warning.  This capability is needed
      * to compile gcc 2.95 as well as other programs.  */
     {
         void *p = (void *) 3;
@@ -2141,7 +2141,7 @@ void builtin_test(void)
     COMPAT_TYPE(int *, void *);
     COMPAT_TYPE(int *, const int *);
     COMPAT_TYPE(char *, unsigned char *);
-/* space is needed because tcc preprocessor introduces a space between each token */
+/* space is needed because tinycc preprocessor introduces a space between each token */
     COMPAT_TYPE(char * *, void *); 
 #endif
     printf("res = %d\n", __builtin_constant_p(1));
