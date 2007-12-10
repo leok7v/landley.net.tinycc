@@ -714,6 +714,13 @@ void expr2_test()
     printf("res= %d %d\n", a, b);
 }
 
+int constant_i = "blah" && 0;
+int constant_j = "blah" || 0;
+int constant_k = vpop && 0;
+int constant_l = "blah" && 1;
+int constant_m = "blah" || 1;
+int constant_n = 0 || vpop;
+
 void constant_expr_test()
 {
     int a;
@@ -722,6 +729,8 @@ void constant_expr_test()
     printf("%d\n", a * 16);
     printf("%d\n", a * 1);
     printf("%d\n", a + 0);
+    printf("%d %d %d %d %d %d\n",constant_i,constant_j,constant_k,constant_l,
+        constant_m,constant_n);
 }
 
 int tab4[10];

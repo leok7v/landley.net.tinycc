@@ -4436,10 +4436,11 @@ void gen_opl(int op)
 /* handle long long constant and various machine independent optimizations */
 void gen_opic(int op)
 {
-    int c1, c2, t1, t2;
+    int c1, c2, t1, t2, squash;
     SValue *v1, *v2;
     long long l1, l2;
 
+    /* Grab the two symbols to operate on, their types, and their values */
     v1 = vtop - 1;
     v2 = vtop;
     t1 = v1->type.t & VT_BTYPE;
@@ -4447,12 +4448,21 @@ void gen_opic(int op)
     l1 = (t1 == VT_LLONG) ? v1->c.ll : v1->c.i;
     l2 = (t2 == VT_LLONG) ? v2->c.ll : v2->c.i;
 
-    /* For forward symbols we can only constify &&, || or == NULL */
-    c2 = VT_SYM;
-    if (op == TOK_EQ && (v1->c.ll == 0 || v2->c.ll == 0)) c2 = 0;
-    if (op == TOK_LAND || op == TOK_LOR) c2 = 0;
-    c1 = (v1->r & (VT_VALMASK | VT_LVAL | c2)) == VT_CONST;
-    c2 = (v2->r & (VT_VALMASK | VT_LVAL | c2)) == VT_CONST;
+    /* For forward symbols we can only constify &&, || or == NULL.  If we
+       do so, we need to remove VT_SYM from the resulting type. */
+    squash = VT_SYM;
+    if (op == TOK_LAND || op == TOK_LOR ||
+        (op == TOK_EQ && (v1->c.ll == 0 || v2->c.ll == 0)))
+    {
+        squash = 0;
+        if (v1->r & VT_SYM) l1=1;
+        if (v2->r & VT_SYM) l2=1;
+    } else c2 = VT_SYM;
+
+    /* Are both arguments constant? */
+
+    c1 = (v1->r & (VT_VALMASK | VT_LVAL | squash)) == VT_CONST;
+    c2 = (v2->r & (VT_VALMASK | VT_LVAL | squash)) == VT_CONST;
 
     if (c1 && c2) {
         switch(op) {
@@ -4502,6 +4512,8 @@ void gen_opic(int op)
             goto general_case;
         }
         v1->c.ll = l1;
+        // If v1 was a symbol, the resulting type is an int.
+        if (!squash) v1->r &= ~VT_SYM;
         vtop--;
     } else {
         /* if commutative ops, put c2 as constant */
@@ -4548,7 +4560,7 @@ void gen_opic(int op)
             vtop--;
             vtop->c.ll += l2;
         } else {
-        general_case:
+general_case:
             /* call low level op generator */
             if (cur_text_section) {
                 if (t1 == VT_LLONG|| t2 == VT_LLONG) gen_opl(op);
