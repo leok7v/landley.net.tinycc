@@ -27,11 +27,11 @@ function build()
   [ $? -ne 0 ] && exit 1
 
   # If this would be a native compiler for this host, create "tinycc" symlink
-  if [ "$1" == "$HOST" ]
-  then
+  #if [ "$1" == "$HOST" ]
+  #then
     $DEBUG rm -f tinycc
     $DEBUG ln -s $1-tinycc tinycc
-  fi
+  #fi
 
   # Build libtinycc1.a
 
