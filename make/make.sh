@@ -49,7 +49,7 @@ function build()
 
 [ $# -ne 0 ] && TARGETS="$@"
 [ "$TARGETS" == "native" ] && TARGETS="$HOST"
-[ -z "$TARGETS" ] && TARGETS="i386 arm c67 win32"
+[ -z "$TARGETS" ] && TARGETS="i386 arm c67"  # win32
 
 # Build each architecture
 
