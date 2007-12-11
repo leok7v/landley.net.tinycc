@@ -16,7 +16,7 @@ function build()
   # Build tinycc with a specific architecture and search paths.
 
   $DEBUG $CC tcc.c -o $1-tinycc_unstripped $CFLAGS $LIBS \
-    -DTINYCC_TARGET_$1 \
+    -DTINYCC_TARGET_$(echo $1 | tr a-z A-Z) \
     -DTINYCC_TARGET='"'$1'"' \
     -DTINYCC_VERSION='"'$TINYCC_VERSION'"' \
     -DTINYCC_INSTALLDIR='"'$TINYCC_INSTALLDIR'"' \
@@ -49,7 +49,7 @@ function build()
 
 [ $# -ne 0 ] && TARGETS="$@"
 [ "$TARGETS" == "native" ] && TARGETS="$HOST"
-[ -z "$TARGETS" ] && TARGETS="i386 arm c67"  # win32
+[ -z "$TARGETS" ] && TARGETS="i386" # arm c67 win32
 
 # Build each architecture
 
