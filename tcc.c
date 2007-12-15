@@ -8835,15 +8835,16 @@ TCCState *tcc_new(void)
     tcc_define_symbol(s, "__ARM_ARCH_4__", NULL);
     tcc_define_symbol(s, "__arm_elf__", NULL);
     tcc_define_symbol(s, "__arm_elf", NULL);
-    tcc_define_symbol(s, "arm_elf", NULL);
+    //tcc_define_symbol(s, "arm_elf", NULL);
     tcc_define_symbol(s, "__arm__", NULL);
     tcc_define_symbol(s, "__arm", NULL);
-    tcc_define_symbol(s, "arm", NULL);
+    //tcc_define_symbol(s, "arm", NULL);
     tcc_define_symbol(s, "__APCS_32__", NULL);
 #endif
-#if defined(linux)
+#if defined(__linux__)
     tcc_define_symbol(s, "__linux__", NULL);
-    tcc_define_symbol(s, "linux", NULL);
+    tcc_define_symbol(s, "__linux", NULL);
+    //tcc_define_symbol(s, "linux", NULL);
 #endif
     /* tiny C specific defines */
     tcc_define_symbol(s, "__TINYC__", NULL);
