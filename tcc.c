@@ -4154,7 +4154,7 @@ void vpop(void)
 #ifdef TCC_TARGET_I386
     /* for x86, we need to pop the FP stack */
     if (v == TREG_ST0) {
-        o(0xd9dd); /* fstp %st(1) */
+        o(0xd8dd); /* fstp %st(1) */
     } else
 #endif
     if (v == VT_JMP || v == VT_JMPI) {
