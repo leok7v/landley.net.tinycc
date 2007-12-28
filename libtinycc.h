@@ -23,7 +23,7 @@ void tcc_set_error_func(TCCState *s, void *error_opaque,
                         void (*error_func)(void *opaque, const char *msg));
 
 /* set/reset a warning */
-int tcc_set_warning(TCCState *s, const char *warning_name, int value);
+int tcc_set_warning(TCCState *s, char *warning_name, int value);
 
 /*****************************/
 /* preprocessor */

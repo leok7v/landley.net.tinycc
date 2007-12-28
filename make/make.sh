@@ -15,7 +15,7 @@ function build()
 
   # Build tinycc with a specific architecture and search paths.
 
-  $DEBUG $CC tcc.c -o $1-tinycc_unstripped $CFLAGS $LIBS \
+  $DEBUG $CC tcc.c options.c -o $1-tinycc_unstripped $CFLAGS $LIBS \
     -DTINYCC_TARGET_$(echo $1 | tr a-z A-Z) \
     -DTINYCC_TARGET='"'$1'"' \
     -DTINYCC_VERSION='"'$TINYCC_VERSION'"' \

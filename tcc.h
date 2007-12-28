@@ -662,9 +662,9 @@ extern float strtof (const char *__nptr, char **__endptr);
 extern long double strtold (const char *__nptr, char **__endptr);
 #endif
 
-static char *pstrcpy(char *buf, int buf_size, const char *s);
+char *pstrcpy(char *buf, int buf_size, const char *s);
 static char *pstrcat(char *buf, int buf_size, const char *s);
-static const char *tcc_basename(const char *name);
+static char *tcc_basename(char *name);
 
 static void next(void);
 static void next_nomacro(void);
@@ -757,7 +757,7 @@ static int tcc_add_dll(TCCState *s, const char *filename, int flags);
 #define AFF_PRINT_ERROR     0x0001 /* print error if file not found */
 #define AFF_REFERENCED_DLL  0x0002 /* load a referenced dll from another dll */
 #define AFF_PREPROCESS      0x0004 /* preprocess file */
-static int tcc_add_file_internal(TCCState *s, const char *filename, int flags);
+int tcc_add_file_internal(TCCState *s, const char *filename, int flags);
 
 /* tcccoff.c */
 int tcc_output_coff(TCCState *s1, FILE *f);
@@ -878,5 +878,12 @@ static inline void *resolve_sym(TCCState *s1, const char *sym, int type)
 {
     return dlsym(RTLD_DEFAULT, sym);
 }
+
+/* space excluding newline */
+static inline int is_space(int ch)
+{
+    return ch == ' ' || ch == '\t' || ch == '\v' || ch == '\f' || ch == '\r';
+}
+
 
 #endif
