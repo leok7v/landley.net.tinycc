@@ -7377,7 +7377,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             gexpr();
             if ((vtop->type.t & VT_BTYPE) != VT_PTR)
                 expect("pointer");
-            ggoto();
+            gen_goto();
         } else if (tok >= TOK_UIDENT) {
             s = label_find(tok);
             /* put forward definition if needed */

@@ -939,7 +939,7 @@ void gen_cvt_ftof(int t)
 }
 
 /* computed goto support */
-void ggoto(void)
+void gen_goto(void)
 {
     gcall_or_jmp(1);
     vtop--;
@@ -1011,7 +1011,3 @@ void gen_bounded_ptr_deref(void)
     rel->r_info = ELF32_R_INFO(sym->c, ELF32_R_TYPE(rel->r_info));
 }
 #endif
-
-/* end of X86 code generator */
-/*************************************************************/
-
