@@ -11,7 +11,7 @@ fi
 # Install libraries and headers
 
 $DEBUG mkdir -p "$TINYCC_INSTALLDIR"/{lib,include} &&
-$DEBUG cp libtinycc-*.a "$TINYCC_INSTALLDIR"/lib &&
+$DEBUG cp libtinyccrt-*.a libtinycc-*.so "$TINYCC_INSTALLDIR"/lib &&
 $DEBUG cp include/* "$TINYCC_INSTALLDIR"/include &&
 
 # Install binaries

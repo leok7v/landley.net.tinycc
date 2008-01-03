@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../libtcc.h"
+#include "../libtinycc.h"
 
 /* this function is called by the generated code */
 int add(int a, int b)
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
     }
 
     /* MUST BE CALLED before any compilation or file loading */
-    tcc_set_output_type(s, TCC_OUTPUT_MEMORY);
+    init_output_type(s, TCC_OUTPUT_MEMORY);
 
     tcc_compile_string(s, my_program);
 

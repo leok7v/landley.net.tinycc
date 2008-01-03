@@ -9,20 +9,30 @@ TINYCC_VERSION=0.9.25
 
 DOLOCAL="-B. -I./include -I."
 
+# Invoke the compiler with all the appropriate arguments
+
+function compile_tinycc()
+{
+  OUTFILE=$1
+  shift
+  $DEBUG $CC $@ -o $OUTFILE $CFLAGS $LIBS \
+    -DTINYCC_TARGET_$(echo $ARCH | tr a-z A-Z) \
+    -DTINYCC_TARGET='"'$ARCH'"' \
+    -DTINYCC_VERSION='"'$TINYCC_VERSION'"' \
+    -DTINYCC_INSTALLDIR='"'$TINYCC_INSTALLDIR'"' \
+    -DCC_CRTDIR='"'$CC_CRTDIR'"' \
+    -DCC_LIBPATH='"'$CC_LIBPATH'"' \
+    -DCC_HEADERPATH='"'$CC_HEADERPATH'"'
+}
+
+
 function build()
 {
   source ./configure -v
 
   # Build tinycc with a specific architecture and search paths.
 
-  $DEBUG $CC tcc.c options.c -o $1-tinycc_unstripped $CFLAGS $LIBS \
-    -DTINYCC_TARGET_$(echo $1 | tr a-z A-Z) \
-    -DTINYCC_TARGET='"'$1'"' \
-    -DTINYCC_VERSION='"'$TINYCC_VERSION'"' \
-    -DTINYCC_INSTALLDIR='"'$TINYCC_INSTALLDIR'"' \
-    -DCC_CRTDIR='"'$CC_CRTDIR'"' \
-    -DCC_LIBPATH='"'$CC_LIBPATH'"' \
-    -DCC_HEADERPATH='"'$CC_HEADERPATH'"' &&
+  ARCH=$1 compile_tinycc $1-tinycc_unstripped tcc.c options.c &&
   $DEBUG $STRIP $1-tinycc_unstripped -o $1-tinycc
   [ $? -ne 0 ] && exit 1
 
@@ -33,7 +43,11 @@ function build()
     $DEBUG ln -s $1-tinycc tinycc
   #fi
 
-  # Build libtinycc1.a
+  # Compile tinycc as a shared library.
+
+  ARCH=$1 compile_tinycc libtinycc-$1.so -shared -fPIC -DLIBTCC tcc.c &&
+
+  # Build libtinyccrt-$ARCH.a (which compiled programs link against)
 
   if [ -f $1/alloca.S ]
   then
@@ -41,7 +55,7 @@ function build()
     $DEBUG ./$1-tinycc $DOLOCAL -o libtinycc1-$1.o -c libtinycc1.c &&
     $DEBUG ./$1-tinycc $DOLOCAL -o alloca-$1.o -c $1/alloca.S &&
     $DEBUG ./$1-tinycc $DOLOCAL -o bound-alloca-$1.o -c $1/bound-alloca.S &&
-    $DEBUG $AR rcs libtinycc-$1.a {libtinycc1,alloca,bound-alloca}-$1.o
+    $DEBUG $AR rcs libtinyccrt-$1.a {libtinycc1,alloca,bound-alloca}-$1.o
   fi
 }
 
