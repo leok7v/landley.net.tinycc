@@ -289,7 +289,7 @@ static void asm_free_labels(TCCState *st)
             put_extern_sym2(s, sec, (long)s->next, 0, 0);
         }
         /* remove label */
-        table_ident[s->v - TOK_IDENT]->sym_label = NULL;
+        table_ident[s->token - TOK_IDENT]->sym_label = NULL;
         sym_free(s);
     }
     st->asm_labels = NULL;

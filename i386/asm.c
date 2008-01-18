@@ -1022,7 +1022,7 @@ static void subst_asm_operand(CString *add_str,
         if (!(r & VT_LVAL) && modifier != 'c' && modifier != 'n')
             cstr_ccat(add_str, '$');
         if (r & VT_SYM) {
-            cstr_cat(add_str, get_tok_str(sv->sym->v, NULL));
+            cstr_cat(add_str, get_tok_str(sv->sym->token, NULL));
             if (sv->c.i != 0) {
                 cstr_ccat(add_str, '+');
             } else {

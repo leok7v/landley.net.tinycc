@@ -371,7 +371,7 @@ static void put_extern_sym2(Sym *sym, Section *section,
         else
             sym_bind = STB_GLOBAL;
         
-        name = get_tok_str(sym->v, NULL);
+        name = get_tok_str(sym->token, NULL);
 #ifdef CONFIG_TCC_BCHECK
         if (do_bounds_check) {
             char buf[32];
@@ -379,7 +379,7 @@ static void put_extern_sym2(Sym *sym, Section *section,
             /* XXX: avoid doing that for statics ? */
             /* if bound checking is activated, we change some function
                names by adding the "__bound" prefix */
-            switch(sym->v) {
+            switch(sym->token) {
 #if 0
             /* XXX: we rely only on malloc hooks */
             case TOK_malloc: 
@@ -808,11 +808,11 @@ char *get_tok_str(int v, CValue *cv)
 }
 
 /* push, without hashing */
-static Sym *sym_push2(Sym **ps, int v, int t, long c)
+static Sym *sym_push2(Sym **ps, int token, int t, long c)
 {
     Sym *s;
     s = sym_malloc();
-    s->v = v;
+    s->token = token;
     s->type.t = t;
     s->c = c;
     s->next = NULL;
@@ -824,10 +824,10 @@ static Sym *sym_push2(Sym **ps, int v, int t, long c)
 
 /* find a symbol and return its associated structure. 's' is the top
    of the symbol stack */
-static Sym *sym_find2(Sym *s, int v)
+static Sym *sym_find2(Sym *s, int token)
 {
     while (s) {
-        if (s->v == v)
+        if (s->token == token)
             return s;
         s = s->prev;
     }
@@ -903,17 +903,17 @@ static void sym_pop(Sym **ptop, Sym *b)
 {
     Sym *s, *ss, **ps;
     TokenSym *ts;
-    int v;
+    int token;
 
     s = *ptop;
     while(s != b) {
         ss = s->prev;
-        v = s->v;
+        token = s->token;
         /* remove symbol in token array */
         /* XXX: simplify */
-        if (!(v & SYM_FIELD) && (v & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
-            ts = table_ident[(v & ~SYM_STRUCT) - TOK_IDENT];
-            if (v & SYM_STRUCT)
+        if (!(token & SYM_FIELD) && (token & ~SYM_STRUCT) < SYM_FIRST_ANOM) {
+            ts = table_ident[(token & ~SYM_STRUCT) - TOK_IDENT];
+            if (token & SYM_STRUCT)
                 ps = &ts->sym_struct;
             else
                 ps = &ts->sym_identifier;
@@ -1580,38 +1580,38 @@ static void tok_str_add_tok(TokenString *s)
 }
 
 /* defines handling */
-static inline void define_push(int v, int macro_type, int *str, Sym *first_arg)
+static inline void define_push(int token, int macro_type, int *str, Sym *first_arg)
 {
     Sym *s;
 
-    s = sym_push2(&define_stack, v, macro_type, (long)str);
+    s = sym_push2(&define_stack, token, macro_type, (long)str);
     s->next = first_arg;
-    table_ident[v - TOK_IDENT]->sym_define = s;
+    table_ident[token - TOK_IDENT]->sym_define = s;
 }
 
 /* undefined a define symbol. Its name is just set to zero */
 static void define_undef(Sym *s)
 {
-    int v;
-    v = s->v;
-    if (v >= TOK_IDENT && v < tok_ident)
-        table_ident[v - TOK_IDENT]->sym_define = NULL;
-    s->v = 0;
+    int token;
+    token = s->token;
+    if (token >= TOK_IDENT && token < tok_ident)
+        table_ident[token - TOK_IDENT]->sym_define = NULL;
+    s->token = 0;
 }
 
-static inline Sym *define_find(int v)
+static inline Sym *define_find(int token)
 {
-    v -= TOK_IDENT;
-    if ((unsigned)v >= (unsigned)(tok_ident - TOK_IDENT))
+    token -= TOK_IDENT;
+    if ((unsigned)token >= (unsigned)(tok_ident - TOK_IDENT))
         return NULL;
-    return table_ident[v]->sym_define;
+    return table_ident[token]->sym_define;
 }
 
 /* free define stack until top reaches 'b' */
 static void free_defines(Sym *b)
 {
     Sym *top, *top1;
-    int v;
+    int token;
 
     top = define_stack;
     while (top != b) {
@@ -1619,9 +1619,9 @@ static void free_defines(Sym *b)
         /* do not free args or predefined defines */
         if (top->c)
             tok_str_free((int *)top->c);
-        v = top->v;
-        if (v >= TOK_IDENT && v < tok_ident)
-            table_ident[v - TOK_IDENT]->sym_define = NULL;
+        token = top->token;
+        if (token >= TOK_IDENT && token < tok_ident)
+            table_ident[token - TOK_IDENT]->sym_define = NULL;
         sym_free(top);
         top = top1;
     }
@@ -1629,20 +1629,20 @@ static void free_defines(Sym *b)
 }
 
 /* label lookup */
-static Sym *label_find(int v)
+static Sym *label_find(int token)
 {
-    v -= TOK_IDENT;
-    if ((unsigned)v >= (unsigned)(tok_ident - TOK_IDENT))
+    token -= TOK_IDENT;
+    if ((unsigned)token >= (unsigned)(tok_ident - TOK_IDENT))
         return NULL;
-    return table_ident[v]->sym_label;
+    return table_ident[token]->sym_label;
 }
 
-static Sym *label_push(Sym **ptop, int v, int flags)
+static Sym *label_push(Sym **ptop, int token, int flags)
 {
     Sym *s, **ps;
-    s = sym_push2(ptop, v, 0, 0);
+    s = sym_push2(ptop, token, 0, 0);
     s->r = flags;
-    ps = &table_ident[v - TOK_IDENT]->sym_label;
+    ps = &table_ident[token - TOK_IDENT]->sym_label;
     if (ptop == &global_label_stack) {
         /* modify the top most local identifier, so that
            sym_identifier will point to 's' when popped */
@@ -1662,19 +1662,19 @@ static void label_pop(Sym **ptop, Sym *slast)
     for(s = *ptop; s != slast; s = s1) {
         s1 = s->prev;
         if (s->r == LABEL_DECLARED) {
-            warning("label '%s' declared but not used", get_tok_str(s->v, NULL));
+            warning("label '%s' declared but not used",
+                get_tok_str(s->token, NULL));
         } else if (s->r == LABEL_FORWARD) {
                 error("label '%s' used but not defined",
-                      get_tok_str(s->v, NULL));
+                      get_tok_str(s->token, NULL));
         } else {
             if (s->c) {
-                /* define corresponding symbol. A size of
-                   1 is put. */
+                /* define corresponding symbol. A size of 1 is put. */
                 put_extern_sym(s, cur_text_section, (long)s->next, 1);
             }
         }
         /* remove label */
-        table_ident[s->v - TOK_IDENT]->sym_label = s->prev_tok;
+        table_ident[s->token - TOK_IDENT]->sym_label = s->prev_tok;
         sym_free(s);
     }
     *ptop = slast;
@@ -3210,7 +3210,7 @@ static int macro_subst_tok(TokenString *tok_str,
                     break;
                 if (!sa)
                     error("macro '%s' used with too many args",
-                          get_tok_str(s->v, 0));
+                          get_tok_str(s->token, 0));
                 tok_str_new(&str);
                 parlevel = 0;
                 /* NOTE: non zero sa->t indicates VA_ARGS */
@@ -3226,7 +3226,8 @@ static int macro_subst_tok(TokenString *tok_str,
                     next_nomacro();
                 }
                 tok_str_add(&str, 0, 0);
-                sym_push2(&args, sa->v & ~SYM_FIELD, sa->type.t, (long)str.str);
+                sym_push2(&args, sa->token & ~SYM_FIELD, sa->type.t,
+                    (long)str.str);
                 sa = sa->next;
                 if (tok == ')') {
                     /* special case for gcc var args: add an empty
@@ -3242,7 +3243,7 @@ static int macro_subst_tok(TokenString *tok_str,
             }
             if (sa) {
                 error("macro '%s' used with too few args",
-                      get_tok_str(s->v, 0));
+                      get_tok_str(s->token, 0));
             }
 
             /* now subst each arg */
@@ -3257,7 +3258,7 @@ static int macro_subst_tok(TokenString *tok_str,
             }
             mstr_allocated = 1;
         }
-        sym_push2(nested_list, s->v, 0, 0);
+        sym_push2(nested_list, s->token, 0, 0);
         macro_subst(tok_str, nested_list, mstr, can_read_stream);
         /* pop nested defined symbol */
         sa1 = *nested_list;
@@ -5210,7 +5211,7 @@ static int is_compatible_types(CType *type1, CType *type2)
 void type_to_str(char *buf, int buf_size, 
                  CType *type, const char *varstr)
 {
-    int bt, v, t;
+    int bt, token, t;
     Sym *s, *sa;
     char buf1[256];
     const char *tstr;
@@ -5264,11 +5265,9 @@ void type_to_str(char *buf, int buf_size,
         else
             tstr = "enum ";
         pstrcat(buf, buf_size, tstr);
-        v = type->ref->v & ~SYM_STRUCT;
-        if (v >= SYM_FIRST_ANOM)
-            pstrcat(buf, buf_size, "<anonymous>");
-        else
-            pstrcat(buf, buf_size, get_tok_str(v, NULL));
+        token = type->ref->token & ~SYM_STRUCT;
+        pstrcat(buf, buf_size,
+            token >= SYM_FIRST_ANOM ? "<anonymous>" : get_tok_str(token, 0));
         break;
     case VT_FUNC:
         s = type->ref;
@@ -5815,7 +5814,7 @@ static void struct_decl(CType *type, int u)
                     if (v == 0 && (type1.t & VT_BTYPE) == VT_STRUCT) {
                         ass = type1.ref;
                         while ((ass = ass->next) != NULL) {
-                           ss = sym_push(ass->v, &ass->type, 0, offset + ass->c);
+                           ss = sym_push(ass->token, &ass->type, 0, offset + ass->c);
                            *ps = ss;
                            ps = &ss->next;
                         }
@@ -6136,7 +6135,7 @@ static void parse_array_dimensions(CType *type)
    attribute definition of the basic type. It can be modified by
    type_decl(). 
  */
-static void type_decl(CType *type, AttributeDef *ad, int *v, int td)
+static void type_decl(CType *type, AttributeDef *ad, int *token, int td)
 {
     Sym *s;
     CType type1, *type2;
@@ -6179,17 +6178,17 @@ static void type_decl(CType *type, AttributeDef *ad, int *v, int td)
            the syntax is not clear */
         if (tok == TOK_ATTRIBUTE1 || tok == TOK_ATTRIBUTE2)
             parse_attribute(ad);
-        type_decl(&type1, ad, v, td);
+        type_decl(&type1, ad, token, td);
         skip(')');
     } else {
         /* type identifier */
         if (tok >= TOK_IDENT && (td & TYPE_DIRECT)) {
-            *v = tok;
+            *token = tok;
             next();
         } else {
             if (!(td & TYPE_ABSTRACT))
                 expect("identifier");
-            *v = 0;
+            *token = 0;
         }
     }
     if (tok == '(') parse_function_parameters(type, ad);
@@ -6615,7 +6614,7 @@ static void unary(void)
             /* find field */
             tok |= SYM_FIELD;
             while ((s = s->next) != NULL) {
-                if (s->v == tok)
+                if (s->token == tok)
                     break;
             }
             if (!s)
@@ -7405,7 +7404,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             s = label_find(b);
             if (s) {
                 if (s->r == LABEL_DEFINED)
-                    error("duplicate label '%s'", get_tok_str(s->v, NULL));
+                    error("duplicate label '%s'", get_tok_str(s->token, NULL));
                 gsym((long)s->next);
                 s->r = LABEL_DEFINED;
             } else {
@@ -7496,7 +7495,7 @@ static void decl_designator(CType *type, Section *sec, unsigned long c,
             l |= SYM_FIELD;
             f = s->next;
             while (f) {
-                if (f->v == l)
+                if (f->token == l)
                     break;
                 f = f->next;
             }
@@ -8102,7 +8101,7 @@ void put_func_debug(Sym *sym)
 static void func_decl_list(Sym *func_sym)
 {
     AttributeDef ad;
-    int v;
+    int token;
     Sym *s;
     CType btype, type;
 
@@ -8117,20 +8116,20 @@ static void func_decl_list(Sym *func_sym)
         } else {
             for(;;) {
                 type = btype;
-                type_decl(&type, &ad, &v, TYPE_DIRECT);
+                type_decl(&type, &ad, &token, TYPE_DIRECT);
                 /* find parameter in function parameter list */
                 s = func_sym->next;
                 while (s != NULL) {
-                    if ((s->v & ~SYM_FIELD) == v)
+                    if ((s->token & ~SYM_FIELD) == token)
                         goto found;
                     s = s->next;
                 }
                 error("declaration for parameter '%s' but no such parameter",
-                      get_tok_str(v, NULL));
+                      get_tok_str(token, NULL));
             found:
                 /* check that no storage specifier except 'register' was given */
                 if (type.t & VT_STORAGE)
-                    error("storage class specified for '%s'", get_tok_str(v, NULL)); 
+                    error("storage class specified for '%s'", get_tok_str(token, NULL)); 
                 convert_parameter_type(&type);
                 /* we can add the type (NOTE: it could be local to the function) */
                 s->type = type;
@@ -8152,7 +8151,7 @@ static void gen_function(Sym *sym)
     ind = cur_text_section->data_offset;
     /* NOTE: we patch the symbol size later */
     put_extern_sym(sym, cur_text_section, ind, 0);
-    funcname = get_tok_str(sym->v, NULL);
+    funcname = get_tok_str(sym->token, NULL);
     func_ind = ind;
     /* put debug symbol */
     if (do_debug)
@@ -8291,7 +8290,7 @@ static void decl(int l)
                 /* reject abstract declarators in function definition */
                 sym = type.ref;
                 while ((sym = sym->next) != NULL)
-                    if (!(sym->v & ~SYM_FIELD))
+                    if (!(sym->token & ~SYM_FIELD))
                        expect("identifier");
                 
                 /* XXX: cannot do better now: convert extern inline to static inline */

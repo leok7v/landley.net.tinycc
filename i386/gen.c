@@ -458,7 +458,7 @@ void gfunc_prolog(CType *func_type)
             param_addr = addr;
             addr += size;
         }
-        sym_push(sym->v & ~SYM_FIELD, type,
+        sym_push(sym->token & ~SYM_FIELD, type,
                  VT_LOCAL | VT_LVAL, param_addr);
         param_index++;
     }
