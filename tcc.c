@@ -808,7 +808,7 @@ char *get_tok_str(int v, CValue *cv)
 }
 
 /* push, without hashing */
-static Sym *sym_push2(Sym **ps, int v, int t, int c)
+static Sym *sym_push2(Sym **ps, int v, int t, long c)
 {
     Sym *s;
     s = sym_malloc();
@@ -1584,7 +1584,7 @@ static inline void define_push(int v, int macro_type, int *str, Sym *first_arg)
 {
     Sym *s;
 
-    s = sym_push2(&define_stack, v, macro_type, (int)str);
+    s = sym_push2(&define_stack, v, macro_type, (long)str);
     s->next = first_arg;
     table_ident[v - TOK_IDENT]->sym_define = s;
 }
@@ -3226,7 +3226,7 @@ static int macro_subst_tok(TokenString *tok_str,
                     next_nomacro();
                 }
                 tok_str_add(&str, 0, 0);
-                sym_push2(&args, sa->v & ~SYM_FIELD, sa->type.t, (int)str.str);
+                sym_push2(&args, sa->v & ~SYM_FIELD, sa->type.t, (long)str.str);
                 sa = sa->next;
                 if (tok == ')') {
                     /* special case for gcc var args: add an empty
@@ -7132,8 +7132,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
         skip(')');
         a = gtst(1, 0);
         block(bsym, csym, case_sym, def_sym, case_reg, 0);
-        c = tok;
-        if (c == TOK_ELSE) {
+        if (tok == TOK_ELSE) {
             next();
             d = gjmp(0);
             gsym(a);
