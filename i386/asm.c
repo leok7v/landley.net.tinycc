@@ -96,7 +96,7 @@ typedef struct Operand {
     ExprValue e;
 } Operand;
 
-static const uint8_t reg_to_size[5] = {
+static uint8_t reg_to_size[5] = {
     [OP_REG8] = 0,
     [OP_REG16] = 1,
     [OP_REG32] = 2,
@@ -106,7 +106,7 @@ static const uint8_t reg_to_size[5] = {
 
 #define NB_TEST_OPCODES 30
 
-static const uint8_t test_bits[NB_TEST_OPCODES] = {
+static uint8_t test_bits[NB_TEST_OPCODES] = {
  0x00, /* o */
  0x01, /* no */
  0x02, /* b */
@@ -139,7 +139,7 @@ static const uint8_t test_bits[NB_TEST_OPCODES] = {
  0x0f, /* g */
 };
 
-static const uint8_t segment_prefixes[] = {
+static uint8_t segment_prefixes[] = {
  0x26, /* es */
  0x2e, /* cs */
  0x36, /* ss */
@@ -148,7 +148,7 @@ static const uint8_t segment_prefixes[] = {
  0x65  /* gs */
 };
 
-static const ASMInstr asm_instrs[] = {
+static ASMInstr asm_instrs[] = {
 #define ALT(x) x
 #define DEF_ASM_OP0(name, opcode)
 #define DEF_ASM_OP0L(name, opcode, group, instr_type) { TOK_ASM_ ## name, opcode, (instr_type | group << OPC_GROUP_SHIFT), 0 },
@@ -161,7 +161,7 @@ static const ASMInstr asm_instrs[] = {
     { 0, },
 };
 
-static const uint16_t op0_codes[] = {
+static uint16_t op0_codes[] = {
 #define ALT(x)
 #define DEF_ASM_OP0(x, opcode) opcode,
 #define DEF_ASM_OP0L(name, opcode, group, instr_type)
@@ -218,7 +218,7 @@ static void parse_operand(TCCState *s1, Operand *op)
 {
     ExprValue e;
     int reg, indir;
-    const char *p;
+    char *p;
 
     indir = 0;
     if (tok == '*') {
@@ -408,7 +408,7 @@ static inline void asm_modrm(int reg, Operand *op)
 
 static void asm_opcode(TCCState *s1, int opcode)
 {
-    const ASMInstr *pa;
+    ASMInstr *pa;
     int i, modrm_index, reg, v, op1, is_short_jmp, has_seg_prefix;
     int nb_ops, s, ss;
     Operand ops[MAX_OPERANDS], *pop, seg_prefix;
@@ -720,7 +720,7 @@ static void asm_opcode(TCCState *s1, int opcode)
 
 /* return the constraint priority (we allocate first the lowest
    numbered constraints) */
-static inline int constraint_priority(const char *str)
+static inline int constraint_priority(char *str)
 {
     int priority, c, pr;
 
@@ -767,7 +767,7 @@ static inline int constraint_priority(const char *str)
     return priority;
 }
 
-static const char *skip_constraint_modifiers(const char *p)
+static char *skip_constraint_modifiers(char *p)
 {
     while (*p == '=' || *p == '&' || *p == '+' || *p == '%')
         p++;
@@ -781,13 +781,13 @@ static const char *skip_constraint_modifiers(const char *p)
 
 static void asm_compute_constraints(ASMOperand *operands, 
                                     int nb_operands, int nb_outputs, 
-                                    const uint8_t *clobber_regs,
+                                    uint8_t *clobber_regs,
                                     int *pout_reg)
 {
     ASMOperand *op;
     int sorted_op[MAX_ASM_OPERANDS];
     int i, j, k, p1, p2, tmp, reg, c, reg_mask;
-    const char *str;
+    char *str;
     uint8_t regs_allocated[NB_ASM_REGS];
     
     /* init fields */
@@ -1176,7 +1176,7 @@ static void asm_gen_code(ASMOperand *operands, int nb_operands,
     }
 }
 
-static void asm_clobber(uint8_t *clobber_regs, const char *str)
+static void asm_clobber(uint8_t *clobber_regs, char *str)
 {
     int reg;
     TokenSym *ts;

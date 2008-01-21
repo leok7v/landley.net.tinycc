@@ -390,7 +390,7 @@ struct TCCState {
 
     /* error handling */
     void *error_opaque;
-    void (*error_func)(void *opaque, const char *msg);
+    void (*error_func)(void *opaque, char *msg);
     int error_set_jmp_enabled;
     jmp_buf error_jmp_buf;
     int nb_errors;
@@ -619,7 +619,7 @@ enum tcc_token {
 #undef DEF
 };
 
-static const char tcc_keywords[] = 
+static char tcc_keywords[] = 
 #define DEF(id, str) str "\0"
 #include "tcctok.h"
 #undef DEF
@@ -662,8 +662,8 @@ extern float strtof (const char *__nptr, char **__endptr);
 extern long double strtold (const char *__nptr, char **__endptr);
 #endif
 
-char *pstrcpy(char *buf, int buf_size, const char *s);
-static char *pstrcat(char *buf, int buf_size, const char *s);
+char *pstrcpy(char *buf, int buf_size, char *s);
+static char *pstrcat(char *buf, int buf_size, char *s);
 static char *tcc_basename(char *name);
 
 static void next(void);
@@ -699,7 +699,7 @@ struct macro_level {
 };
 
 static void macro_subst(TokenString *tok_str, Sym **nested_list, 
-                        const int *macro_str, struct macro_level **can_read_stream);
+                        int *macro_str, struct macro_level **can_read_stream);
 void gen_op(int op);
 void force_charshort_cast(int t);
 static void gen_cast(CType *type);
@@ -718,7 +718,7 @@ static int is_compatible_types(CType *type1, CType *type2);
 static void expr_const1(void);
 
 int ieee_finite(double d);
-void error(const char *fmt, ...);
+void error(char *fmt, ...);
 void vpushi(int v);
 void vrott(int n);
 void vnrott(int n);
@@ -726,7 +726,7 @@ void lexpand_nr(void);
 static void vpush_global_sym(CType *type, int v);
 void vset(CType *type, int r, int v);
 void type_to_str(char *buf, int buf_size, 
-                 CType *type, const char *varstr);
+                 CType *type, char *varstr);
 char *get_tok_str(int v, CValue *cv);
 static Sym *get_sym_ref(CType *type, Section *sec, 
                         unsigned long offset, unsigned long size);
@@ -738,36 +738,36 @@ static void *section_ptr_add(Section *sec, unsigned long size);
 static void put_extern_sym(Sym *sym, Section *section, 
                            unsigned long value, unsigned long size);
 static void greloc(Section *s, Sym *sym, unsigned long addr, int type);
-static int put_elf_str(Section *s, const char *sym);
+static int put_elf_str(Section *s, char *sym);
 static int put_elf_sym(Section *s, 
                        unsigned long value, unsigned long size,
-                       int info, int other, int shndx, const char *name);
+                       int info, int other, int shndx, char *name);
 static int add_elf_sym(Section *s, unsigned long value, unsigned long size,
-                       int info, int other, int sh_num, const char *name);
+                       int info, int other, int sh_num, char *name);
 static void put_elf_reloc(Section *symtab, Section *s, unsigned long offset,
                           int type, int symbol);
-static void put_stabs(const char *str, int type, int other, int desc, 
+static void put_stabs(char *str, int type, int other, int desc, 
                       unsigned long value);
-static void put_stabs_r(const char *str, int type, int other, int desc, 
+static void put_stabs_r(char *str, int type, int other, int desc, 
                         unsigned long value, Section *sec, int sym_index);
 static void put_stabn(int type, int other, int desc, int value);
 static void put_stabd(int type, int other, int desc);
-static int tcc_add_dll(TCCState *s, const char *filename, int flags);
+static int tcc_add_dll(TCCState *s, char *filename, int flags);
 
 #define AFF_PRINT_ERROR     0x0001 /* print error if file not found */
 #define AFF_REFERENCED_DLL  0x0002 /* load a referenced dll from another dll */
 #define AFF_PREPROCESS      0x0004 /* preprocess file */
-int tcc_add_file_internal(TCCState *s, const char *filename, int flags);
+int tcc_add_file_internal(TCCState *s, char *filename, int flags);
 
 /* tcccoff.c */
 int tcc_output_coff(TCCState *s1, FILE *f);
 
 /* tccpe.c */
-static void *resolve_sym(TCCState *s1, const char *sym, int type);
+static void *resolve_sym(TCCState *s1, char *sym, int type);
 int pe_load_def_file(struct TCCState *s1, FILE *fp);
-void pe_setup_paths(struct TCCState *s1, int *p_output_type, const char **p_outfile, char *first_file);
+void pe_setup_paths(struct TCCState *s1, int *p_output_type, char **p_outfile, char *first_file);
 unsigned long pe_add_runtime(struct TCCState *s1);
-int tcc_output_pe(struct TCCState *s1, const char *filename);
+int tcc_output_pe(struct TCCState *s1, char *filename);
 
 /* tccasm.c */
 
@@ -797,7 +797,7 @@ typedef struct ASMOperand {
 static void asm_expr(TCCState *s1, ExprValue *pe);
 static int asm_int_expr(TCCState *s1);
 static int find_constraint(ASMOperand *operands, int nb_operands, 
-                           const char *name, const char **pp);
+                           char *name, char **pp);
 
 static int tcc_assemble(TCCState *s1, int do_preprocess);
 
@@ -847,7 +847,7 @@ static TCCSyms tcc_syms[] = {
     { NULL, NULL },
 };
 
-static void *resolve_sym(TCCState *s1, const char *symbol, int type)
+static void *resolve_sym(TCCState *s1, char *symbol, int type)
 {
     TCCSyms *p;
     p = tcc_syms;
@@ -860,12 +860,12 @@ static void *resolve_sym(TCCState *s1, const char *symbol, int type)
 }
 
 /* dummy function for profiling */
-void *dlopen(const char *filename, int flag)
+void *dlopen(char *filename, int flag)
 {
     return NULL;
 }
 
-const char *dlerror(void)
+char *dlerror(void)
 {
     return "error";
 }
@@ -874,7 +874,7 @@ const char *dlerror(void)
 
 #include <dlfcn.h>
 
-static inline void *resolve_sym(TCCState *s1, const char *sym, int type)
+static inline void *resolve_sym(TCCState *s1, char *sym, int type)
 {
     return dlsym(RTLD_DEFAULT, sym);
 }

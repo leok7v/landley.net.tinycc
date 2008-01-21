@@ -8,7 +8,7 @@
 
 #include <limits.h>
 
-static int put_elf_str(Section *s, const char *sym)
+static int put_elf_str(Section *s, char *sym)
 {
     int offset, len;
     char *ptr;
@@ -21,7 +21,7 @@ static int put_elf_str(Section *s, const char *sym)
 }
 
 /* elf symbol hashing function */
-static unsigned long elf_hash(const unsigned char *name)
+static unsigned long elf_hash(unsigned char *name)
 {
     unsigned long h = 0, g;
     
@@ -72,7 +72,7 @@ static void rebuild_hash(Section *s, unsigned int nb_buckets)
 /* return the symbol number */
 static int put_elf_sym(Section *s, 
                        unsigned long value, unsigned long size,
-                       int info, int other, int shndx, const char *name)
+                       int info, int other, int shndx, char *name)
 {
     int name_offset, sym_index;
     int nbuckets, h;
@@ -120,12 +120,12 @@ static int put_elf_sym(Section *s,
 
 /* find global ELF symbol 'name' and return its index. Return 0 if not
    found. */
-static int find_elf_sym(Section *s, const char *name)
+static int find_elf_sym(Section *s, char *name)
 {
     Elf32_Sym *sym;
     Section *hs;
     int nbuckets, sym_index, h;
-    const char *name1;
+    char *name1;
     
     hs = s->hash;
     if (!hs)
@@ -144,7 +144,7 @@ static int find_elf_sym(Section *s, const char *name)
 }
 
 /* return elf symbol value or error */
-int tcc_get_symbol(TCCState *s, unsigned long *pval, const char *name)
+int tcc_get_symbol(TCCState *s, unsigned long *pval, char *name)
 {
     int sym_index;
     Elf32_Sym *sym;
@@ -157,7 +157,7 @@ int tcc_get_symbol(TCCState *s, unsigned long *pval, const char *name)
     return 0;
 }
 
-void *tcc_get_symbol_err(TCCState *s, const char *name)
+void *tcc_get_symbol_err(TCCState *s, char *name)
 {
     unsigned long val;
     if (tcc_get_symbol(s, &val, name) < 0)
@@ -168,7 +168,7 @@ void *tcc_get_symbol_err(TCCState *s, const char *name)
 /* add an elf symbol : check if it is already defined and patch
    it. Return symbol index. NOTE that sh_num can be SHN_UNDEF. */
 static int add_elf_sym(Section *s, unsigned long value, unsigned long size,
-                       int info, int other, int sh_num, const char *name)
+                       int info, int other, int sh_num, char *name)
 {
     Elf32_Sym *esym;
     int sym_bind, sym_index, sym_type, esym_bind;
@@ -270,7 +270,7 @@ typedef struct {
     unsigned long n_value;        /* value of symbol */
 } Stab_Sym;
 
-static void put_stabs(const char *str, int type, int other, int desc, 
+static void put_stabs(char *str, int type, int other, int desc, 
                       unsigned long value)
 {
     Stab_Sym *sym;
@@ -287,7 +287,7 @@ static void put_stabs(const char *str, int type, int other, int desc,
     sym->n_value = value;
 }
 
-static void put_stabs_r(const char *str, int type, int other, int desc, 
+static void put_stabs_r(char *str, int type, int other, int desc, 
                         unsigned long value, Section *sec, int sym_index)
 {
     put_stabs(str, type, other, desc, value);
@@ -399,7 +399,7 @@ static void relocate_syms(TCCState *s1, int do_resolve)
 {
     Elf32_Sym *sym, *esym, *sym_end;
     int sym_bind, sh_num, sym_index;
-    const char *name;
+    char *name;
     unsigned long addr;
 
     sym_end = (Elf32_Sym *)(symtab_section->data + symtab_section->data_offset);
@@ -713,7 +713,7 @@ static void put_got_entry(TCCState *s1,
                           int sym_index)
 {
     int index;
-    const char *name;
+    char *name;
     Elf32_Sym *sym;
     unsigned long offset;
     int *ptr;
@@ -908,9 +908,9 @@ static void build_got_entries(TCCState *s1)
 }
 
 static Section *new_symtab(TCCState *s1,
-                           const char *symtab_name, int sh_type, int sh_flags,
-                           const char *strtab_name, 
-                           const char *hash_name, int hash_sh_flags)
+                           char *symtab_name, int sh_type, int sh_flags,
+                           char *strtab_name, 
+                           char *hash_name, int hash_sh_flags)
 {
     Section *symtab, *strtab, *hash;
     int *ptr, nb_buckets;
@@ -945,7 +945,7 @@ static void put_dt(Section *dynamic, int dt, unsigned long val)
     dyn->d_un.d_val = val;
 }
 
-static void add_init_array_defines(TCCState *s1, const char *section_name)
+static void add_init_array_defines(TCCState *s1, char *section_name)
 {
     Section *s;
     long end_offset;
@@ -1050,7 +1050,7 @@ static void tcc_add_linker_symbols(TCCState *s1)
         s = s1->sections[i];
         if (s->sh_type == SHT_PROGBITS &&
             (s->sh_flags & SHF_ALLOC)) {
-            const char *p;
+            char *p;
             int ch;
 
             /* check if section name can be expressed in C */
@@ -1090,7 +1090,7 @@ static char elf_interp[] = "/lib/ld-linux.so.2";
 #endif
 
 static void tcc_output_binary(TCCState *s1, FILE *f,
-                              const int *section_order)
+                              int *section_order)
 {
     Section *s;
     int i, offset, size;
@@ -1113,7 +1113,7 @@ static void tcc_output_binary(TCCState *s1, FILE *f,
 
 /* output an ELF file */
 /* XXX: suppress unneeded sections */
-int tcc_output_file(TCCState *s1, const char *filename)
+int tcc_output_file(TCCState *s1, char *filename)
 {
     Elf32_Ehdr ehdr;
     FILE *f;
@@ -1150,7 +1150,7 @@ int tcc_output_file(TCCState *s1, const char *filename)
         tcc_add_linker_symbols(s1);
 
         if (!s1->static_link) {
-            const char *name;
+            char *name;
             int sym_index, index;
             Elf32_Sym *esym, *sym_end;
             
@@ -2019,7 +2019,7 @@ typedef struct ArchiveHeader {
     char ar_fmag[2];		/* should contain ARFMAG */
 } ArchiveHeader;
 
-static int get_be32(const uint8_t *b)
+static int get_be32(uint8_t *b)
 {
     return b[3] | (b[2] << 8) | (b[1] << 16) | (b[0] << 24);
 }
@@ -2029,8 +2029,8 @@ static int tcc_load_alacarte(TCCState *s1, int fd, int size)
 {
     int i, bound, nsyms, sym_index, off, ret;
     uint8_t *data;
-    const char *ar_names, *p;
-    const uint8_t *ar_index;
+    char *ar_names, *p;
+    uint8_t *ar_index;
     Elf32_Sym *sym;
 
     data = xmalloc(size);
@@ -2123,7 +2123,7 @@ static int tcc_load_archive(TCCState *s1, int fd)
 /* load a DLL and all referenced DLLs. 'level = 0' means that the DLL
    is referenced by the user (so it should be added as DT_NEEDED in
    the generated ELF file) */
-static int tcc_load_dll(TCCState *s1, int fd, const char *filename, int level)
+static int tcc_load_dll(TCCState *s1, int fd, char *filename, int level)
 { 
     Elf32_Ehdr ehdr;
     Elf32_Shdr *shdr, *sh, *sh1;
@@ -2131,7 +2131,7 @@ static int tcc_load_dll(TCCState *s1, int fd, const char *filename, int level)
     Elf32_Sym *sym, *dynsym;
     Elf32_Dyn *dt, *dynamic;
     unsigned char *dynstr;
-    const char *name, *soname, *p;
+    char *name, *soname, *p;
     DLLReference *dllref;
     
     read(fd, &ehdr, sizeof(ehdr));

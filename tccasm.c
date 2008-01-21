@@ -25,7 +25,7 @@ static void asm_expr_unary(TCCState *s1, ExprValue *pe)
 {
     Sym *sym;
     int op, n, label;
-    const char *p;
+    char *p;
 
     switch(tok) {
     case TOK_PPNUM:
@@ -278,14 +278,12 @@ static void asm_free_labels(TCCState *st)
     Sym *s, *s1;
     Section *sec;
     
-    for(s = st->asm_labels; s != NULL; s = s1) {
+    for(s = st->asm_labels; s; s = s1) {
         s1 = s->prev;
         /* define symbol value in object file */
         if (s->r) {
-            if (s->r == SHN_ABS)
-                sec = SECTION_ABS;
-            else
-                sec = st->sections[s->r];
+            if (s->r == SHN_ABS) sec = SECTION_ABS;
+            else sec = st->sections[s->r];
             put_extern_sym2(s, sec, (long)s->next, 0, 0);
         }
         /* remove label */
@@ -302,7 +300,7 @@ static void use_section1(TCCState *s1, Section *sec)
     ind = cur_text_section->data_offset;
 }
 
-static void use_section(TCCState *s1, const char *name)
+static void use_section(TCCState *s1, char *name)
 {
     Section *sec;
     sec = find_section(s1, name);
@@ -353,7 +351,7 @@ static void asm_parse_directive(TCCState *s1)
         next();
         for(;;) {
             uint64_t vl;
-            const char *p;
+            char *p;
 
             p = tokc.cstr->data;
             if (tok != TOK_PPNUM) {
@@ -484,7 +482,7 @@ static void asm_parse_directive(TCCState *s1)
     case TOK_ASM_ascii:
     case TOK_ASM_asciz:
         {
-            const uint8_t *p;
+            uint8_t *p;
             int i, size, t;
 
             t = tok;
@@ -574,7 +572,7 @@ static int tcc_assemble_internal(TCCState *s1, int do_preprocess)
 #if 0
     /* print stats about opcodes */
     {
-        const ASMInstr *pa;
+        ASMInstr *pa;
         int freq[4];
         int op_vals[500];
         int nb_op_vals, i, j;
@@ -623,7 +621,7 @@ static int tcc_assemble_internal(TCCState *s1, int do_preprocess)
         } else if (tok == '.') {
             asm_parse_directive(s1);
         } else if (tok == TOK_PPNUM) {
-            const char *p;
+            char *p;
             int n;
             p = tokc.cstr->data;
             n = strtoul(p, (char **)&p, 10);
@@ -727,11 +725,11 @@ static void tcc_assemble_inline(TCCState *s1, char *str, int len)
    syntax). return -1 if not found. Return in *pp in char after the
    constraint */
 static int find_constraint(ASMOperand *operands, int nb_operands, 
-                           const char *name, const char **pp)
+                           char *name, char **pp)
 {
     int index;
     TokenSym *ts;
-    const char *p;
+    char *p;
 
     if (isnum(*name)) {
         index = 0;
@@ -769,7 +767,7 @@ static void subst_asm_operands(ASMOperand *operands, int nb_operands,
                                CString *out_str, CString *in_str)
 {
     int c, index, modifier;
-    const char *str;
+    char *str;
     ASMOperand *op;
     SValue sv;
 

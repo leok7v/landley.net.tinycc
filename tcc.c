@@ -109,13 +109,13 @@ static int tcc_ext = 1;
 
 /* max number of callers shown if error */
 static int num_callers = 6;
-static const char **rt_bound_error_msg;
+static char **rt_bound_error_msg;
 
 /* XXX: get rid of this ASAP */
 static struct TCCState *tcc_state;
 
 /* give the path of the compiler's libraries */
-const char *tinycc_path;
+char *tinycc_path;
 
 
 /********************************************************/
@@ -130,7 +130,7 @@ int ieee_finite(double d)
 }
 
 /* copy a string and truncate it. */
-char *pstrcpy(char *buf, int buf_size, const char *s)
+char *pstrcpy(char *buf, int buf_size, char *s)
 {
     char *q, *q_end;
     int c;
@@ -149,7 +149,7 @@ char *pstrcpy(char *buf, int buf_size, const char *s)
 }
 
 /* strcat and truncate. */
-static char *pstrcat(char *buf, int buf_size, const char *s)
+static char *pstrcat(char *buf, int buf_size, char *s)
 {
     int len;
     len = strlen(buf);
@@ -160,7 +160,7 @@ static char *pstrcat(char *buf, int buf_size, const char *s)
 
 // If str starts with val, return 1 and move ptr right after val in str.
 // Otherwise return 0
-int strstart(const char *str, const char *val, const char **ptr)
+int strstart(char *str, char *val, char **ptr)
 {
     while (*val) {
         if (*str != *val) return 0;
@@ -192,7 +192,7 @@ static inline void *xrealloc(void *ptr, unsigned long size)
     return ptr1;
 }
 
-static char *xstrdup(const char *str)
+static char *xstrdup(char *str)
 {
     char *ptr = xmalloc(strlen(str) + 1);
     strcpy(ptr, str);
@@ -258,7 +258,7 @@ static inline void sym_free(Sym *sym)
     sym_free_first = sym;
 }
 
-Section *new_section(TCCState *s1, const char *name, int sh_type, int sh_flags)
+Section *new_section(TCCState *s1, char *name, int sh_type, int sh_flags)
 {
     Section *sec;
 
@@ -329,7 +329,7 @@ static void *section_ptr_add(Section *sec, unsigned long size)
 
 /* return a reference to a section, and create it if it does not
    exists */
-Section *find_section(TCCState *s1, const char *name)
+Section *find_section(TCCState *s1, char *name)
 {
     Section *sec;
     int i;
@@ -352,24 +352,19 @@ static void put_extern_sym2(Sym *sym, Section *section,
 {
     int sym_type, sym_bind, sh_num, info;
     Elf32_Sym *esym;
-    const char *name;
+    char *name;
     char buf1[256];
 
-    if (section == NULL)
-        sh_num = SHN_UNDEF;
-    else if (section == SECTION_ABS) 
-        sh_num = SHN_ABS;
-    else
-        sh_num = section->sh_num;
+    if (!section) sh_num = SHN_UNDEF;
+    else if (section == SECTION_ABS) sh_num = SHN_ABS;
+    else sh_num = section->sh_num;
+
     if (!sym->c) {
-        if ((sym->type.t & VT_BTYPE) == VT_FUNC)
-            sym_type = STT_FUNC;
-        else
-            sym_type = STT_OBJECT;
-        if (sym->type.t & VT_STATIC)
-            sym_bind = STB_LOCAL;
-        else
-            sym_bind = STB_GLOBAL;
+        if ((sym->type.t & VT_BTYPE) == VT_FUNC) sym_type = STT_FUNC;
+        else sym_type = STT_OBJECT;
+
+        if (sym->type.t & VT_STATIC) sym_bind = STB_LOCAL;
+        else sym_bind = STB_GLOBAL;
         
         name = get_tok_str(sym->token, NULL);
 #ifdef CONFIG_TCC_BCHECK
@@ -444,14 +439,14 @@ static inline int toup(int c)
         return c;
 }
 
-static void strcat_vprintf(char *buf, int buf_size, const char *fmt, va_list ap)
+static void strcat_vprintf(char *buf, int buf_size, char *fmt, va_list ap)
 {
     int len;
     len = strlen(buf);
     vsnprintf(buf + len, buf_size - len, fmt, ap);
 }
 
-static void strcat_printf(char *buf, int buf_size, const char *fmt, ...)
+static void strcat_printf(char *buf, int buf_size, char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
@@ -459,7 +454,7 @@ static void strcat_printf(char *buf, int buf_size, const char *fmt, ...)
     va_end(ap);
 }
 
-void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap)
+void error1(TCCState *s1, int is_warning, char *fmt, va_list ap)
 {
     char buf[2048];
     BufferedFile **f;
@@ -496,7 +491,7 @@ void error1(TCCState *s1, int is_warning, const char *fmt, va_list ap)
 
 #ifdef LIBTCC
 void tcc_set_error_func(TCCState *s, void *error_opaque,
-                        void (*error_func)(void *opaque, const char *msg))
+                        void (*error_func)(void *opaque, char *msg))
 {
     s->error_opaque = error_opaque;
     s->error_func = error_func;
@@ -504,7 +499,7 @@ void tcc_set_error_func(TCCState *s, void *error_opaque,
 #endif
 
 /* error without aborting current compilation */
-void error_noabort(const char *fmt, ...)
+void error_noabort(char *fmt, ...)
 {
     TCCState *s1 = tcc_state;
     va_list ap;
@@ -514,7 +509,7 @@ void error_noabort(const char *fmt, ...)
     va_end(ap);
 }
 
-void error(const char *fmt, ...)
+void error(char *fmt, ...)
 {
     TCCState *s1 = tcc_state;
     va_list ap;
@@ -531,12 +526,12 @@ void error(const char *fmt, ...)
     }
 }
 
-void expect(const char *msg)
+void expect(char *msg)
 {
     error("%s expected", msg);
 }
 
-void warning(const char *fmt, ...)
+void warning(char *fmt, ...)
 {
     TCCState *s1 = tcc_state;
     va_list ap;
@@ -563,7 +558,7 @@ static void test_lvalue(void)
 }
 
 /* allocate a new token */
-static TokenSym *tok_alloc_new(TokenSym **pts, const char *str, int len)
+static TokenSym *tok_alloc_new(TokenSym **pts, char *str, int len)
 {
     TokenSym *ts, **ptable;
     int i;
@@ -597,7 +592,7 @@ static TokenSym *tok_alloc_new(TokenSym **pts, const char *str, int len)
 #define TOK_HASH_FUNC(h, c) ((h) * 263 + (c))
 
 /* find a token and add it if not found */
-static TokenSym *tok_alloc(const char *str, int len)
+static TokenSym *tok_alloc(char *str, int len)
 {
     TokenSym *ts, **pts;
     int i;
@@ -649,7 +644,7 @@ static inline void cstr_ccat(CString *cstr, int ch)
     cstr->size = size;
 }
 
-static void cstr_cat(CString *cstr, const char *str)
+static void cstr_cat(CString *cstr, char *str)
 {
     int c;
     for(;;) {
@@ -927,7 +922,7 @@ static void sym_pop(Sym **ptop, Sym *b)
 
 /* I/O layer */
 
-BufferedFile *tcc_open(TCCState *s1, const char *filename)
+BufferedFile *tcc_open(TCCState *s1, char *filename)
 {
     int fd;
     BufferedFile *bf;
@@ -1791,14 +1786,14 @@ static void parse_define(void)
     define_push(v, t, str.str, first);
 }
 
-static inline int hash_cached_include(int type, const char *filename)
+static inline int hash_cached_include(int type, char *filename)
 {
-    const unsigned char *s;
+    uint8_t *s;
     unsigned int h;
 
     h = TOK_HASH_INIT;
     h = TOK_HASH_FUNC(h, type);
-    s = filename;
+    s = (uint8_t *)filename;
     while (*s) {
         h = TOK_HASH_FUNC(h, *s);
         s++;
@@ -1809,7 +1804,7 @@ static inline int hash_cached_include(int type, const char *filename)
 
 /* XXX: use a token or a hash table to accelerate matching ? */
 static CachedInclude *search_cached_include(TCCState *s1,
-                                            int type, const char *filename)
+                                            int type, char *filename)
 {
     CachedInclude *e;
     int i, h;
@@ -1827,7 +1822,7 @@ static CachedInclude *search_cached_include(TCCState *s1,
 }
 
 static inline void add_cached_include(TCCState *s1, int type, 
-                                      const char *filename, int ifndef_macro)
+                                      char *filename, int ifndef_macro)
 {
     CachedInclude *e;
     int h;
@@ -2013,7 +2008,7 @@ static void preprocess(int is_bof)
             /* now search in all the include paths */
             n = s1->include_paths.len + s1->sysinclude_paths.len;
             for(i = 0; i < n; i++) {
-                const char *path;
+                char *path;
                 int verbose = s1->verbose;
 
                 verbose -= (s1->include_stack_ptr != s1->include_stack);
@@ -2177,10 +2172,10 @@ static void preprocess(int is_bof)
 }
 
 /* evaluate escape codes in a string. */
-static void parse_escape_string(CString *outstr, const uint8_t *buf, int is_long)
+static void parse_escape_string(CString *outstr, uint8_t *buf, int is_long)
 {
     int c, n, i;
-    const uint8_t *p;
+    uint8_t *p;
 
     p = buf;
     for(;;) {
@@ -2297,7 +2292,7 @@ void bn_zero(unsigned int *bn)
 
 /* parse number in null terminated string 'p' and return it in the
    current token */
-void parse_number(const char *p)
+void parse_number(char *p)
 {
     int b, t, shift, frac_bits, s, exp_val, ch;
     char *q;
@@ -3111,7 +3106,7 @@ static int *macro_arg_subst(Sym **nested_list, int *macro_str, Sym *args)
     return str.str;
 }
 
-static char const ab_month_name[12][4] =
+static char ab_month_name[12][4] =
 {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
@@ -3272,12 +3267,12 @@ static int macro_subst_tok(TokenString *tok_str,
 
 /* handle the '##' operator. Return NULL if no '##' seen. Otherwise
    return the resulting string (which must be freed). */
-static inline int *macro_twosharps(const int *macro_str)
+static inline int *macro_twosharps(int *macro_str)
 {
     TokenSym *ts;
-    const int *macro_ptr1, *start_macro_ptr, *ptr, *saved_macro_ptr;
+    int *macro_ptr1, *start_macro_ptr, *ptr, *saved_macro_ptr;
     int t, tf;
-    const char *p1, *p2;
+    char *p1, *p2;
     CValue cval;
     TokenString macro_str1;
     CString cstr;
@@ -3341,7 +3336,7 @@ static inline int *macro_twosharps(const int *macro_str)
                         /* if identifier, we must do a test to
                            validate we have a correct identifier */
                         if (t == TOK_PPNUM) {
-                            const char *p;
+                            char *p;
                             int c;
 
                             p = p2;
@@ -3358,8 +3353,8 @@ static inline int *macro_twosharps(const int *macro_str)
                         tok = ts->tok; /* modify current token */
                     }
                 } else {
-                    const char *str = cstr.data;
-                    const unsigned char *q;
+                    char *str = cstr.data;
+                    unsigned char *q;
 
                     /* we look for a valid token */
                     /* XXX: do more extensive checks */
@@ -3413,11 +3408,11 @@ static inline int *macro_twosharps(const int *macro_str)
    (tok_str,tok_len). 'nested_list' is the list of all macros we got
    inside to avoid recursing. */
 static void macro_subst(TokenString *tok_str, Sym **nested_list, 
-                        const int *macro_str, struct macro_level ** can_read_stream)
+                        int *macro_str, struct macro_level ** can_read_stream)
 {
     Sym *s;
     int *macro_str1;
-    const int *ptr;
+    int *ptr;
     int t, tf, ret;
     CValue cval;
     struct macro_level ml;
@@ -5209,12 +5204,12 @@ static int is_compatible_types(CType *type1, CType *type2)
 /* XXX: union */
 /* XXX: add array and function pointers */
 void type_to_str(char *buf, int buf_size, 
-                 CType *type, const char *varstr)
+                 CType *type, char *varstr)
 {
     int bt, token, t;
     Sym *s, *sa;
     char buf1[256];
-    const char *tstr;
+    char *tstr;
 
     t = type->t & VT_TYPE;
     bt = t & VT_BTYPE;
@@ -8569,7 +8564,7 @@ static int tcc_preprocess(TCCState *s1)
 }
 
 #ifdef LIBTCC
-int tcc_compile_string(TCCState *s, const char *str)
+int tcc_compile_string(TCCState *s, char *str)
 {
     BufferedFile bf1, *bf = &bf1;
     int ret, len;
@@ -8598,7 +8593,7 @@ int tcc_compile_string(TCCState *s, const char *str)
 #endif
 
 /* define a preprocessor symbol. A value can also be provided with the '=' operator */
-void tcc_define_symbol(TCCState *s1, const char *sym, const char *value)
+void tcc_define_symbol(TCCState *s1, char *sym, char *value)
 {
     BufferedFile bf1, *bf = &bf1;
 
@@ -8628,7 +8623,7 @@ void tcc_define_symbol(TCCState *s1, const char *sym, const char *value)
 }
 
 /* undefine a preprocessor symbol */
-void tcc_undefine_symbol(TCCState *s1, const char *sym)
+void tcc_undefine_symbol(TCCState *s1, char *sym)
 {
     TokenSym *ts;
     Sym *s;
@@ -8762,9 +8757,9 @@ int tcc_run(TCCState *s1, int argc, char **argv)
     return (*prog_main)(argc, argv);
 }
 
-void add_dynarray_path(TCCState *s, const char *pathname, struct dynarray *dd)
+void add_dynarray_path(TCCState *s, char *pathname, struct dynarray *dd)
 {
-    const char *c = pathname;
+    char *c = pathname;
 
     for (;;) {
         if (!*c || *c==LIB_PATH_SEPCHAR) {
@@ -8784,7 +8779,7 @@ void add_dynarray_path(TCCState *s, const char *pathname, struct dynarray *dd)
 
 TCCState *tcc_new(void)
 {
-    const char *p, *r;
+    char *p, *r;
     TCCState *s;
     TokenSym *ts;
     int i, c;
@@ -8937,9 +8932,9 @@ void tcc_delete(TCCState *s1)
     free(s1);
 }
 
-int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
+int tcc_add_file_internal(TCCState *s1, char *filename, int flags)
 {
-    const char *ext, *filename1;
+    char *ext, *filename1;
     Elf32_Ehdr ehdr;
     int fd, ret;
     BufferedFile *saved_file;
@@ -9054,14 +9049,14 @@ int tcc_add_file_internal(TCCState *s1, const char *filename, int flags)
     goto the_end;
 }
 
-int tcc_add_file(TCCState *s, const char *filename)
+int tcc_add_file(TCCState *s, char *filename)
 {
     return tcc_add_file_internal(s, filename, AFF_PRINT_ERROR);
 }
 
 /* find and load a dll. Return non zero if not found */
 /* XXX: add '-rpath' option support ? */
-static int tcc_add_dll(TCCState *s, const char *filename, int flags)
+static int tcc_add_dll(TCCState *s, char *filename, int flags)
 {
     char buf[1024];
     int i;
@@ -9076,7 +9071,7 @@ static int tcc_add_dll(TCCState *s, const char *filename, int flags)
 }
 
 /* the library name is the same as the argument of the '-l' option */
-int tcc_add_library(TCCState *s, const char *libraryname)
+int tcc_add_library(TCCState *s, char *libraryname)
 {
     char buf[1024];
     int i;
@@ -9102,7 +9097,7 @@ int tcc_add_library(TCCState *s, const char *libraryname)
     return -1;
 }
 
-int tcc_add_symbol(TCCState *s, const char *name, unsigned long val)
+int tcc_add_symbol(TCCState *s, char *name, unsigned long val)
 {
     add_elf_sym(symtab_section, val, 0, 
                 ELF32_ST_INFO(STB_GLOBAL, STT_NOTYPE), 0,

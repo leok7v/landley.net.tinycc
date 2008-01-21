@@ -20,7 +20,7 @@ void tcc_enable_debug(TCCState *s);
 
 /* set error/warning display callback */
 void tcc_set_error_func(TCCState *s, void *error_opaque,
-                        void (*error_func)(void *opaque, const char *msg));
+                        void (*error_func)(void *opaque, char *msg));
 
 /* set/reset a warning */
 int tcc_set_warning(TCCState *s, char *warning_name, int value);
@@ -29,27 +29,27 @@ int tcc_set_warning(TCCState *s, char *warning_name, int value);
 /* preprocessor */
 
 /* add include path */
-int tcc_add_include_path(TCCState *s, const char *pathname);
+int tcc_add_include_path(TCCState *s, char *pathname);
 
 /* add in system include path */
-int tcc_add_sysinclude_path(TCCState *s, const char *pathname);
+int tcc_add_sysinclude_path(TCCState *s, char *pathname);
 
 /* define preprocessor symbol 'sym'. Can put optional value */
-void tcc_define_symbol(TCCState *s, const char *sym, const char *value);
+void tcc_define_symbol(TCCState *s, char *sym, char *value);
 
 /* undefine preprocess symbol 'sym' */
-void tcc_undefine_symbol(TCCState *s, const char *sym);
+void tcc_undefine_symbol(TCCState *s, char *sym);
 
 /*****************************/
 /* compiling */
 
 /* add a file (either a C file, dll, an object, a library or an ld
    script). Return -1 if error. */
-int tcc_add_file(TCCState *s, const char *filename);
+int tcc_add_file(TCCState *s, char *filename);
 
 /* compile a string containing a C source. Return non zero if
    error. */
-int tcc_compile_string(TCCState *s, const char *buf);
+int tcc_compile_string(TCCState *s, char *buf);
 
 /*****************************/
 /* linking commands */
@@ -68,17 +68,17 @@ int tcc_set_output_type(TCCState *s, int output_type);
 #define TCC_OUTPUT_FORMAT_COFF   2 /* COFF */
 
 /* equivalent to -Lpath option */
-int tcc_add_library_path(TCCState *s, const char *pathname);
+int tcc_add_library_path(TCCState *s, char *pathname);
 
 /* the library name is the same as the argument of the '-l' option */
-int tcc_add_library(TCCState *s, const char *libraryname);
+int tcc_add_library(TCCState *s, char *libraryname);
 
 /* add a symbol to the compiled program */
-int tcc_add_symbol(TCCState *s, const char *name, unsigned long val);
+int tcc_add_symbol(TCCState *s, char *name, unsigned long val);
 
 /* output an executable, library or object file. DO NOT call
    tcc_relocate() before. */
-int tcc_output_file(TCCState *s, const char *filename);
+int tcc_output_file(TCCState *s, char *filename);
 
 /* link and run main() function and return its value. DO NOT call
    tcc_relocate() before. */
@@ -89,7 +89,7 @@ int tcc_run(TCCState *s, int argc, char **argv);
 int tcc_relocate(TCCState *s);
 
 /* return symbol value. return 0 if OK, -1 if symbol not found */
-int tcc_get_symbol(TCCState *s, unsigned long *pval, const char *name);
+int tcc_get_symbol(TCCState *s, unsigned long *pval, char *name);
 
 #ifdef __cplusplus
 }
