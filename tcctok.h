@@ -114,7 +114,7 @@
 
 /* pragma */
      DEF(TOK_pack, "pack")
-#if !defined(TCC_TARGET_I386)
+#if !defined(TINYCC_TARGET_I386)
      /* already defined for assembler */
      DEF(TOK_ASM_push, "push")
      DEF(TOK_ASM_pop, "pop")
@@ -135,7 +135,7 @@
      DEF(TOK___moddi3, "__moddi3")
      DEF(TOK___udivdi3, "__udivdi3")
      DEF(TOK___umoddi3, "__umoddi3")
-#if defined(TCC_TARGET_ARM)
+#if defined(TINYCC_TARGET_ARM)
      DEF(TOK___modsi3, "__modsi3")
      DEF(TOK___umodsi3, "__umodsi3")
 #ifdef TCC_ARM_EABI
@@ -163,7 +163,7 @@
      DEF(TOK___fixdfdi, "__fixdfdi")
      DEF(TOK___fixxfdi, "__fixxfdi")
 #endif
-#elif defined(TCC_TARGET_C67)
+#elif defined(TINYCC_TARGET_C67)
      DEF(TOK__divi, "_divi")
      DEF(TOK__divu, "_divu")
      DEF(TOK__divf, "_divf")
@@ -238,7 +238,7 @@
  DEF_ASM(org)
  DEF_ASM(quad)
 
-#ifdef TCC_TARGET_I386
+#ifdef TINYCC_TARGET_I386
 
 /* WARNING: relative order of tokens is important. */
  DEF_ASM(al)

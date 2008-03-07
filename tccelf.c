@@ -454,7 +454,7 @@ static void relocate_section(TCCState *s1, Section *s)
     int type, sym_index;
     unsigned char *ptr;
     unsigned long val, addr;
-#if defined(TCC_TARGET_I386)
+#if defined(TINYCC_TARGET_I386)
     int esym_index;
 #endif
 
@@ -474,7 +474,7 @@ static void relocate_section(TCCState *s1, Section *s)
 
         /* CPU specific */
         switch(type) {
-#if defined(TCC_TARGET_I386)
+#if defined(TINYCC_TARGET_I386)
         case R_386_32:
             if (tccg_output_type == TCC_OUTPUT_DLL) {
                 esym_index = s1->symtab_to_dynsym[sym_index];
@@ -520,7 +520,7 @@ static void relocate_section(TCCState *s1, Section *s)
             /* we load the got offset */
             *(int *)ptr += s1->got_offsets[sym_index];
             break;
-#elif defined(TCC_TARGET_ARM)
+#elif defined(TINYCC_TARGET_ARM)
 	case R_ARM_PC24:
 	case R_ARM_CALL:
 	case R_ARM_JUMP24:
@@ -570,7 +570,7 @@ static void relocate_section(TCCState *s1, Section *s)
 	    fprintf(stderr,"FIXME: handle reloc type %x at %lx [%.8x] to %lx\n",
                     type,addr,(unsigned int )ptr,val);
             break;
-#elif defined(TCC_TARGET_C67)
+#elif defined(TINYCC_TARGET_C67)
 	case R_C60_32:
 	    *(int *)ptr += val;
 	    break;
@@ -682,7 +682,7 @@ static void put32(unsigned char *p, uint32_t val)
     p[3] = val >> 24;
 }
 
-#if defined(TCC_TARGET_I386) || defined(TCC_TARGET_ARM)
+#if defined(TINYCC_TARGET_I386) || defined(TINYCC_TARGET_ARM)
 static uint32_t get32(unsigned char *p)
 {
     return p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24);
@@ -732,7 +732,7 @@ static void put_got_entry(TCCState *s1,
         sym = &((Elf32_Sym *)symtab_section->data)[sym_index];
         name = symtab_section->link->data + sym->st_name;
         offset = sym->st_value;
-#ifdef TCC_TARGET_I386
+#ifdef TINYCC_TARGET_I386
         if (reloc_type == R_386_JMP_SLOT) {
             Section *plt;
             uint8_t *p;
@@ -771,7 +771,7 @@ static void put_got_entry(TCCState *s1,
             if (tccg_output_type == TCC_OUTPUT_EXE)
                 offset = plt->data_offset - 16;
         }
-#elif defined(TCC_TARGET_ARM)
+#elif defined(TINYCC_TARGET_ARM)
 	if (reloc_type == R_ARM_JUMP_SLOT) {
             Section *plt;
             uint8_t *p;
@@ -802,7 +802,7 @@ static void put_got_entry(TCCState *s1,
             if (tccg_output_type == TCC_OUTPUT_EXE)
                 offset = plt->data_offset - 16;
         }
-#elif defined(TCC_TARGET_C67)
+#elif defined(TINYCC_TARGET_C67)
         error("C67 got not implemented");
 #else
 #error unsupported CPU
@@ -840,7 +840,7 @@ static void build_got_entries(TCCState *s1)
             rel++) {
             type = ELF32_R_TYPE(rel->r_info);
             switch(type) {
-#if defined(TCC_TARGET_I386)
+#if defined(TINYCC_TARGET_I386)
             case R_386_GOT32:
             case R_386_GOTOFF:
             case R_386_GOTPC:
@@ -859,7 +859,7 @@ static void build_got_entries(TCCState *s1)
                                   sym_index);
                 }
                 break;
-#elif defined(TCC_TARGET_ARM)
+#elif defined(TINYCC_TARGET_ARM)
 	    case R_ARM_GOT_BREL:
             case R_ARM_GOTOFF32:
             case R_ARM_BASE_PREL:
@@ -878,7 +878,7 @@ static void build_got_entries(TCCState *s1)
                                   sym_index);
                 }
                 break;
-#elif defined(TCC_TARGET_C67)
+#elif defined(TINYCC_TARGET_C67)
 	    case R_C60_GOT32:
             case R_C60_GOTOFF:
             case R_C60_GOTPC:
@@ -994,7 +994,7 @@ static void tcc_add_runtime(TCCState *s1)
         /* add bound check code */
         snprintf(buf, sizeof(buf), "%s/bcheck.o", tinycc_path);
         tcc_add_file(s1, buf);
-#ifdef TCC_TARGET_I386
+#ifdef TINYCC_TARGET_I386
         if (tccg_output_type != TCC_OUTPUT_MEMORY) {
             /* add 'call __bound_init()' in .init section */
             init_section = find_section(s1, ".init");
@@ -1523,7 +1523,7 @@ int tcc_output_file(TCCState *s1, char *filename)
                 p = s1->plt->data;
                 p_end = p + s1->plt->data_offset;
                 if (p < p_end) {
-#if defined(TCC_TARGET_I386)
+#if defined(TINYCC_TARGET_I386)
                     put32(p + 2, get32(p + 2) + s1->got->sh_addr);
                     put32(p + 8, get32(p + 8) + s1->got->sh_addr);
                     p += 16;
@@ -1531,7 +1531,7 @@ int tcc_output_file(TCCState *s1, char *filename)
                         put32(p + 2, get32(p + 2) + s1->got->sh_addr);
                         p += 16;
                     }
-#elif defined(TCC_TARGET_ARM)
+#elif defined(TINYCC_TARGET_ARM)
 		    int x;
 		    x=s1->got->sh_addr - s1->plt->sh_addr - 12;
 		    p +=16;
@@ -1539,7 +1539,7 @@ int tcc_output_file(TCCState *s1, char *filename)
 		        put32(p + 12, x + get32(p + 12) + s1->plt->data - p);
 			p += 16;
 		    }
-#elif defined(TCC_TARGET_C67)
+#elif defined(TINYCC_TARGET_C67)
                     /* XXX: TODO */
 #else
 #error unsupported CPU
@@ -1643,7 +1643,7 @@ int tcc_output_file(TCCState *s1, char *filename)
     }
     f = fdopen(fd, "wb");
 
-#ifdef TCC_TARGET_COFF
+#ifdef TINYCC_TARGET_COFF
     if (tccg_output_format == TCC_OUTPUT_FORMAT_COFF) {
         tcc_output_coff(s1, f);
     } else
@@ -1665,7 +1665,7 @@ int tcc_output_file(TCCState *s1, char *filename)
 #ifdef __FreeBSD__
         ehdr.e_ident[EI_OSABI] = ELFOSABI_FREEBSD;
 #endif
-#ifdef TCC_TARGET_ARM
+#ifdef TINYCC_TARGET_ARM
 #ifdef TCC_ARM_EABI
 	ehdr.e_ident[EI_OSABI] = 0;
 	ehdr.e_flags = 4 << 24;

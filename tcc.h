@@ -59,33 +59,33 @@
 //#define ASM_DEBUG
 
 /* target selection */
-//#define TCC_TARGET_I386   /* i386 code generator */
-//#define TCC_TARGET_ARM    /* ARMv4 code generator */
-//#define TCC_TARGET_C67    /* TMS320C67xx code generator */
+//#define TINYCC_TARGET_I386   /* i386 code generator */
+//#define TINYCC_TARGET_ARM    /* ARMv4 code generator */
+//#define TINYCC_TARGET_C67    /* TMS320C67xx code generator */
 
 /* default target is I386 */
-#if !defined(TCC_TARGET_I386) && !defined(TCC_TARGET_ARM) && \
-    !defined(TCC_TARGET_C67)
-#define TCC_TARGET_I386
-#endif
+//#if !defined(TINYCC_TARGET_I386) && !defined(TINYCC_TARGET_ARM) && \
+//    !defined(TINYCC_TARGET_C67)
+//#define TINYCC_TARGET_I386
+//#endif
 
-#if !defined(WIN32) && !defined(TCC_UCLIBC) && !defined(TCC_TARGET_ARM) && \
-    !defined(TCC_TARGET_C67)
+#if !defined(WIN32) && !defined(TCC_UCLIBC) && !defined(TINYCC_TARGET_ARM) && \
+    !defined(TINYCC_TARGET_C67)
 #define CONFIG_TCC_BCHECK /* enable bound checking code */
 #endif
 
-#if defined(WIN32) && !defined(TCC_TARGET_PE)
+#if defined(WIN32) && !defined(TINYCC_TARGET_PE)
 #define CONFIG_TCC_STATIC
 #endif
 
 /* define it to include assembler support */
-#if !defined(TCC_TARGET_ARM) && !defined(TCC_TARGET_C67)
+#if !defined(TINYCC_TARGET_ARM) && !defined(TINYCC_TARGET_C67)
 #define CONFIG_TCC_ASM
 #endif
 
 /* object format selection */
-#if defined(TCC_TARGET_C67)
-#define TCC_TARGET_COFF
+#if defined(TINYCC_TARGET_C67)
+#define TINYCC_TARGET_COFF
 #endif
 
 #define FALSE 0
@@ -116,7 +116,7 @@ typedef struct TokenSym {
     char str[1];
 } TokenSym;
 
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
 typedef unsigned short nwchar_t;
 #define LIB_PATH_SEPCHAR ';'
 #else

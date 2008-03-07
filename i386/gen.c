@@ -526,7 +526,7 @@ void gfunc_epilog(void)
     v = (-loc + 3) & -4; 
     saved_ind = ind;
     ind = func_sub_sp_offset - FUNC_PROLOG_SIZE;
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
     if (v >= 4096) {
         Sym *sym = external_global_sym(TOK___chkstk, &func_old_type, 0);
         oad(0xe8, -4); /* call __chkstk, (does the stackframe too) */

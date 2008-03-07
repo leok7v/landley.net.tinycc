@@ -27,15 +27,15 @@ static CType func_old_type;
 /* compile with built-in memory and bounds checker */
 static int do_bounds_check = 0;
 
-#ifdef TCC_TARGET_I386
+#ifdef TINYCC_TARGET_I386
 #include "i386/gen.c"
 #endif
 
-#ifdef TCC_TARGET_ARM
+#ifdef TINYCC_TARGET_ARM
 #include "arm/gen.c"
 #endif
 
-#ifdef TCC_TARGET_C67
+#ifdef TINYCC_TARGET_C67
 #include "c67-gen.c"
 #endif
 
@@ -3705,7 +3705,7 @@ void save_reg(int r)
                 sv.r = VT_LOCAL | VT_LVAL;
                 sv.c.ul = loc;
                 store(r, &sv);
-#ifdef TCC_TARGET_I386
+#ifdef TINYCC_TARGET_I386
                 /* x86 specific: need to pop fp register ST0 if saved */
                 if (r == TREG_ST0) {
                     o(0xd9dd); /* fstp %st(1) */
@@ -3888,7 +3888,7 @@ int gv(int rc)
             Sym *sym;
             int *ptr;
             unsigned long offset;
-#if defined(TCC_TARGET_ARM) && !defined(TCC_ARM_VFP)
+#if defined(TINYCC_TARGET_ARM) && !defined(TCC_ARM_VFP)
             CValue check;
 #endif
             
@@ -3908,7 +3908,7 @@ int gv(int rc)
 #endif
             ptr = section_ptr_add(data_section, size);
             size = size >> 2;
-#if defined(TCC_TARGET_ARM) && !defined(TCC_ARM_VFP)
+#if defined(TINYCC_TARGET_ARM) && !defined(TCC_ARM_VFP)
             check.d = 1;
             if(check.tab[0])
                 for(i=0;i<size;i++)
@@ -4004,7 +4004,7 @@ int gv(int rc)
             }
         }
         vtop->r = r;
-#ifdef TCC_TARGET_C67
+#ifdef TINYCC_TARGET_C67
         /* uses register pairs for doubles */
         if ((vtop->type.t & VT_BTYPE) == VT_DOUBLE) 
             vtop->r2 = r+1;
@@ -4060,7 +4060,7 @@ void lexpand(void)
     vtop[-1].type.t = VT_INT | u;
 }
 
-#ifdef TCC_TARGET_ARM
+#ifdef TINYCC_TARGET_ARM
 /* expand long long on stack */
 void lexpand_nr(void)
 {
@@ -4125,7 +4125,7 @@ void vrott(int n)
     vtop[-n + 1] = tmp;
 }
 
-#ifdef TCC_TARGET_ARM
+#ifdef TINYCC_TARGET_ARM
 /* like vrott but in other direction
    In ... I1 -> I(n-1) ... I1 In  [top is right]
  */
@@ -4146,7 +4146,7 @@ void vpop(void)
 {
     int v;
     v = vtop->r & VT_VALMASK;
-#ifdef TCC_TARGET_I386
+#ifdef TINYCC_TARGET_I386
     /* for x86, we need to pop the FP stack */
     if (v == TREG_ST0) {
         o(0xd8dd); /* fstp %st(1) */
@@ -4398,12 +4398,12 @@ void gen_opl(int op)
             if (a == 0) {
                 b = gtst(0, 0);
             } else {
-#if defined(TCC_TARGET_I386)
+#if defined(TINYCC_TARGET_I386)
                 b = psym(0x850f, 0);
-#elif defined(TCC_TARGET_ARM)
+#elif defined(TINYCC_TARGET_ARM)
                 b = ind;
                 o(0x1A000000 | encbranch(ind, 0, 1));
-#elif defined(TCC_TARGET_C67)
+#elif defined(TINYCC_TARGET_C67)
                 error("not implemented");
 #else
 #error not supported
@@ -4972,7 +4972,7 @@ static void gen_cast(CType *type)
                 }
             } else {
             do_itof:
-#if !defined(TCC_TARGET_ARM)
+#if !defined(TINYCC_TARGET_ARM)
                 gen_cvt_itof1(dbt);
 #else
                 gen_cvt_itof(dbt);
@@ -5101,9 +5101,9 @@ static int type_size(CType *type, int *a)
         *a = LDOUBLE_ALIGN;
         return LDOUBLE_SIZE;
     } else if (bt == VT_DOUBLE || bt == VT_LLONG) {
-#ifdef TCC_TARGET_I386
+#ifdef TINYCC_TARGET_I386
         *a = 4;
-#elif defined(TCC_TARGET_ARM)
+#elif defined(TINYCC_TARGET_ARM)
 #ifdef TCC_ARM_EABI
         *a = 8;
 #else
@@ -5593,7 +5593,7 @@ static void parse_attribute(AttributeDef *ad)
         case TOK_STDCALL3:
             ad->func_call = FUNC_STDCALL;
             break;
-#ifdef TCC_TARGET_I386
+#ifdef TINYCC_TARGET_I386
         case TOK_REGPARM1:
         case TOK_REGPARM2:
             skip('(');
@@ -6367,7 +6367,7 @@ static void unary(void)
         }
         break;
     case TOK_LSTR:
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
         t = VT_SHORT | VT_UNSIGNED;
 #else
         t = VT_INT;
@@ -7687,7 +7687,7 @@ static void decl_initializer(CType *type, Section *sec, unsigned long c,
         /* only parse strings here if correct type (otherwise: handle
            them as ((w)char *) expressions */
         if ((tok == TOK_LSTR && 
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
              (t1->t & VT_BTYPE) == VT_SHORT && (t1->t & VT_UNSIGNED)) ||
 #else
              (t1->t & VT_BTYPE) == VT_INT) ||
@@ -8352,7 +8352,7 @@ static void decl(int l)
                         cur_text_section = text_section;
                     sym->r = VT_SYM | VT_CONST;
                     gen_function(sym);
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
                     if (ad.dllexport) {
                         ((Elf32_Sym *)symtab_section->data)[sym->c].st_other |= 1;
                     }
@@ -8637,7 +8637,7 @@ void tcc_undefine_symbol(TCCState *s1, char *sym)
 
 #ifdef CONFIG_TCC_ASM
 
-#ifdef TCC_TARGET_I386
+#ifdef TINYCC_TARGET_I386
 #include "i386/asm.c"
 #endif
 #include "tccasm.c"
@@ -8655,11 +8655,11 @@ static void asm_global_instr(void)
 
 #include "tccelf.c"
 
-#ifdef TCC_TARGET_COFF
+#ifdef TINYCC_TARGET_COFF
 #include "tcccoff.c"
 #endif
 
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
 #include "win32/tccpe.c"
 #endif
 
@@ -8671,7 +8671,7 @@ int tcc_relocate(TCCState *s1)
 
     s1->nb_errors = 0;
     
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
     pe_add_runtime(s1);
 #else
     tcc_add_runtime(s1);
@@ -8820,10 +8820,10 @@ TCCState *tcc_new(void)
     /* standard defines */
     tcc_define_symbol(s, "__STDC__", NULL);
     tcc_define_symbol(s, "__STDC_VERSION__", "199901L");
-#if defined(TCC_TARGET_I386)
+#if defined(TINYCC_TARGET_I386)
     tcc_define_symbol(s, "__i386__", NULL);
 #endif
-#if defined(TCC_TARGET_ARM)
+#if defined(TINYCC_TARGET_ARM)
     tcc_define_symbol(s, "__ARM_ARCH_4__", NULL);
     tcc_define_symbol(s, "__arm_elf__", NULL);
     tcc_define_symbol(s, "__arm_elf", NULL);
@@ -8846,7 +8846,7 @@ TCCState *tcc_new(void)
     tcc_define_symbol(s, "__PTRDIFF_TYPE__", "int");
 
     /* wchar type and default library paths */
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
     tcc_define_symbol(s, "__WCHAR_TYPE__", "unsigned short");
 #else
     tcc_define_symbol(s, "__WCHAR_TYPE__", "int");
@@ -8875,7 +8875,7 @@ TCCState *tcc_new(void)
 #ifdef CHAR_IS_UNSIGNED
     tccg_char_is_unsigned = 1;
 #endif
-#if defined(TCC_TARGET_PE) && 0
+#if defined(TINYCC_TARGET_PE) && 0
     /* XXX: currently the PE linker is not ready to support that */
     tccg_leading_underscore = 1;
 #endif
@@ -8977,7 +8977,7 @@ int tcc_add_file_internal(TCCState *s1, char *filename, int flags)
         ret = tcc_assemble(s1, 0);
     } else 
 #endif
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
     if (!strcmp(ext, "def")) {
         ret = pe_load_def_file(s1, fdopen(file->fd, "rb"));
     } else
@@ -9003,7 +9003,7 @@ int tcc_add_file_internal(TCCState *s1, char *filename, int flags)
                 ret = tcc_load_object_file(s1, fd, 0);
             } else if (ehdr.e_type == ET_DYN) {
                 if (tccg_output_type == TCC_OUTPUT_MEMORY) {
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
                     ret = -1;
 #else
                     void *h;
@@ -9025,7 +9025,7 @@ int tcc_add_file_internal(TCCState *s1, char *filename, int flags)
             file->line_num = 0; /* do not display line number if error */
             ret = tcc_load_archive(s1, fd);
         } else 
-#ifdef TCC_TARGET_COFF
+#ifdef TINYCC_TARGET_COFF
         if (*(uint16_t *)(&ehdr) == COFF_C67_MAGIC) {
             ret = tcc_load_coff(s1, fd);
         } else
@@ -9079,7 +9079,7 @@ int tcc_add_library(TCCState *s, char *libraryname)
     
     /* first we look for the dynamic library if not static linking */
     if (!tccg_static_link) {
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
         snprintf(buf, sizeof(buf), "%s.def", libraryname);
 #else
         snprintf(buf, sizeof(buf), "lib%s.so", libraryname);
@@ -9156,7 +9156,7 @@ int init_output_type(TCCState *s)
     }
 
     /* add libc crt1/crti objects */
-#ifndef TCC_TARGET_PE
+#ifndef TINYCC_TARGET_PE
     if ((tccg_output_type == TCC_OUTPUT_EXE || tccg_output_type == TCC_OUTPUT_DLL)
         && !tccg_nostdlib)
     {

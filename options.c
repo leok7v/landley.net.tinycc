@@ -462,7 +462,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                         } else if (!strcmp(p, "binary")) {
                             tccg_output_format = TCC_OUTPUT_FORMAT_BINARY;
                         } else
-#ifdef TCC_TARGET_COFF
+#ifdef TINYCC_TARGET_COFF
                         if (!strcmp(p, "coff")) {
                             tccg_output_format = TCC_OUTPUT_FORMAT_COFF;
                         } else
@@ -562,7 +562,7 @@ int main(int argc, char **argv)
             pstrcpy(objfilename, sizeof(objfilename) - 1, 
                     /* strip path */
                     tcc_basename(files[0]));
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
             pe_guess_outfile(objfilename, tccg_output_type);
 #else
             if (tccg_output_type == TCC_OUTPUT_OBJ && !reloc_output) {
@@ -627,7 +627,7 @@ int main(int argc, char **argv)
     } else if (tccg_output_type == TCC_OUTPUT_MEMORY) {
         ret = tcc_run(s, argc - optind, argv + optind);
     } else
-#ifdef TCC_TARGET_PE
+#ifdef TINYCC_TARGET_PE
     if (tccg_output_type != TCC_OUTPUT_OBJ) {
         ret = tcc_output_pe(s, outfile);
     } else
