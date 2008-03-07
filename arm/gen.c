@@ -944,7 +944,7 @@ void gfunc_prolog(CType *func_type)
 #ifdef TCC_ARM_EABI
     addr = (addr + align - 1) & -align;
 #endif
-    sym_push(sym->v & ~SYM_FIELD, type, VT_LOCAL | VT_LVAL, addr);
+    sym_push(sym->token & ~SYM_FIELD, type, VT_LOCAL | VT_LVAL, addr);
     addr += size;
   }
   last_itod_magic=0;
