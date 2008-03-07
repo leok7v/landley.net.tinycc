@@ -7,17 +7,8 @@
  *  Licensed under GPLv2, see file LICENSE in this tarball
  */
 
-#include "tcc.h"
+#include "tinycc.h"
 
-
-void *xmalloc(unsigned long size);
-void dynarray_add(void ***ptab, int *nb_ptr, void *data);
-void add_dynarray_path(TCCState *s, char *pathname, struct dynarray *dd);
-int strstart(char *str, char *val, char **ptr);
-void warning(char *fmt, ...);
-int init_output_type(TCCState *s);
-
-extern char *tinycc_path;
 int do_bounds_check = 0;
 int do_debug = 0;
 int next_tok_flags;
@@ -36,16 +27,19 @@ int is_space(int ch);
 #define FD_INVERT 0x0002 /* invert value before storing */
 
 typedef struct FlagDef {
-    uint16_t offset;
+    //uint16_t offset;
+    int *var;
     uint16_t flags;
     char *name;
 } FlagDef;
 
+// was { offsetof(TCCState, warn_unsupported), 0, "unsupported" },
+
 static FlagDef warning_defs[] = {
-    { offsetof(TCCState, warn_unsupported), 0, "unsupported" },
-    { offsetof(TCCState, warn_write_strings), 0, "write-strings" },
-    { offsetof(TCCState, warn_error), 0, "error" },
-    { offsetof(TCCState, warn_implicit_function_declaration), WD_ALL,
+    { &tccg_warn_unsupported, 0, "unsupported" },
+    { &tccg_warn_write_strings, 0, "write-strings" },
+    { &tccg_warn_error, 0, "error" },
+    { &tccg_warn_implicit_function_declaration, WD_ALL,
       "implicit-function-declaration" },
 };
 
@@ -69,10 +63,10 @@ static int set_flag(TCCState *s, FlagDef *flags, int nb_flags,
  found:
     if (p->flags & FD_INVERT)
         value = !value;
-    *(int *)((uint8_t *)s + p->offset) = value;
+    //*(int *)((uint8_t *)s + p->offset) = value;
+    *p->var = value;
     return 0;
 }
-
 
 /* set/reset a warning */
 int tcc_set_warning(TCCState *s, char *warning_name, int value)
@@ -83,7 +77,8 @@ int tcc_set_warning(TCCState *s, char *warning_name, int value)
     if (!strcmp(warning_name, "all")) {
         for(i = 0, p = warning_defs; i < countof(warning_defs); i++, p++) {
             if (p->flags & WD_ALL)
-                *(int *)((uint8_t *)s + p->offset) = 1;
+                // *(int *)((uint8_t *)s + p->offset) = 1;
+                *p->var = 1;
         }
         return 0;
     } else {
@@ -93,10 +88,10 @@ int tcc_set_warning(TCCState *s, char *warning_name, int value)
 }
 
 static FlagDef flag_defs[] = {
-    { offsetof(TCCState, char_is_unsigned), 0, "unsigned-char" },
-    { offsetof(TCCState, char_is_unsigned), FD_INVERT, "signed-char" },
-    { offsetof(TCCState, nocommon), FD_INVERT, "common" },
-    { offsetof(TCCState, leading_underscore), 0, "leading-underscore" },
+    { &tccg_char_is_unsigned, 0, "unsigned-char" },
+    { &tccg_char_is_unsigned, FD_INVERT, "signed-char" },
+    { &tccg_nocommon, FD_INVERT, "common" },
+    { &tccg_leading_underscore, 0, "leading-underscore" },
 };
 
 /* set/reset a flag */
@@ -302,7 +297,7 @@ int parse_args(TCCState *s, int argc, char **argv)
     while (1) {
         if (optind >= argc) {
             if (nb_files == 0 && !print_search_dirs) {
-                if (!s->verbose) help(s);
+                if (!tccg_verbose) help(s);
                 exit(1);
             } else break;
         }
@@ -355,7 +350,7 @@ int parse_args(TCCState *s, int argc, char **argv)
                 help(s);
                 exit(1);
             case TCC_OPTION_I:
-                add_dynarray_path(s, optarg, &(s->include_paths));
+                add_dynarray_path(s, optarg, &tccg_include_paths);
                 break;
             case TCC_OPTION_D:
                 {
@@ -370,13 +365,13 @@ int parse_args(TCCState *s, int argc, char **argv)
                 }
                 break;
             case TCC_OPTION_E:
-                s->output_type = TCC_OUTPUT_PREPROCESS;
+                tccg_output_type = TCC_OUTPUT_PREPROCESS;
                 break;
             case TCC_OPTION_U:
                 tcc_undefine_symbol(s, optarg);
                 break;
             case TCC_OPTION_L:
-                add_dynarray_path(s, optarg, &(s->library_paths));
+                add_dynarray_path(s, optarg, &tccg_library_paths);
                 break;
             case TCC_OPTION_B:
                 /* set tcc utilities path (mainly for tcc development) */
@@ -400,13 +395,13 @@ int parse_args(TCCState *s, int argc, char **argv)
                 break;
             case TCC_OPTION_c:
                 multiple_files = 1;
-                s->output_type = TCC_OUTPUT_OBJ;
+                tccg_output_type = TCC_OUTPUT_OBJ;
                 break;
             case TCC_OPTION_static:
-                s->static_link = 1;
+                tccg_static_link = 1;
                 break;
             case TCC_OPTION_shared:
-                s->output_type = TCC_OUTPUT_DLL;
+                tccg_output_type = TCC_OUTPUT_DLL;
                 break;
             case TCC_OPTION_o:
                 multiple_files = 1;
@@ -415,13 +410,13 @@ int parse_args(TCCState *s, int argc, char **argv)
             case TCC_OPTION_r:
                 /* generate a .o merging several output files */
                 reloc_output = 1;
-                s->output_type = TCC_OUTPUT_OBJ;
+                tccg_output_type = TCC_OUTPUT_OBJ;
                 break;
             case TCC_OPTION_nostdinc:
-                s->nostdinc = 1;
+                tccg_nostdinc = 1;
                 break;
             case TCC_OPTION_nostdlib:
-                s->nostdlib = 1;
+                tccg_nostdlib = 1;
                 break;
             case TCC_OPTION_print_search_dirs:
                 print_search_dirs = 1;
@@ -435,42 +430,41 @@ int parse_args(TCCState *s, int argc, char **argv)
                         parse_args(s, argc1, argv1);
                     }
                     multiple_files = 0;
-                    s->output_type = TCC_OUTPUT_MEMORY;
+                    tccg_output_type = TCC_OUTPUT_MEMORY;
                 }
                 break;
             case TCC_OPTION_v:
-                if (!s->verbose++) show_version();
+                if (!tccg_verbose++) show_version();
                 break;
             case TCC_OPTION_f:
-                if (tcc_set_flag(s, optarg, 1) < 0 && s->warn_unsupported)
+                if (tcc_set_flag(s, optarg, 1) < 0 && tccg_warn_unsupported)
                     goto unsupported_option;
                 break;
             case TCC_OPTION_W:
-                if (tcc_set_warning(s, optarg, 1) < 0 && 
-                    s->warn_unsupported)
+                if (tcc_set_warning(s, optarg, 1) < 0 && tccg_warn_unsupported)
                     goto unsupported_option;
                 break;
             case TCC_OPTION_w:
-                s->warn_none = 1;
+                tccg_warn_none = 1;
                 break;
             case TCC_OPTION_rdynamic:
-                s->rdynamic = 1;
+                tccg_rdynamic = 1;
                 break;
             case TCC_OPTION_Wl:
                 {
                     char *p;
                     if (strstart(optarg, "-Ttext,", &p)) {
-                        s->text_addr = strtoul(p, NULL, 16);
-                        s->has_text_addr = 1;
+                        tccg_text_addr = strtoul(p, NULL, 16);
+                        tccg_has_text_addr = 1;
                     } else if (strstart(optarg, "--oformat,", &p)) {
                         if (strstart(p, "elf32-", NULL)) {
-                            s->output_format = TCC_OUTPUT_FORMAT_ELF;
+                            tccg_output_format = TCC_OUTPUT_FORMAT_ELF;
                         } else if (!strcmp(p, "binary")) {
-                            s->output_format = TCC_OUTPUT_FORMAT_BINARY;
+                            tccg_output_format = TCC_OUTPUT_FORMAT_BINARY;
                         } else
 #ifdef TCC_TARGET_COFF
                         if (!strcmp(p, "coff")) {
-                            s->output_format = TCC_OUTPUT_FORMAT_COFF;
+                            tccg_output_format = TCC_OUTPUT_FORMAT_COFF;
                         } else
 #endif
                         {
@@ -482,8 +476,8 @@ int parse_args(TCCState *s, int argc, char **argv)
                 }
                 break;
             default:
-                if (s->warn_unsupported) {
-                unsupported_option:
+                if (tccg_warn_unsupported) {
+unsupported_option:
                     warning("unsupported option '%s'", r);
                 }
                 break;
@@ -502,7 +496,7 @@ int main(int argc, char **argv)
     int64_t start_time = 0;
 
     s = tcc_new();
-    s->output_type = TCC_OUTPUT_EXE;
+    tccg_output_type = TCC_OUTPUT_EXE;
     outfile = NULL;
     multiple_files = 1;
     files = NULL;
@@ -544,11 +538,11 @@ int main(int argc, char **argv)
     nb_objfiles = nb_files - nb_libraries;
 
     // if outfile provided without other options, we output an executable
-    if (outfile && s->output_type == TCC_OUTPUT_MEMORY)
-        s->output_type = TCC_OUTPUT_EXE;
+    if (outfile && tccg_output_type == TCC_OUTPUT_MEMORY)
+        tccg_output_type = TCC_OUTPUT_EXE;
 
     // check -c consistency : only single file handled. XXX: checks file type
-    if (s->output_type == TCC_OUTPUT_OBJ && !reloc_output) {
+    if (tccg_output_type == TCC_OUTPUT_OBJ && !reloc_output) {
         /* accepts only a single input file */
         if (nb_objfiles != 1)
             error("cannot specify multiple files with -c");
@@ -556,22 +550,22 @@ int main(int argc, char **argv)
             error("cannot specify libraries with -c");
     }
 
-    if (s->output_type == TCC_OUTPUT_PREPROCESS) {
-        if (!outfile) s->outfile = stdout;
+    if (tccg_output_type == TCC_OUTPUT_PREPROCESS) {
+        if (!outfile) tccg_outfile = stdout;
         else {
-            s->outfile = fopen(outfile, "wb");
-            if (!s->outfile) error("could not open '%s'", outfile);
+            tccg_outfile = fopen(outfile, "wb");
+            if (!tccg_outfile) error("could not open '%s'", outfile);
         }
-    } else if (s->output_type != TCC_OUTPUT_MEMORY) {
+    } else if (tccg_output_type != TCC_OUTPUT_MEMORY) {
         if (!outfile) {
     /* compute default outfile name */
             pstrcpy(objfilename, sizeof(objfilename) - 1, 
                     /* strip path */
                     tcc_basename(files[0]));
 #ifdef TCC_TARGET_PE
-            pe_guess_outfile(objfilename, s->output_type);
+            pe_guess_outfile(objfilename, tccg_output_type);
 #else
-            if (s->output_type == TCC_OUTPUT_OBJ && !reloc_output) {
+            if (tccg_output_type == TCC_OUTPUT_OBJ && !reloc_output) {
                 char *ext = strrchr(objfilename, '.');
             if (!ext)
                 goto default_outfile;
@@ -592,14 +586,14 @@ int main(int argc, char **argv)
 
     init_output_type(s);
 
-    /* compile or add each files or library */
-    for(i = 0;i < nb_files; i++) {
+    /* compile or add each file or library */
+    for(i = 0; i < nb_files; i++) {
         char *filename;
 
         next_tok_flags = TOK_FLAG_BOL | TOK_FLAG_BOF | TOK_FLAG_BOW;
 
         filename = files[i];
-        if (s->output_type == TCC_OUTPUT_PREPROCESS) {
+        if (tccg_output_type == TCC_OUTPUT_PREPROCESS) {
             tcc_add_file_internal(s, filename,
                                   AFF_PRINT_ERROR | AFF_PREPROCESS);
         } else if (filename[0] == '-') {
@@ -627,14 +621,14 @@ int main(int argc, char **argv)
                total_bytes / total_time / 1000000.0); 
     }
 
-    if (s->output_type == TCC_OUTPUT_PREPROCESS) {
-        if (outfile) fclose(s->outfile);
+    if (tccg_output_type == TCC_OUTPUT_PREPROCESS) {
+        if (outfile) fclose(tccg_outfile);
         ret = 0;
-    } else if (s->output_type == TCC_OUTPUT_MEMORY) {
+    } else if (tccg_output_type == TCC_OUTPUT_MEMORY) {
         ret = tcc_run(s, argc - optind, argv + optind);
     } else
 #ifdef TCC_TARGET_PE
-    if (s->output_type != TCC_OUTPUT_OBJ) {
+    if (tccg_output_type != TCC_OUTPUT_OBJ) {
         ret = tcc_output_pe(s, outfile);
     } else
 #endif

@@ -7,6 +7,7 @@
  *  Licensed under GPLv2, see file LICENSE in this tarball
  */
 
+#include "tinycc.h"
 #include "tcc.h"
 
 // This stuff is used by the code generation backend.
@@ -396,7 +397,7 @@ static void put_extern_sym2(Sym *sym, Section *section,
             }
         }
 #endif
-        if (tcc_state->leading_underscore && can_add_underscore) {
+        if (tccg_leading_underscore && can_add_underscore) {
             buf1[0] = '_';
             pstrcpy(buf1 + 1, sizeof(buf1) - 1, name);
             name = buf1;
@@ -485,7 +486,7 @@ void error1(TCCState *s1, int is_warning, char *fmt, va_list ap)
     } else {
         s1->error_func(s1->error_opaque, buf);
     }
-    if (!is_warning || s1->warn_error)
+    if (!is_warning || tccg_warn_error)
         s1->nb_errors++;
 }
 
@@ -536,7 +537,7 @@ void warning(char *fmt, ...)
     TCCState *s1 = tcc_state;
     va_list ap;
 
-    if (s1->warn_none)
+    if (tccg_warn_none)
         return;
 
     va_start(ap, fmt);
@@ -1003,10 +1004,10 @@ static inline void inp(void)
 }
 
 /* space excluding newline */
-//static inline int is_space(int ch)
-//{
-//    return ch == ' ' || ch == '\t' || ch == '\v' || ch == '\f' || ch == '\r';
-//}
+int is_space(int ch)
+{
+    return strchr(" \t\v\f\r", ch);
+}
 
 /* handle '\[\r]\n' */
 static int handle_stray_noerror(void)
@@ -2006,16 +2007,16 @@ static void preprocess(int is_bof)
             if (s1->include_stack_ptr >= s1->include_stack + INCLUDE_STACK_SIZE)
                 error("#include recursion too deep");
             /* now search in all the include paths */
-            n = s1->include_paths.len + s1->sysinclude_paths.len;
+            n = tccg_include_paths.len + s1->sysinclude_paths.len;
             for(i = 0; i < n; i++) {
                 char *path;
-                int verbose = s1->verbose;
+                int verbose = tccg_verbose;
 
                 verbose -= (s1->include_stack_ptr != s1->include_stack);
-                if (i < s1->include_paths.len)
-                    path = s1->include_paths.data[i];
+                if (i < tccg_include_paths.len)
+                    path = tccg_include_paths.data[i];
                 else
-                    path = s1->sysinclude_paths.data[i - s1->include_paths.len];
+                    path = s1->sysinclude_paths.data[i - tccg_include_paths.len];
                 pstrcpy(buf1, sizeof(buf1), path);
                 pstrcat(buf1, sizeof(buf1), "/");
                 pstrcat(buf1, sizeof(buf1), buf);
@@ -5615,7 +5616,7 @@ static void parse_attribute(AttributeDef *ad)
             ad->dllexport = 1;
             break;
         default:
-            if (tcc_state->warn_unsupported)
+            if (tccg_warn_unsupported)
                 warning("'%s' attribute ignored", get_tok_str(t, NULL));
             /* skip parameters */
             if (tok == '(') {
@@ -5994,7 +5995,7 @@ static int parse_btype(CType *type, AttributeDef *ad)
 the_end:
     if ((t & (VT_SIGNED|VT_UNSIGNED)) == (VT_SIGNED|VT_UNSIGNED))
       error("signed and unsigned modifier");
-    if (tcc_state->char_is_unsigned) {
+    if (tccg_char_is_unsigned) {
         if ((t & (VT_SIGNED|VT_UNSIGNED|VT_BTYPE)) == VT_BYTE)
             t |= VT_UNSIGNED;
     }
@@ -6376,7 +6377,7 @@ static void unary(void)
         /* string parsing */
         t = VT_BYTE;
     str_init:
-        if (tcc_state->warn_write_strings)
+        if (tccg_warn_write_strings)
             t |= VT_CONSTANT;
         type.t = t;
         mk_pointer(&type);
@@ -6563,7 +6564,7 @@ static void unary(void)
                 error("'%s' undeclared", get_tok_str(t, NULL));
             /* for simple function calls, we tolerate undeclared
                external reference to int() function */
-            if (tcc_state->warn_implicit_function_declaration)
+            if (tccg_warn_implicit_function_declaration)
                 warning("implicit declaration of function '%s'",
                         get_tok_str(t, NULL));
             s = external_global_sym(t, &func_old_type, 0); 
@@ -8004,7 +8005,7 @@ static void decl_initializer_alloc(CType *type, AttributeDef *ad, int r,
         if (!sec) {
             if (has_init)
                 sec = data_section;
-            else if (tcc_state->nocommon)
+            else if (tccg_nocommon)
                 sec = bss_section;
         }
         if (sec) {
@@ -8543,9 +8544,9 @@ static int tcc_preprocess(TCCState *s1)
         if (tok == TOK_EOF)
             break;
         if (!last_is_space) {
-            fputc(' ', s1->outfile);
+            fputc(' ', tccg_outfile);
         }
-        fputs(get_tok_str(tok, &tokc), s1->outfile);
+        fputs(get_tok_str(tok, &tokc), tccg_outfile);
         if (tok == TOK_LINEFEED) {
             last_is_space = 1;
             /* XXX: suppress that hack */
@@ -8785,7 +8786,7 @@ TCCState *tcc_new(void)
     int i, c;
 
     s = tcc_state = xzmalloc(sizeof(TCCState));
-    tcc_state->output_type = TCC_OUTPUT_MEMORY;
+    tccg_output_type = TCC_OUTPUT_MEMORY;
 
     /* init isidnum table */
     for(i=0;i<256;i++)
@@ -8872,11 +8873,11 @@ TCCState *tcc_new(void)
     s->alacarte_link = 1;
 
 #ifdef CHAR_IS_UNSIGNED
-    s->char_is_unsigned = 1;
+    tccg_char_is_unsigned = 1;
 #endif
 #if defined(TCC_TARGET_PE) && 0
     /* XXX: currently the PE linker is not ready to support that */
-    s->leading_underscore = 1;
+    tccg_leading_underscore = 1;
 #endif
     return s;
 }
@@ -8912,18 +8913,18 @@ void tcc_delete(TCCState *s1)
     free(s1->loaded_dlls);
 
     /* library paths */
-    for(i = 0; i < s1->library_paths.len; i++)
-        free(s1->library_paths.data[i]);
-    free(s1->library_paths.data);
+    for(i = 0; i < tccg_library_paths.len; i++)
+        free(tccg_library_paths.data[i]);
+    free(tccg_library_paths.data);
 
     /* cached includes */
     for(i = 0; i < s1->nb_cached_includes; i++)
         free(s1->cached_includes[i]);
     free(s1->cached_includes);
 
-    for(i = 0; i < s1->include_paths.len; i++)
-        free(s1->include_paths.data[i]);
-    free(s1->include_paths.data);
+    for(i = 0; i < tccg_include_paths.len; i++)
+        free(tccg_include_paths.data[i]);
+    free(tccg_include_paths.data);
 
     for(i = 0; i < s1->sysinclude_paths.len; i++)
         free(s1->sysinclude_paths.data[i]);
@@ -8952,7 +8953,7 @@ int tcc_add_file_internal(TCCState *s1, char *filename, int flags)
     /* open the file */
     saved_file = file;
     file = tcc_open(s1, filename);
-    if (s1->verbose > !file)
+    if (tccg_verbose > !file)
         printf("%s file '%s'\n", file ? "Read" : "Tried", filename);
     if (!file) {
         if (flags & AFF_PRINT_ERROR) {
@@ -9001,7 +9002,7 @@ int tcc_add_file_internal(TCCState *s1, char *filename, int flags)
             if (ehdr.e_type == ET_REL) {
                 ret = tcc_load_object_file(s1, fd, 0);
             } else if (ehdr.e_type == ET_DYN) {
-                if (s1->output_type == TCC_OUTPUT_MEMORY) {
+                if (tccg_output_type == TCC_OUTPUT_MEMORY) {
 #ifdef TCC_TARGET_PE
                     ret = -1;
 #else
@@ -9061,9 +9062,9 @@ static int tcc_add_dll(TCCState *s, char *filename, int flags)
     char buf[1024];
     int i;
 
-    for(i = 0; i < s->library_paths.len; i++) {
+    for(i = 0; i < tccg_library_paths.len; i++) {
         snprintf(buf, sizeof(buf), "%s/%s", 
-                 s->library_paths.data[i], filename);
+                 tccg_library_paths.data[i], filename);
         if (tcc_add_file_internal(s, buf, flags) == 0)
             return 0;
     }
@@ -9077,7 +9078,7 @@ int tcc_add_library(TCCState *s, char *libraryname)
     int i;
     
     /* first we look for the dynamic library if not static linking */
-    if (!s->static_link) {
+    if (!tccg_static_link) {
 #ifdef TCC_TARGET_PE
         snprintf(buf, sizeof(buf), "%s.def", libraryname);
 #else
@@ -9088,9 +9089,9 @@ int tcc_add_library(TCCState *s, char *libraryname)
     }
 
     /* then we look for the static library */
-    for(i = 0; i < s->library_paths.len; i++) {
+    for(i = 0; i < tccg_library_paths.len; i++) {
         snprintf(buf, sizeof(buf), "%s/lib%s.a", 
-                 s->library_paths.data[i], libraryname);
+                 tccg_library_paths.data[i], libraryname);
         if (tcc_add_file_internal(s, buf, 0) == 0)
             return 0;
     }
@@ -9107,7 +9108,7 @@ int tcc_add_symbol(TCCState *s, char *name, unsigned long val)
 
 int init_output_type(TCCState *s)
 {
-    if (!s->nostdinc) {
+    if (!tccg_nostdinc) {
         char buf[1024];
 
         /* default include paths */
@@ -9118,11 +9119,11 @@ int init_output_type(TCCState *s)
         add_dynarray_path(s, buf, &(s->sysinclude_paths));
     }
 
-    if (!s->nostdlib) {
+    if (!tccg_nostdlib) {
         char buf[1024];
         snprintf(buf, sizeof(buf), "%s/lib", tinycc_path);
-        add_dynarray_path(s, buf, &(s->library_paths));
-        add_dynarray_path(s, CC_LIBPATH, &(s->library_paths));
+        add_dynarray_path(s, buf, &(tccg_library_paths));
+        add_dynarray_path(s, CC_LIBPATH, &(tccg_library_paths));
     }
 
     /* if bound checking, then add corresponding sections */
@@ -9138,7 +9139,7 @@ int init_output_type(TCCState *s)
     }
 #endif
 
-    if (s->char_is_unsigned) {
+    if (tccg_char_is_unsigned) {
         tcc_define_symbol(s, "__CHAR_UNSIGNED__", NULL);
     }
 
@@ -9156,10 +9157,10 @@ int init_output_type(TCCState *s)
 
     /* add libc crt1/crti objects */
 #ifndef TCC_TARGET_PE
-    if ((s->output_type == TCC_OUTPUT_EXE || s->output_type == TCC_OUTPUT_DLL)
-        && !s->nostdlib)
+    if ((tccg_output_type == TCC_OUTPUT_EXE || tccg_output_type == TCC_OUTPUT_DLL)
+        && !tccg_nostdlib)
     {
-        if (s->output_type != TCC_OUTPUT_DLL)
+        if (tccg_output_type != TCC_OUTPUT_DLL)
             tcc_add_file(s, CC_CRTDIR "/crt1.o");
         tcc_add_file(s, CC_CRTDIR "/crti.o");
     }

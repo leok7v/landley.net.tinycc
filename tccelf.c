@@ -476,7 +476,7 @@ static void relocate_section(TCCState *s1, Section *s)
         switch(type) {
 #if defined(TCC_TARGET_I386)
         case R_386_32:
-            if (s1->output_type == TCC_OUTPUT_DLL) {
+            if (tccg_output_type == TCC_OUTPUT_DLL) {
                 esym_index = s1->symtab_to_dynsym[sym_index];
                 qrel->r_offset = rel->r_offset;
                 if (esym_index) {
@@ -491,7 +491,7 @@ static void relocate_section(TCCState *s1, Section *s)
             *(int *)ptr += val;
             break;
         case R_386_PC32:
-            if (s1->output_type == TCC_OUTPUT_DLL) {
+            if (tccg_output_type == TCC_OUTPUT_DLL) {
                 /* DLL relocation */
                 esym_index = s1->symtab_to_dynsym[sym_index];
                 if (esym_index) {
@@ -739,7 +739,7 @@ static void put_got_entry(TCCState *s1,
             int modrm;
 
             /* if we build a DLL, we add a %ebx offset */
-            if (s1->output_type == TCC_OUTPUT_DLL)
+            if (tccg_output_type == TCC_OUTPUT_DLL)
                 modrm = 0xa3;
             else
                 modrm = 0x25;
@@ -768,7 +768,7 @@ static void put_got_entry(TCCState *s1,
 
             /* the symbol is modified so that it will be relocated to
                the PLT */
-            if (s1->output_type == TCC_OUTPUT_EXE)
+            if (tccg_output_type == TCC_OUTPUT_EXE)
                 offset = plt->data_offset - 16;
         }
 #elif defined(TCC_TARGET_ARM)
@@ -777,7 +777,7 @@ static void put_got_entry(TCCState *s1,
             uint8_t *p;
             
             /* if we build a DLL, we add a %ebx offset */
-            if (s1->output_type == TCC_OUTPUT_DLL)
+            if (tccg_output_type == TCC_OUTPUT_DLL)
                 error("DLLs unimplemented!");
 
             /* add a PLT entry */
@@ -799,7 +799,7 @@ static void put_got_entry(TCCState *s1,
 
             /* the symbol is modified so that it will be relocated to
                the PLT */
-            if (s1->output_type == TCC_OUTPUT_EXE)
+            if (tccg_output_type == TCC_OUTPUT_EXE)
                 offset = plt->data_offset - 16;
         }
 #elif defined(TCC_TARGET_C67)
@@ -995,7 +995,7 @@ static void tcc_add_runtime(TCCState *s1)
         snprintf(buf, sizeof(buf), "%s/bcheck.o", tinycc_path);
         tcc_add_file(s1, buf);
 #ifdef TCC_TARGET_I386
-        if (s1->output_type != TCC_OUTPUT_MEMORY) {
+        if (tccg_output_type != TCC_OUTPUT_MEMORY) {
             /* add 'call __bound_init()' in .init section */
             init_section = find_section(s1, ".init");
             pinit = section_ptr_add(init_section, 5);
@@ -1009,11 +1009,11 @@ static void tcc_add_runtime(TCCState *s1)
     }
 #endif
     // add libc
-    if (!s1->nostdlib) {
+    if (!tccg_nostdlib) {
         tcc_add_library(s1, "c");
         tcc_add_library(s1, "tinyccrt-" TINYCC_TARGET);
       // add crt end if not memory output
-      if (s1->output_type != TCC_OUTPUT_MEMORY)
+      if (tccg_output_type != TCC_OUTPUT_MEMORY)
           tcc_add_file(s1, CC_CRTDIR "/crtn.o");
     }
 }
@@ -1130,7 +1130,7 @@ int tcc_output_file(TCCState *s1, char *filename)
     int type, file_type;
     unsigned long rel_addr, rel_size;
     
-    file_type = s1->output_type;
+    file_type = tccg_output_type;
     s1->nb_errors = 0;
 
     if (file_type != TCC_OUTPUT_OBJ) {
@@ -1149,7 +1149,7 @@ int tcc_output_file(TCCState *s1, char *filename)
 
         tcc_add_linker_symbols(s1);
 
-        if (!s1->static_link) {
+        if (!tccg_static_link) {
             char *name;
             int sym_index, index;
             Elf32_Sym *esym, *sym_end;
@@ -1225,7 +1225,7 @@ int tcc_output_file(TCCState *s1, char *filename)
                                 error_noabort("undefined symbol '%s'", name);
                             }
                         }
-                    } else if (s1->rdynamic && 
+                    } else if (tccg_rdynamic && 
                                ELF32_ST_BIND(sym->st_info) != STB_LOCAL) {
                         /* if -rdynamic option, then export all non
                            local symbols */
@@ -1328,7 +1328,7 @@ int tcc_output_file(TCCState *s1, char *filename)
         phnum = 0;
         break;
     case TCC_OUTPUT_EXE:
-        if (!s1->static_link)
+        if (!tccg_static_link)
             phnum = 4;
         else
             phnum = 2;
@@ -1363,16 +1363,16 @@ int tcc_output_file(TCCState *s1, char *filename)
     /* allocate program segment headers */
     phdr = xzmalloc(phnum * sizeof(Elf32_Phdr));
         
-    if (s1->output_format == TCC_OUTPUT_FORMAT_ELF) {
+    if (tccg_output_format == TCC_OUTPUT_FORMAT_ELF) {
         file_offset = sizeof(Elf32_Ehdr) + phnum * sizeof(Elf32_Phdr);
     } else {
         file_offset = 0;
     }
     if (phnum > 0) {
         /* compute section to program header mapping */
-        if (s1->has_text_addr) { 
+        if (tccg_has_text_addr) { 
             int a_offset, p_offset;
-            addr = s1->text_addr;
+            addr = tccg_text_addr;
             /* we ensure that (addr % ELF_PAGE_SIZE) == file_offset %
                ELF_PAGE_SIZE */
             a_offset = addr & (ELF_PAGE_SIZE - 1);
@@ -1471,7 +1471,7 @@ int tcc_output_file(TCCState *s1, char *filename)
             ph->p_memsz = addr - ph->p_vaddr;
             ph++;
             if (j == 0) {
-                if (s1->output_format == TCC_OUTPUT_FORMAT_ELF) {
+                if (tccg_output_format == TCC_OUTPUT_FORMAT_ELF) {
                     /* if in the middle of a page, we duplicate the page in
                        memory so that one copy is RX and the other is RW */
                     if ((addr & (ELF_PAGE_SIZE - 1)) != 0)
@@ -1644,11 +1644,11 @@ int tcc_output_file(TCCState *s1, char *filename)
     f = fdopen(fd, "wb");
 
 #ifdef TCC_TARGET_COFF
-    if (s1->output_format == TCC_OUTPUT_FORMAT_COFF) {
+    if (tccg_output_format == TCC_OUTPUT_FORMAT_COFF) {
         tcc_output_coff(s1, f);
     } else
 #endif
-    if (s1->output_format == TCC_OUTPUT_FORMAT_ELF) {
+    if (tccg_output_format == TCC_OUTPUT_FORMAT_ELF) {
         sort_syms(s1, symtab_section);
         
         /* align to 4 */

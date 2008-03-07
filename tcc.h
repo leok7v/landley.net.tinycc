@@ -6,7 +6,7 @@
  *
  *  Licensed under GPLv2, see file LICENSE in this tarball.
  */
-#define _GNU_SOURCE
+// #define _GNU_SOURCE
 
 #ifdef CONFIG_TCCBOOT
 
@@ -293,9 +293,9 @@ typedef struct CachedInclude {
 #define CACHED_INCLUDES_HASH_SIZE 512
 
 /* additional information about token */
-#define TOK_FLAG_BOW   0x0001 /* beginning of word before */
-#define TOK_FLAG_BOL   0x0002 /* beginning of line before */
-#define TOK_FLAG_BOF   0x0004 /* beginning of file before */
+//#define TOK_FLAG_BOW   0x0001 /* beginning of word before */
+//#define TOK_FLAG_BOL   0x0002 /* beginning of line before */
+//#define TOK_FLAG_BOF   0x0004 /* beginning of file before */
 #define TOK_FLAG_ENDIF 0x0008 /* a endif was found matching starting #ifdef */
 
 #define PARSE_FLAG_PREPROCESS 0x0001 /* activate preprocessing */
@@ -307,26 +307,26 @@ typedef struct CachedInclude {
  
 #define SYM_POOL_NB (8192 / sizeof(Sym))
 
-struct dynarray {
-    char **data;
-    int len;
-};
+//struct dynarray {
+//    char **data;
+//    int len;
+//};
 
 struct TCCState {
-    int output_type;
+    //int output_type;
  
     BufferedFile **include_stack_ptr;
     int *ifdef_stack_ptr;
 
     /* include file handling */
-    struct dynarray include_paths;
+    // struct dynarray include_paths;
     struct dynarray sysinclude_paths;
 
     //struct dynarray cached_includes;
     CachedInclude **cached_includes;
     int nb_cached_includes;
 
-    struct dynarray library_paths;
+    // struct dynarray library_paths;
 
     /* array of all loaded dlls (including those referenced by loaded
        dlls) */
@@ -353,40 +353,40 @@ struct TCCState {
     /* exported dynamic symbol section */
     Section *dynsym;
 
-    int nostdinc; /* if true, no standard headers are added */
-    int nostdlib; /* if true, no standard libraries are added */
+    // int nostdinc; /* if true, no standard headers are added */
+    // int nostdlib; /* if true, no standard libraries are added */
 
-    int nocommon; /* if true, do not use common symbols for .bss data */
+    //int nocommon; /* if true, do not use common symbols for .bss data */
 
     /* if true, static linking is performed */
-    int static_link;
+    // int static_link;
 
     /* if true, all symbols are exported */
-    int rdynamic;
+    // int rdynamic;
 
     /* if true, describe each room as you enter it, unless it contains a grue */
-    int verbose;
+    // int verbose;
 
     /* if true, only link in referenced objects from archive */
     int alacarte_link;
 
     /* address of text section */
-    unsigned long text_addr;
-    int has_text_addr;
+    // unsigned long text_addr;
+    // int has_text_addr;
     
     /* output format, see TCC_OUTPUT_FORMAT_xxx */
-    int output_format;
+    // int output_format;
 
     /* C language options */
-    int char_is_unsigned;
-    int leading_underscore;
+    //int char_is_unsigned;
+    //int leading_underscore;
     
     /* warning switches */
-    int warn_write_strings;
-    int warn_unsupported;
-    int warn_error;
-    int warn_none;
-    int warn_implicit_function_declaration;
+    //int warn_write_strings;
+    //int warn_unsupported;
+    //int warn_error;
+    //int warn_none;
+    //int warn_implicit_function_declaration;
 
     /* error handling */
     void *error_opaque;
@@ -412,7 +412,7 @@ struct TCCState {
     int *pack_stack_ptr;
 
     /* output file for preprocessing */
-    FILE *outfile;
+    // FILE *outfile;
 };
 
 /* The current value can be: */
@@ -536,13 +536,13 @@ struct TCCState {
 #define TOK_A_SHL 0x81
 #define TOK_A_SAR 0x82
 
-#ifndef offsetof
-#define offsetof(type, field) ((size_t) &((type *)0)->field)
-#endif
+//#ifndef offsetof
+//#define offsetof(type, field) ((size_t) &((type *)0)->field)
+//#endif
 
-#ifndef countof
-#define countof(tab) (sizeof(tab) / sizeof((tab)[0]))
-#endif
+//#ifndef countof
+//#define countof(tab) (sizeof(tab) / sizeof((tab)[0]))
+//#endif
 
 /* WARNING: the content of this string encodes token numbers */
 static unsigned char tok_two_chars[] = "<=\236>=\235!=\225&&\240||\241++\244--\242==\224<<\1>>\2+=\253-=\255*=\252/=\257%=\245&=\246^=\336|=\374->\313..\250##\266";
@@ -551,7 +551,7 @@ static unsigned char tok_two_chars[] = "<=\236>=\235!=\225&&\240||\241++\244--\2
 #define TOK_LINEFEED  10    /* line feed */
 
 /* all identificators and strings have token above that */
-#define TOK_IDENT 256
+//#define TOK_IDENT 256
 
 /* only used for i386 asm opcodes definitions */
 #define DEF_ASM(x) DEF(TOK_ASM_ ## x, #x)
@@ -662,7 +662,7 @@ extern float strtof (const char *__nptr, char **__endptr);
 extern long double strtold (const char *__nptr, char **__endptr);
 #endif
 
-char *pstrcpy(char *buf, int buf_size, char *s);
+//char *pstrcpy(char *buf, int buf_size, char *s);
 static char *pstrcat(char *buf, int buf_size, char *s);
 static char *tcc_basename(char *name);
 
@@ -754,10 +754,10 @@ static void put_stabn(int type, int other, int desc, int value);
 static void put_stabd(int type, int other, int desc);
 static int tcc_add_dll(TCCState *s, char *filename, int flags);
 
-#define AFF_PRINT_ERROR     0x0001 /* print error if file not found */
+//#define AFF_PRINT_ERROR     0x0001 /* print error if file not found */
 #define AFF_REFERENCED_DLL  0x0002 /* load a referenced dll from another dll */
-#define AFF_PREPROCESS      0x0004 /* preprocess file */
-int tcc_add_file_internal(TCCState *s, char *filename, int flags);
+//#define AFF_PREPROCESS      0x0004 /* preprocess file */
+//int tcc_add_file_internal(TCCState *s, char *filename, int flags);
 
 /* tcccoff.c */
 int tcc_output_coff(TCCState *s1, FILE *f);
@@ -876,14 +876,14 @@ char *dlerror(void)
 
 static inline void *resolve_sym(TCCState *s1, char *sym, int type)
 {
-    return dlsym(RTLD_DEFAULT, sym);
+    return dlsym(0, sym);
 }
 
 /* space excluding newline */
-static inline int is_space(int ch)
-{
-    return ch == ' ' || ch == '\t' || ch == '\v' || ch == '\f' || ch == '\r';
-}
+//static inline int is_space(int ch)
+//{
+//    return ch == ' ' || ch == '\t' || ch == '\v' || ch == '\f' || ch == '\r';
+//}
 
 
 #endif
