@@ -499,7 +499,7 @@ int tcc_output_coff(TCCState *s1, FILE *f)
 	int nstr;
 	int n = 0;
 
-	Coff_str_table = (char *) tcc_malloc(MAX_STR_TABLE);
+	Coff_str_table = (char *) xmalloc(MAX_STR_TABLE);
 	pCoff_str_table = Coff_str_table;
 	nstr = 0;
 
@@ -685,7 +685,7 @@ void SortSymbolTable(void)
     Elf32_Sym *p, *p2, *NewTable;
     char *name, *name2;
 
-    NewTable = (Elf32_Sym *) tcc_malloc(nb_syms * sizeof(Elf32_Sym));
+    NewTable = (Elf32_Sym *) xmalloc(nb_syms * sizeof(Elf32_Sym));
 
     p = (Elf32_Sym *) symtab_section->data;
 
@@ -885,7 +885,7 @@ int tcc_load_coff(TCCState * s1, int fd)
 	error("error reading .out file for input");
 
 
-    Coff_str_table = (char *) tcc_malloc(str_size);
+    Coff_str_table = (char *) xmalloc(str_size);
 
     if (fread(Coff_str_table, str_size - 4, 1, f) != 1)
 	error("error reading .out file for input");

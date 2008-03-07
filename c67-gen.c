@@ -1952,7 +1952,7 @@ void gfunc_prolog(CType * func_type)
     /* define parameters */
     while ((sym = sym->next) != NULL) {
 	type = &sym->type;
-	sym_push(sym->v & ~SYM_FIELD, type, VT_LOCAL | VT_LVAL, addr);
+	sym_push(sym->token & ~SYM_FIELD, type, VT_LOCAL | VT_LVAL, addr);
 	size = type_size(type, &align);
 	size = (size + 3) & ~3;
 
