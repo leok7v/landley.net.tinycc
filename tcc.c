@@ -109,7 +109,6 @@ static int gnu_ext = 1;
 static int tcc_ext = 1;
 
 /* max number of callers shown if error */
-static int num_callers = 6;
 static char **rt_bound_error_msg;
 
 /* XXX: get rid of this ASAP */
@@ -191,13 +190,6 @@ static inline void *xrealloc(void *ptr, unsigned long size)
     void *ptr1 = realloc(ptr, size);
     if (!ptr1 && size) error("memory full");
     return ptr1;
-}
-
-static char *xstrdup(char *str)
-{
-    char *ptr = xmalloc(strlen(str) + 1);
-    strcpy(ptr, str);
-    return ptr;
 }
 
 void dynarray_add(void ***ptab, int *nb_ptr, void *data)
