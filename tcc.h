@@ -664,7 +664,6 @@ extern long double strtold (const char *__nptr, char **__endptr);
 
 //char *pstrcpy(char *buf, int buf_size, char *s);
 static char *pstrcat(char *buf, int buf_size, char *s);
-static char *tcc_basename(char *name);
 
 static void next(void);
 static void next_nomacro(void);
