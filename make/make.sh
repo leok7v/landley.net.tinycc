@@ -63,7 +63,13 @@ function build()
 
 [ $# -ne 0 ] && TARGETS="$@"
 [ "$TARGETS" == "native" ] && TARGETS="$HOST"
-[ -z "$TARGETS" ] && TARGETS="i386" # arm c67 win32
+[ "$TARGETS" == "all" ] && TARGETS="i386 arm c67 win32"
+if [ -z "$TARGETS" ]
+then
+  echo "Usage: make.sh TARGET [TARGET...]" >&2
+  echo "Targets: i386 arm c67 win32 (all native)" >&2
+  exit 1
+fi
 
 # Build each architecture
 
