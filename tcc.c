@@ -992,7 +992,7 @@ static inline void inp(void)
 /* space excluding newline */
 int is_space(int ch)
 {
-    return strchr(" \t\v\f\r", ch);
+    return strchr(" \t\v\f\r", ch) ? 1 : 0;
 }
 
 /* handle '\[\r]\n' */
@@ -9057,7 +9057,6 @@ static int tcc_add_dll(TCCState *s, char *filename, int flags)
 int tcc_add_library(TCCState *s, char *libraryname)
 {
     char buf[1024];
-    int i;
     
     /* first we look for the dynamic library if not static linking */
     if (!tccg_static_link) {
@@ -9070,14 +9069,8 @@ int tcc_add_library(TCCState *s, char *libraryname)
             return 0;
     }
 
-    /* then we look for the static library */
-    for(i = 0; i < tccg_library_paths.len; i++) {
-        snprintf(buf, sizeof(buf), "%s/lib%s.a", 
-                 tccg_library_paths.data[i], libraryname);
-        if (tcc_add_file_internal(s, buf, 0) == 0)
-            return 0;
-    }
-    return -1;
+    snprintf(buf, sizeof(buf), "lib%s.a", libraryname);
+    return tcc_add_dll(s, buf, 0);
 }
 
 int tcc_add_symbol(TCCState *s, char *name, unsigned long val)
