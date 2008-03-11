@@ -96,9 +96,6 @@ static unsigned char isidnum_table[256];
 static int do_debug = 0;
 
 /* display benchmark infos */
-#if !defined(LIBTCC)
-static int do_bench = 0;
-#endif
 static int total_lines;
 static int total_bytes;
 
@@ -107,9 +104,6 @@ static int gnu_ext = 1;
 
 /* use Tiny C extensions */
 static int tcc_ext = 1;
-
-/* max number of callers shown if error */
-static char **rt_bound_error_msg;
 
 /* XXX: get rid of this ASAP */
 static struct TCCState *tcc_state;
@@ -8737,10 +8731,6 @@ int tcc_run(TCCState *s1, int argc, char **argv)
 #ifdef CONFIG_TCC_BCHECK
     if (do_bounds_check) {
         void (*bound_init)(void);
-
-        /* set error function */
-        rt_bound_error_msg = (void *)tcc_get_symbol_err(s1, 
-                                                        "__bound_error_msg");
 
         /* XXX: use .init section so that it also work in binary ? */
         bound_init = (void *)tcc_get_symbol_err(s1, "__bound_init");
