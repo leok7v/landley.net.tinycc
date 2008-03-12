@@ -4,7 +4,7 @@ source ./configure
 
 if [ -z "$TINYCC_INSTALLDIR" ]
 then
-  No TINYCC_INSTALLDIR
+  echo 'No $TINYCC_INSTALLDIR' >&2
   exit 1
 fi
 

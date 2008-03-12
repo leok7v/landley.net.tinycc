@@ -5,6 +5,10 @@
 # With no arguments, builds all targets.  Else build target(s) listed on
 # command line.  Special target "native" builds a native compiler.
 
+# Set "DEBUG=echo" to view the commands instead of running them.
+
+source ./configure
+
 TINYCC_VERSION=0.9.25
 
 DOLOCAL="-B. -I./include -I."
@@ -28,20 +32,31 @@ function compile_tinycc()
 
 function build()
 {
-  source ./configure -v
+  # The path at which the new compiler should search for system libraries is,
+  # alas, target dependent.
+
+  if [ -z "$CC_LIBPATH" ]
+  then
+    L="lib"
+    [ "$HOST" == "x86_64" ] && [ TARGET="i386" ] && L="lib32"
+    L="/usr/local/$L:/usr/$L:/$L"
+  else
+    L="$CC_LIBPATH"
+  fi
 
   # Build tinycc with a specific architecture and search paths.
 
-  ARCH=$1 compile_tinycc $1-tinycc_unstripped tcc.c options.c &&
+  ARCH=$1 CC_LIBPATH="$L" compile_tinycc $1-tinycc_unstripped tcc.c options.c &&
   $DEBUG $STRIP $1-tinycc_unstripped -o $1-tinycc
+
   [ $? -ne 0 ] && exit 1
 
   # If this would be a native compiler for this host, create "tinycc" symlink
-  #if [ "$1" == "$HOST" ]
-  #then
+  if [ "$1" == "$HOST" ]
+  then
     $DEBUG rm -f tinycc
     $DEBUG ln -s $1-tinycc tinycc
-  #fi
+  fi
 
   # Compile tinycc as a shared library.
 
@@ -75,5 +90,6 @@ fi
 
 for TARGET in $TARGETS
 do
+  echo Building for target: "$TARGET"
   build $TARGET || exit 1
 done

@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Set lots of environment variables to default values.  All of these are
-# overridden by existing local variables.
+# overridden by existing local variables, if any.
+
+# You don't have to run ./configure before running make, since make/make.sh
+# sources this file, but it shouldn't hurt anything if you do.
 
 [ -z "$CC" ] && CC=cc
 [ -z "$AR" ] && AR=ar
@@ -13,23 +16,22 @@
 [ -z "$HOST" ] && HOST=$(uname -m | sed 's/i.86/i686/')
 [ -z "$PREFIX" ] && PREFIX=/usr/local
 
-
-
 # Set the compiler's search/install paths.
 
-# i386 runs on an x86-64 host, but the library paths are abnormal.
-
-LIB="lib"
-[ "$HOST" == "x86_64" ] && [ TARGET="i386" ] && LIB="lib32"
-
-# Directory for tinycc libraries (such as libtinycc.a) and headers (stdarg.h)
+# Directory for tinycc's own libraries (such as libtinyccrt-$ARCH.a)
+# and headers (such as stdarg.h)
 [ -z "$TINYCC_INSTALLDIR" ] && TINYCC_INSTALLDIR="$PREFIX"/tinycc
-# Where should the linker look for C runtime files (crt1.o, crti.o, crtn.o)
-[ -z "$CC_CRTDIR" ] && CC_CRTDIR="/usr/$LIB"
-# Path to search for system libraries.
-[ -z "$CC_LIBPATH" ] && CC_LIBPATH="/usr/local/$LIB:/usr/$LIB:/$LIB"
 # Path to search for system #include files.
 [ -z "$CC_HEADERPATH" ] && CC_HEADERPATH="/usr/include:/usr/local/include"
+
+# CC_LIBPATH is set in make/make.sh because it varies by target (such as
+# building for i386 on an x86_64 host).  You can set CC_LIBPATH here if you
+# want to, but then it won't vary by target because we don't know what the
+# target _is_ yet.
+#
+# # Path to search for system libraries.
+#
+# [ -z "$CC_LIBPATH" ] && CC_LIBPATH="/usr/local/lib:/usr/lib:/lib"
 
 # For ./configure -v display all the variables we just set.
 
