@@ -7,4 +7,4 @@ all native i386 arm c67 win32:
 install clean test:
 	make/$@.sh
 
-.dummy: all i386 arm c67 win32 install clean test
+.PHONY: all i386 arm c67 win32 install clean test
