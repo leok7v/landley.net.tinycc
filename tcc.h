@@ -64,8 +64,7 @@
 //#define TINYCC_TARGET_C67    /* TMS320C67xx code generator */
 
 /* default target is I386 */
-//#if !defined(TINYCC_TARGET_I386) && !defined(TINYCC_TARGET_ARM) && \
-//    !defined(TINYCC_TARGET_C67)
+//#if !defined(TINYCC_TARGET_I386) && !defined(TINYCC_TARGET_ARM) && !defined(TINYCC_TARGET_C67)
 //#define TINYCC_TARGET_I386
 //#endif
 
