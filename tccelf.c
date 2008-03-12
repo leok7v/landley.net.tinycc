@@ -1014,7 +1014,7 @@ static void tcc_add_runtime(TCCState *s1)
         tcc_add_library(s1, "tinyccrt-" TINYCC_TARGET);
       // add crt end if not memory output
       if (tccg_output_type != TCC_OUTPUT_MEMORY)
-          tcc_add_file(s1, CC_CRTDIR "/crtn.o");
+          tcc_add_dll(s1, "crtn.o", AFF_PRINT_ERROR);
     }
 }
 
@@ -2334,8 +2334,10 @@ static int ld_add_file_list(TCCState *s1, int as_needed)
                 return ret;
         } else {
             /* TODO: Implement AS_NEEDED support. Ignore it for now */
-            if (!as_needed)
-                tcc_add_file(s1, filename);
+            if (!as_needed) {
+                if (*filename=='/') tcc_add_file(s1, filename);
+                else tcc_add_dll(s1, filename, AFF_PRINT_ERROR);
+            }
         }
         t = ld_next(s1, filename, sizeof(filename));
         if (t == ',') {

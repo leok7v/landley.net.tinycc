@@ -8918,19 +8918,15 @@ void tcc_delete(TCCState *s1)
 int tcc_add_file_internal(TCCState *s1, char *filename, int flags)
 {
     char *ext, *filename1;
-    Elf32_Ehdr ehdr;
     int fd, ret;
     BufferedFile *saved_file;
 
     /* find source file type with extension */
     filename1 = strrchr(filename, '/');
-    if (filename1)
-        filename1++;
-    else
-        filename1 = filename;
+    if (filename1) filename1++;
+    else filename1 = filename;
     ext = strrchr(filename1, '.');
-    if (ext)
-        ext++;
+    if (ext) ext++;
 
     /* open the file */
     saved_file = file;
@@ -8965,6 +8961,8 @@ int tcc_add_file_internal(TCCState *s1, char *filename, int flags)
     } else
 #endif
     {
+        Elf32_Ehdr ehdr;
+
         fd = file->fd;
         /* assume executable format: auto guess file type */
         ret = read(fd, &ehdr, sizeof(ehdr));
@@ -9042,13 +9040,17 @@ int tcc_add_file(TCCState *s, char *filename)
 static int tcc_add_dll(TCCState *s, char *filename, int flags)
 {
     char buf[1024];
-    int i;
+    int i = 0;
 
-    for(i = 0; i < tccg_library_paths.len; i++) {
+    for(;;) {
+        int test;
+
         snprintf(buf, sizeof(buf), "%s/%s", 
                  tccg_library_paths.data[i], filename);
-        if (tcc_add_file_internal(s, buf, flags) == 0)
+        test = tccg_library_paths.len == ++i;
+        if (!tcc_add_file_internal(s, buf, test ? flags : (flags & ~AFF_PRINT_ERROR)))
             return 0;
+        if (test) break;
     }
     return -1;
 }
@@ -9070,7 +9072,7 @@ int tcc_add_library(TCCState *s, char *libraryname)
     }
 
     snprintf(buf, sizeof(buf), "lib%s.a", libraryname);
-    return tcc_add_dll(s, buf, 0);
+    return tcc_add_dll(s, buf, AFF_PRINT_ERROR);
 }
 
 int tcc_add_symbol(TCCState *s, char *name, unsigned long val)
@@ -9136,8 +9138,8 @@ int init_output_type(TCCState *s)
         && !tccg_nostdlib)
     {
         if (tccg_output_type != TCC_OUTPUT_DLL)
-            tcc_add_file(s, CC_CRTDIR "/crt1.o");
-        tcc_add_file(s, CC_CRTDIR "/crti.o");
+            tcc_add_dll(s, "crt1.o", AFF_PRINT_ERROR);
+        tcc_add_dll(s, "crti.o", AFF_PRINT_ERROR);
     }
 #endif
     return 0;
