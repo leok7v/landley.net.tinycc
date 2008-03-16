@@ -356,8 +356,8 @@ static void gen_disp32(ExprValue *pe)
 
 static void gen_le16(int v)
 {
-    g(v);
-    g(v >> 8);
+    gen_byte(v);
+    gen_byte(v >> 8);
 }
 
 /* generate the modrm operand */
@@ -366,10 +366,10 @@ static inline void asm_modrm(int reg, Operand *op)
     int mod, reg1, reg2, sib_reg1;
 
     if (op->type & (OP_REG | OP_MMX | OP_SSE)) {
-        g(0xc0 + (reg << 3) + op->reg);
+        gen_byte(0xc0 + (reg << 3) + op->reg);
     } else if (op->reg == -1 && op->reg2 == -1) {
         /* displacement only */
-        g(0x05 + (reg << 3));
+        gen_byte(0x05 + (reg << 3));
         gen_expr32(&op->e);
     } else {
         sib_reg1 = op->reg;
@@ -388,18 +388,18 @@ static inline void asm_modrm(int reg, Operand *op)
         reg1 = op->reg;
         if (op->reg2 != -1)
             reg1 = 4;
-        g(mod + (reg << 3) + reg1);
+        gen_byte(mod + (reg << 3) + reg1);
         if (reg1 == 4) {
             /* add sib byte */
             reg2 = op->reg2;
             if (reg2 == -1)
                 reg2 = 4; /* indicate no index */
-            g((op->shift << 6) + (reg2 << 3) + sib_reg1);
+            gen_byte((op->shift << 6) + (reg2 << 3) + sib_reg1);
         }
 
         /* add offset */
         if (mod == 0x40) {
-            g(op->e.v);
+            gen_byte(op->e.v);
         } else if (mod == 0x80 || op->reg == -1) {
             gen_expr32(&op->e);
         }
@@ -518,8 +518,8 @@ static void asm_opcode(TCCState *s1, int opcode)
             int b;
             b = op0_codes[opcode - TOK_ASM_pusha];
             if (b & 0xff00) 
-                g(b >> 8);
-            g(b);
+                gen_byte(b >> 8);
+            gen_byte(b);
             return;
         } else {
             error("unknown opcode '%s'", 
@@ -544,14 +544,14 @@ static void asm_opcode(TCCState *s1, int opcode)
     /* generate data16 prefix if needed */
     ss = s;
     if (s == 1 || (pa->instr_type & OPC_D16))
-        g(WORD_PREFIX_OPCODE);
+        gen_byte(WORD_PREFIX_OPCODE);
     else if (s == 2)
         s = 1;
     /* now generates the operation */
     if (pa->instr_type & OPC_FWAIT)
-        g(0x9b);
+        gen_byte(0x9b);
     if (has_seg_prefix)
-        g(segment_prefixes[seg_prefix.reg]);
+        gen_byte(segment_prefixes[seg_prefix.reg]);
 
     v = pa->opcode;
     if (v == 0x69 || v == 0x69) {
@@ -622,8 +622,8 @@ static void asm_opcode(TCCState *s1, int opcode)
     }
     op1 = v >> 8;
     if (op1)
-        g(op1);
-    g(v);
+        gen_byte(op1);
+    gen_byte(v);
         
     /* search which operand will used for modrm */
     modrm_index = 0;
@@ -693,7 +693,7 @@ static void asm_opcode(TCCState *s1, int opcode)
                 if (v & (OP_IM8 | OP_IM8S)) {
                     if (ops[i].e.sym)
                         goto error_relocate;
-                    g(ops[i].e.v);
+                    gen_byte(ops[i].e.v);
                 } else if (v & OP_IM16) {
                     if (ops[i].e.sym) {
                     error_relocate:
@@ -703,7 +703,7 @@ static void asm_opcode(TCCState *s1, int opcode)
                 } else {
                     if (pa->instr_type & (OPC_JMP | OPC_SHORTJMP)) {
                         if (is_short_jmp)
-                            g(ops[i].e.v);
+                            gen_byte(ops[i].e.v);
                         else
                             gen_disp32(&ops[i].e);
                     } else {
@@ -1114,7 +1114,7 @@ static void asm_gen_code(ASMOperand *operands, int nb_operands,
         for(i = 0; i < NB_SAVED_REGS; i++) {
             reg = reg_saved[i];
             if (regs_allocated[reg]) 
-                g(0x50 + reg);
+                gen_byte(0x50 + reg);
         }
 
         /* generate load code */
@@ -1171,7 +1171,7 @@ static void asm_gen_code(ASMOperand *operands, int nb_operands,
         for(i = NB_SAVED_REGS - 1; i >= 0; i--) {
             reg = reg_saved[i];
             if (regs_allocated[reg]) 
-                g(0x58 + reg);
+                gen_byte(0x58 + reg);
         }
     }
 }

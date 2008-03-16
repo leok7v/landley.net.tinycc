@@ -396,7 +396,7 @@ static void asm_parse_directive(TCCState *s1)
                     if (e.sym)
                         expect("constant");
                     if (size == 1)
-                        g(e.v);
+                        gen_byte(e.v);
                     else
                         gen_le16(e.v);
                 }
@@ -445,7 +445,7 @@ static void asm_parse_directive(TCCState *s1)
             repeat_buf[7] = 0;
             for(i = 0; i < repeat; i++) {
                 for(j = 0; j < size; j++) {
-                    g(repeat_buf[j]);
+                    gen_byte(repeat_buf[j]);
                 }
             }
         }
@@ -495,7 +495,7 @@ static void asm_parse_directive(TCCState *s1)
                 if (t == TOK_ASM_ascii && size > 0)
                     size--;
                 for(i = 0; i < size; i++)
-                    g(p[i]);
+                    gen_byte(p[i]);
                 next();
                 if (tok == ',') {
                     next();

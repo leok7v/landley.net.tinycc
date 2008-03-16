@@ -78,7 +78,7 @@ static unsigned long func_bound_offset;
 static int func_ret_sub;
 
 /* XXX: make it faster ? */
-void g(int c)
+void gen_byte(int c)
 {
     int ind1;
 
@@ -93,17 +93,17 @@ void g(int c)
 void o(unsigned int c)
 {
     while (c) {
-        g(c);
+        gen_byte(c);
         c = c >> 8;
     }
 }
 
 void gen_le32(int c)
 {
-    g(c);
-    g(c >> 8);
-    g(c >> 16);
-    g(c >> 24);
+    gen_byte(c);
+    gen_byte(c >> 8);
+    gen_byte(c >> 16);
+    gen_byte(c >> 24);
 }
 
 /* output a symbol and patch all calls to it */
@@ -166,12 +166,12 @@ static void gen_modrm(int op_reg, int r, Sym *sym, int c)
         if (c == (char)c) {
             /* short reference */
             o(0x45 | op_reg);
-            g(c);
+            gen_byte(c);
         } else {
             oad(0x85 | op_reg, c);
         }
     } else {
-        g(0x00 | op_reg | (r & VT_VALMASK));
+        gen_byte(0x00 | op_reg | (r & VT_VALMASK));
     }
 }
 
@@ -282,7 +282,7 @@ static void gadd_sp(int val)
 {
     if (val == (char)val) {
         o(0xc483);
-        g(val);
+        gen_byte(val);
     } else {
         oad(0xc481, val); /* add $xxx, %esp */
     }
@@ -352,8 +352,8 @@ void gfunc_call(int nb_args)
                 o(0x7cdb);
             else
                 o(0x5cd9 + size - 4); /* fstp[s|l] 0(%esp) */
-            g(0x24);
-            g(0x00);
+            gen_byte(0x24);
+            gen_byte(0x00);
             args_size += size;
         } else {
             /* simple type (currently always same size) */
@@ -518,8 +518,8 @@ void gfunc_epilog(void)
         o(0xc3); /* ret */
     } else {
         o(0xc2); /* ret n */
-        g(func_ret_sub);
-        g(func_ret_sub >> 8);
+        gen_byte(func_ret_sub);
+        gen_byte(func_ret_sub >> 8);
     }
     /* align local size to word & save local variables */
     
@@ -553,8 +553,8 @@ void gjmp_addr(int a)
     int r;
     r = a - ind - 2;
     if (r == (char)r) {
-        g(0xeb);
-        g(r);
+        gen_byte(0xeb);
+        gen_byte(r);
     } else {
         oad(0xe9, a - ind - 5);
     }
@@ -568,7 +568,7 @@ int gtst(int inv, int t)
     v = vtop->r & VT_VALMASK;
     if (v == VT_CMP) {
         /* fast case : can jump directly since flags are set */
-        g(0x0f);
+        gen_byte(0x0f);
         t = psym((vtop->c.i - 16) ^ inv, t);
     } else if (v == VT_JMP || v == VT_JMPI) {
         /* && or || optimization */
@@ -597,7 +597,7 @@ int gtst(int inv, int t)
             v = gv(RC_INT);
             o(0x85);
             o(0xc0 + v * 9);
-            g(0x0f);
+            gen_byte(0x0f);
             t = psym(0x85 ^ inv, t);
         }
     }
@@ -625,7 +625,7 @@ void gen_opi(int op)
                 /* XXX: generate inc and dec for smaller code ? */
                 o(0x83);
                 o(0xc0 | (opc << 3) | r);
-                g(c);
+                gen_byte(c);
             } else {
                 o(0x81);
                 oad(0xc0 | (opc << 3) | r, c);
@@ -688,7 +688,7 @@ void gen_opi(int op)
             c = vtop->c.i & 0x1f;
             o(0xc1); /* shl/shr/sar $xxx, r */
             o(opc | r);
-            g(c);
+            gen_byte(c);
         } else {
             /* we generate the shift in ecx */
             gv2(RC_INT, RC_ECX);
@@ -867,7 +867,7 @@ void gen_cvt_itof(int t)
                (VT_INT | VT_UNSIGNED)) {
         /* unsigned int to float/double/long double */
         o(0x6a); /* push $0 */
-        g(0x00);
+        gen_byte(0x00);
         o(0x50 + (vtop->r & VT_VALMASK)); /* push r */
         o(0x242cdf); /* fildll (%esp) */
         o(0x08c483); /* add $8, %esp */
