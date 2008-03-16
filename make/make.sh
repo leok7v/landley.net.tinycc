@@ -9,7 +9,7 @@
 
 source ./configure
 
-TINYCC_VERSION=0.9.25
+TINYCC_VERSION=1.0.0-pre3
 
 DOLOCAL="-B. -I./include -I."
 
