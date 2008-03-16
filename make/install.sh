@@ -15,4 +15,4 @@ $DEBUG cp libtinyccrt-*.a libtinycc-*.so "$TINYCC_INSTALLDIR"/lib &&
 $DEBUG cp include/* "$TINYCC_INSTALLDIR"/include &&
 
 # Install binaries
-$DEBUG cp *-tinycc /usr/local/bin
+$DEBUG cp *-tinycc "$PREFIX"/bin
