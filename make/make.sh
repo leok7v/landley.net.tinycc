@@ -26,7 +26,8 @@ function compile_tinycc()
     -DTINYCC_INSTALLDIR='"'$TINYCC_INSTALLDIR'"' \
     -DCC_CRTDIR='"'$CC_CRTDIR'"' \
     -DCC_LIBPATH='"'$CC_LIBPATH'"' \
-    -DCC_HEADERPATH='"'$CC_HEADERPATH'"'
+    -DCC_HEADERPATH='"'$CC_HEADERPATH'"' \
+    -DCC_DYNAMIC_LINKER='"'$CC_DYNAMIC_LINKER'"'
 }
 
 

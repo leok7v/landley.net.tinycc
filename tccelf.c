@@ -1079,15 +1079,7 @@ static void tcc_add_linker_symbols(TCCState *s1)
 }
 
 /* name of ELF interpreter */
-#ifdef __FreeBSD__
-static char elf_interp[] = "/usr/libexec/ld-elf.so.1";
-#else
-#ifdef TCC_ARM_EABI
-static char elf_interp[] = "/lib/ld-linux.so.3";
-#else
-static char elf_interp[] = "/lib/ld-linux.so.2";
-#endif
-#endif
+static char elf_interp[] = CC_DYNAMIC_LINKER;
 
 static void tcc_output_binary(TCCState *s1, FILE *f,
                               int *section_order)

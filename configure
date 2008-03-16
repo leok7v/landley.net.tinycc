@@ -23,6 +23,8 @@
 [ -z "$TINYCC_INSTALLDIR" ] && TINYCC_INSTALLDIR="$PREFIX"/tinycc
 # Path to search for system #include files.
 [ -z "$CC_HEADERPATH" ] && CC_HEADERPATH="/usr/include:/usr/local/include"
+# Dynamic linker to put into generated executables.
+[ -z "$CC_DYNAMIC_LINKER" ] && CC_DYNAMIC_LINKER="/lib/ld-linux.so.2"
 
 # CC_LIBPATH is set in make/make.sh because it varies by target (such as
 # building for i386 on an x86_64 host).  You can set CC_LIBPATH here if you
