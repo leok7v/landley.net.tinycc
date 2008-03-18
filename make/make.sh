@@ -52,25 +52,43 @@ function build()
 
   [ $? -ne 0 ] && exit 1
 
-  # If this would be a native compiler for this host, create "tinycc" symlink
+  # If the compiler we just built works as a native compiler for this host,
+  # create a "tinycc" symlink pointing to it
+
   if [ "$1" == "$HOST" ]
   then
     $DEBUG rm -f tinycc
-    $DEBUG ln -s $1-tinycc tinycc
+    $DEBUG ln -s $1-tinycc tinycc || exit 1
   fi
 
-  # Compile tinycc as a shared library.
+  # Compile tinycc engine as a shared library.
 
   ARCH=$1 compile_tinycc libtinycc-$1.so -shared -fPIC -DLIBTCC tcc.c &&
 
-  # Build libtinyccrt-$ARCH.a (which compiled programs link against)
+  # If we're building a tinycc binary we can't run, build one we _can_ run
+  # that outputs binaries for the same target.  We need it to build a target
+  # version of the runtime library (libtinyccrt) with.
+
+  if [ "$CC" != "$HOSTCC" ]
+  then
+    LIBCC=host-$1-tinycc
+    ARCH=$1 CC="$HOSTCC" CC_LIBPATH="$L" compile_tinycc $LIBCC tcc.c options.c
+  else
+    LIBCC=$1-tinycc
+  fi
+
+  # Build libtinyccrt-$ARCH.a (which compiled programs link against).  This
+  # contains support code such as alloca, bounds checking (if necessary),
+  # and 64 bit math on 32 bit platforms.
+
+  # XXX build this on all platforms
 
   if [ -f $1/alloca.S ]
   then
     $DEBUG mkdir -p lib/$1
-    $DEBUG ./$1-tinycc $DOLOCAL -o libtinycc1-$1.o -c libtinycc1.c &&
-    $DEBUG ./$1-tinycc $DOLOCAL -o alloca-$1.o -c $1/alloca.S &&
-    $DEBUG ./$1-tinycc $DOLOCAL -o bound-alloca-$1.o -c $1/bound-alloca.S &&
+    $DEBUG ./$LIBCC $DOLOCAL -o libtinycc1-$1.o -c libtinycc1.c &&
+    $DEBUG ./$LIBCC $DOLOCAL -o alloca-$1.o -c $1/alloca.S &&
+    $DEBUG ./$LIBCC $DOLOCAL -o bound-alloca-$1.o -c $1/bound-alloca.S &&
     $DEBUG $AR rcs libtinyccrt-$1.a {libtinycc1,alloca,bound-alloca}-$1.o
   fi
 }
