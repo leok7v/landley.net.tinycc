@@ -976,14 +976,13 @@ static void add_init_array_defines(TCCState *s1, char *section_name)
 /* add tcc runtime libraries */
 static void tcc_add_runtime(TCCState *s1)
 {
-    char buf[1024];
-
 #ifdef CONFIG_TCC_BCHECK
     if (do_bounds_check) {
         unsigned long *ptr;
         Section *init_section;
         unsigned char *pinit;
         int sym_index;
+        char buf[1024];
 
         /* XXX: add an object file to do that */
         ptr = section_ptr_add(bounds_section, sizeof(unsigned long));
