@@ -149,7 +149,7 @@ static CType float_type, double_type, func_float_type, func_double_type;
 static unsigned long func_sub_sp_offset,last_itod_magic;
 static int leaffunc;
 
-void o(unsigned long i)
+void gen_multibyte(unsigned long i)
 {
   /* this is a good place to start adding big-endian support*/
   int ind1;
@@ -226,8 +226,7 @@ static unsigned long stuff_const(unsigned long op,unsigned long c)
 void stuff_const_harder(unsigned long op,unsigned long v) {
   unsigned long x;
   x=stuff_const(op,v);
-  if(x)
-    o(x);
+  if(x) gen_multibyte(x);
   else {
     unsigned long a[16],nv,no,o2,n2;
     int i,j,k;
@@ -238,8 +237,8 @@ void stuff_const_harder(unsigned long op,unsigned long v) {
     for(i=0;i<12;i++)
       for(j=i+4;i<13+i;i++)
 	if((v&(a[i]|a[j]))==v) {
-	  o(stuff_const(op,v&a[i]));
-	  o(stuff_const(o2,v&a[j]));
+	  gen_multibyte(stuff_const(op,v&a[i]));
+	  gen_multibyte(stuff_const(o2,v&a[j]));
 	  return;
 	}
     no=op^0xC00000;
@@ -248,17 +247,17 @@ void stuff_const_harder(unsigned long op,unsigned long v) {
     for(i=0;i<12;i++)
       for(j=i+4;i<13+i;i++)
 	if((nv&(a[i]|a[j]))==nv) {
-	  o(stuff_const(no,nv&a[i]));
-	  o(stuff_const(n2,nv&a[j]));
+	  gen_multibyte(stuff_const(no,nv&a[i]));
+	  gen_multibyte(stuff_const(n2,nv&a[j]));
 	  return;
 	}
     for(i=0;i<8;i++)
       for(j=i+4;i<12;i++)
 	for(k=j+4;k<13+i;i++)
 	  if((v&(a[i]|a[j]|a[k]))==v) {
-	    o(stuff_const(op,v&a[i]));
-	    o(stuff_const(o2,v&a[j]));
-	    o(stuff_const(o2,v&a[k]));
+	    gen_multibyte(stuff_const(op,v&a[i]));
+	    gen_multibyte(stuff_const(o2,v&a[j]));
+	    gen_multibyte(stuff_const(o2,v&a[k]));
 	    return;
 	  }
     no=op^0xC00000;
@@ -267,15 +266,15 @@ void stuff_const_harder(unsigned long op,unsigned long v) {
       for(j=i+4;i<12;i++)
 	for(k=j+4;k<13+i;i++)
 	  if((nv&(a[i]|a[j]|a[k]))==nv) {
-	    o(stuff_const(no,nv&a[i]));
-	    o(stuff_const(n2,nv&a[j]));
-	    o(stuff_const(n2,nv&a[k]));
+	    gen_multibyte(stuff_const(no,nv&a[i]));
+	    gen_multibyte(stuff_const(n2,nv&a[j]));
+	    gen_multibyte(stuff_const(n2,nv&a[k]));
 	    return;
 	  }
-    o(stuff_const(op,v&a[0]));
-    o(stuff_const(o2,v&a[4]));
-    o(stuff_const(o2,v&a[8]));
-    o(stuff_const(o2,v&a[12]));
+    gen_multibyte(stuff_const(op,v&a[0]));
+    gen_multibyte(stuff_const(o2,v&a[4]));
+    gen_multibyte(stuff_const(o2,v&a[8]));
+    gen_multibyte(stuff_const(o2,v&a[12]));
   }
 }
 
@@ -359,13 +358,13 @@ static void calcaddr(unsigned long *base,int *off,int *sgn,int maxoff,unsigned s
     *base=14; // lr
     y=stuff_const(x,*off&~maxoff);
     if(y) {
-      o(y);
+      gen_multibyte(y);
       *off&=maxoff;
       return;
     }
     y=stuff_const(x,(*off+maxoff)&~maxoff);
     if(y) {
-      o(y);
+      gen_multibyte(y);
       *sgn=!*sgn;
       *off=((*off+maxoff)&~maxoff)-*off;
       return;
@@ -491,7 +490,7 @@ void load(int r, SValue *sv)
 	  op|=0x800000;
 	if ((ft & VT_BTYPE) != VT_FLOAT)
 	  op|=0x100;   /* flds -> fldd */
-	o(op|(vfpr(r)<<12)|(fc>>2)|(base<<16));
+	gen_multibyte(op|(vfpr(r)<<12)|(fc>>2)|(base<<16));
 #else
 	op=0xED100100;
 	if(!sign)
@@ -505,7 +504,7 @@ void load(int r, SValue *sv)
 	else if ((ft & VT_BTYPE) == VT_LDOUBLE)
 	  op|=0x400000;
 #endif
-	o(op|(fpr(r)<<12)|(fc>>2)|(base<<16));
+	gen_multibyte(op|(fpr(r)<<12)|(fc>>2)|(base<<16));
 #endif
       } else if((ft & (VT_BTYPE|VT_UNSIGNED)) == VT_BYTE
 	        || (ft & VT_BTYPE) == VT_SHORT) {
@@ -517,7 +516,7 @@ void load(int r, SValue *sv)
 	  op|=0x40;
 	if(!sign)
 	  op|=0x800000;
-	o(op|(intr(r)<<12)|(base<<16)|((fc&0xf0)<<4)|(fc&0xf));
+	gen_multibyte(op|(intr(r)<<12)|(base<<16)|((fc&0xf0)<<4)|(fc&0xf));
       } else {
 	calcaddr(&base,&fc,&sign,4095,0);
 	op=0xE5100000;
@@ -525,7 +524,7 @@ void load(int r, SValue *sv)
 	  op|=0x800000;
         if ((ft & VT_BTYPE) == VT_BYTE)
           op|=0x400000;
-        o(op|(intr(r)<<12)|fc|(base<<16));
+        gen_multibyte(op|(intr(r)<<12)|fc|(base<<16));
       }
       return;
     }
@@ -533,47 +532,47 @@ void load(int r, SValue *sv)
     if (v == VT_CONST) {
       op=stuff_const(0xE3A00000|(intr(r)<<12),sv->c.ul);
       if (fr & VT_SYM || !op) {
-        o(0xE59F0000|(intr(r)<<12));
-        o(0xEA000000);
+        gen_multibyte(0xE59F0000|(intr(r)<<12));
+        gen_multibyte(0xEA000000);
         if(fr & VT_SYM)
 	  greloc(cur_text_section, sv->sym, ind, R_ARM_ABS32);
-        o(sv->c.ul);
+        gen_multibyte(sv->c.ul);
       } else
-        o(op);
+        gen_multibyte(op);
       return;
     } else if (v == VT_LOCAL) {
       op=stuff_const(0xE28B0000|(intr(r)<<12),sv->c.ul);
       if (fr & VT_SYM || !op) {
-	o(0xE59F0000|(intr(r)<<12));
-	o(0xEA000000);
+	gen_multibyte(0xE59F0000|(intr(r)<<12));
+	gen_multibyte(0xEA000000);
 	if(fr & VT_SYM) // needed ?
 	  greloc(cur_text_section, sv->sym, ind, R_ARM_ABS32);
-	o(sv->c.ul);
-	o(0xE08B0000|(intr(r)<<12)|intr(r));
+	gen_multibyte(sv->c.ul);
+	gen_multibyte(0xE08B0000|(intr(r)<<12)|intr(r));
       } else
-	o(op);
+	gen_multibyte(op);
       return;
     } else if(v == VT_CMP) {
-      o(mapcc(sv->c.ul)|0x3A00001|(intr(r)<<12));
-      o(mapcc(negcc(sv->c.ul))|0x3A00000|(intr(r)<<12));
+      gen_multibyte(mapcc(sv->c.ul)|0x3A00001|(intr(r)<<12));
+      gen_multibyte(mapcc(negcc(sv->c.ul))|0x3A00000|(intr(r)<<12));
       return;
     } else if (v == VT_JMP || v == VT_JMPI) {
       int t;
       t = v & 1;
-      o(0xE3A00000|(intr(r)<<12)|t);
-      o(0xEA000000);
+      gen_multibyte(0xE3A00000|(intr(r)<<12)|t);
+      gen_multibyte(0xEA000000);
       gsym(sv->c.ul);
-      o(0xE3A00000|(intr(r)<<12)|(t^1));
+      gen_multibyte(0xE3A00000|(intr(r)<<12)|(t^1));
       return;
     } else if (v < VT_CONST) {
       if(is_float(ft))
 #ifdef TCC_ARM_VFP
-	o(0xEEB00A40|(vfpr(r)<<12)|vfpr(v)|T2CPR(ft)); /* fcpyX */
+	gen_multibyte(0xEEB00A40|(vfpr(r)<<12)|vfpr(v)|T2CPR(ft)); /* fcpyX */
 #else
-	o(0xEE008180|(fpr(r)<<12)|fpr(v));
+	gen_multibyte(0xEE008180|(fpr(r)<<12)|fpr(v));
 #endif
       else
-	o(0xE1A00000|(intr(r)<<12)|intr(v));
+	gen_multibyte(0xE1A00000|(intr(r)<<12)|intr(v));
       return;
     }
   }
@@ -623,7 +622,7 @@ void store(int r, SValue *sv)
 	  op|=0x800000; 
 	if ((ft & VT_BTYPE) != VT_FLOAT) 
 	  op|=0x100;   /* fsts -> fstd */
-	o(op|(vfpr(r)<<12)|(fc>>2)|(base<<16));
+	gen_multibyte(op|(vfpr(r)<<12)|(fc>>2)|(base<<16));
 #else
 	op=0xED000100;
 	if(!sign)
@@ -637,7 +636,7 @@ void store(int r, SValue *sv)
 	if ((ft & VT_BTYPE) == VT_LDOUBLE)
 	  op|=0x400000;
 #endif
-	o(op|(fpr(r)<<12)|(fc>>2)|(base<<16));
+	gen_multibyte(op|(fpr(r)<<12)|(fc>>2)|(base<<16));
 #endif
 	return;
       } else if((ft & VT_BTYPE) == VT_SHORT) {
@@ -645,7 +644,7 @@ void store(int r, SValue *sv)
 	op=0xE14000B0;
 	if(!sign)
 	  op|=0x800000;
-	o(op|(intr(r)<<12)|(base<<16)|((fc&0xf0)<<4)|(fc&0xf));
+	gen_multibyte(op|(intr(r)<<12)|(base<<16)|((fc&0xf0)<<4)|(fc&0xf));
       } else {
 	calcaddr(&base,&fc,&sign,4095,0);
 	op=0xE5000000;
@@ -653,7 +652,7 @@ void store(int r, SValue *sv)
 	  op|=0x800000;
         if ((ft & VT_BTYPE) == VT_BYTE)
           op|=0x400000;
-        o(op|(intr(r)<<12)|fc|(base<<16));
+        gen_multibyte(op|(intr(r)<<12)|fc|(base<<16));
       }
       return;
     }
@@ -680,21 +679,21 @@ static void gcall_or_jmp(int is_jmp)
 	greloc(cur_text_section, vtop->sym, ind, R_ARM_PC24);
       } else
 	put_elf_reloc(symtab_section, cur_text_section, ind, R_ARM_PC24, 0);
-      o(x|(is_jmp?0xE0000000:0xE1000000));
+      gen_multibyte(x|(is_jmp?0xE0000000:0xE1000000));
     } else {
       if(!is_jmp)
-	o(0xE28FE004); // add lr,pc,#4
-      o(0xE51FF004);   // ldr pc,[pc,#-4]
+	gen_multibyte(0xE28FE004); // add lr,pc,#4
+      gen_multibyte(0xE51FF004);   // ldr pc,[pc,#-4]
       if (vtop->r & VT_SYM)
 	greloc(cur_text_section, vtop->sym, ind, R_ARM_ABS32);
-      o(vtop->c.ul);
+      gen_multibyte(vtop->c.ul);
     }
   } else {
     /* otherwise, indirect call */
     r = gv(RC_INT);
     if(!is_jmp)
-      o(0xE1A0E00F);       // mov lr,pc
-    o(0xE1A0F000|intr(r)); // mov pc,r
+      gen_multibyte(0xE1A0E00F);       // mov lr,pc
+    gen_multibyte(0xE1A0F000|intr(r)); // mov pc,r
   }
 }
 
@@ -768,7 +767,7 @@ void gfunc_call(int nb_args)
       gadd_sp(-size);
       /* generate structure store */
       r = get_reg(RC_INT);
-      o(0xE1A0000D|(intr(r)<<12));
+      gen_multibyte(0xE1A0000D|(intr(r)<<12));
       vset(&vtop->type, r | VT_LVAL, 0);
       vswap();
       vstore();
@@ -783,7 +782,7 @@ void gfunc_call(int nb_args)
 	size=8;
 	r|=0x101; /* fstms -> fstmd */
       }
-      o(0xED2D0A01+r);
+      gen_multibyte(0xED2D0A01+r);
 #else
       r=fpr(gv(RC_FLOAT))<<12;
       if ((vtop->type.t & VT_BTYPE) == VT_FLOAT)
@@ -798,7 +797,7 @@ void gfunc_call(int nb_args)
       else if(size == 8)
 	r|=0x8000;
 
-      o(0xED2D0100|r|(size>>2));
+      gen_multibyte(0xED2D0100|r|(size>>2));
 #endif
       vtop--;
       args_size += size;
@@ -816,7 +815,7 @@ void gfunc_call(int nb_args)
 	}
 	if(s==RC_INT) {
 	  r = gv(s);
-	  o(0xE52D0004|(intr(r)<<12)); /* str r,[sp,#-4]! */
+	  gen_multibyte(0xE52D0004|(intr(r)<<12)); /* str r,[sp,#-4]! */
 	  vtop--;
 	} else {
 	  plan2[keep]=s;
@@ -833,13 +832,13 @@ void gfunc_call(int nb_args)
 #ifdef TCC_ARM_EABI
       if(vtop->type.t == VT_VOID) {
 	if(s == RC_INT)
-	  o(0xE24DD004); /* sub sp,sp,#4 */
+	  gen_multibyte(0xE24DD004); /* sub sp,sp,#4 */
 	vtop--;
       } else
 #endif      
       if(s == RC_INT) {
 	r = gv(s);
-	o(0xE52D0004|(intr(r)<<12)); /* str r,[sp,#-4]! */
+	gen_multibyte(0xE52D0004|(intr(r)<<12)); /* str r,[sp,#-4]! */
 	vtop--;
       } else {
 	plan2[keep]=s;
@@ -862,7 +861,7 @@ save_regs(keep); /* save used temporary registers */
     todo&=((1<<n)-1);
     if(todo) {
       int i;
-      o(0xE8BD0000|todo);
+      gen_multibyte(0xE8BD0000|todo);
       for(i=0;i<4;i++)
 	if(todo&(1<<i)) {
 	  vpushi(0);
@@ -887,10 +886,10 @@ save_regs(keep); /* save used temporary registers */
 #ifdef TCC_ARM_VFP
   else if(is_float(vtop->type.ref->type.t)) {
     if((vtop->type.ref->type.t & VT_BTYPE) == VT_FLOAT) {
-      o(0xEE000A10); /* fmsr s0,r0 */
+      gen_multibyte(0xEE000A10); /* fmsr s0,r0 */
     } else {
-      o(0xEE000B10); /* fmdlr d0,r0 */
-      o(0xEE201B10); /* fmdhr d0,r1 */
+      gen_multibyte(0xEE000B10); /* fmdlr d0,r0 */
+      gen_multibyte(0xEE201B10); /* fmdhr d0,r1 */
     }
   }
 #endif
@@ -921,7 +920,7 @@ void gfunc_prolog(CType *func_type)
     size = type_size(&sym2->type, &align);
     n += (size + 3) / 4;
   }
-  o(0xE1A0C00D); /* mov ip,sp */
+  gen_multibyte(0xE1A0C00D); /* mov ip,sp */
   if(func_type->ref->c == FUNC_ELLIPSIS)
     n=4;
   if(n) {
@@ -930,12 +929,12 @@ void gfunc_prolog(CType *func_type)
 #ifdef TCC_ARM_EABI
     n=(n+1)&-2;
 #endif
-    o(0xE92D0000|((1<<n)-1)); /* save r0-r4 on stack if needed */
+    gen_multibyte(0xE92D0000|((1<<n)-1)); /* save r0-r4 on stack if needed */
   }
-  o(0xE92D5800); /* save fp, ip, lr */
-  o(0xE28DB00C); /* add fp, sp, #12 */
+  gen_multibyte(0xE92D5800); /* save fp, ip, lr */
+  gen_multibyte(0xE28DB00C); /* add fp, sp, #12 */
   func_sub_sp_offset = ind;
-  o(0xE1A00000); /* nop, leave space for stack adjustment */
+  gen_multibyte(0xE1A00000); /* nop, leave space for stack adjustment */
   while ((sym = sym->next)) {
     CType *type;
     type = &sym->type;
@@ -960,14 +959,14 @@ void gfunc_epilog(void)
 #ifdef TCC_ARM_EABI
   if(is_float(func_vt.t)) {
     if((func_vt.t & VT_BTYPE) == VT_FLOAT)
-      o(0xEE100A10); /* fmrs r0, s0 */
+      gen_multibyte(0xEE100A10); /* fmrs r0, s0 */
     else {
-      o(0xEE100B10); /* fmrdl r0, d0 */
-      o(0xEE301B10); /* fmrdh r1, d0 */
+      gen_multibyte(0xEE100B10); /* fmrdl r0, d0 */
+      gen_multibyte(0xEE301B10); /* fmrdh r1, d0 */
     }
   }
 #endif
-  o(0xE91BA800); /* restore fp, sp, pc */
+  gen_multibyte(0xE91BA800); /* restore fp, sp, pc */
   diff = (-loc + 3) & -4;
 #ifdef TCC_ARM_EABI
   if(!leaffunc)
@@ -980,10 +979,10 @@ void gfunc_epilog(void)
     else {
       unsigned long addr;
       addr=ind;
-      o(0xE59FC004); /* ldr ip,[pc+4] */
-      o(0xE04BD00C); /* sub sp,fp,ip  */
-      o(0xE1A0F00E); /* mov pc,lr */
-      o(diff);
+      gen_multibyte(0xE59FC004); /* ldr ip,[pc+4] */
+      gen_multibyte(0xE04BD00C); /* sub sp,fp,ip  */
+      gen_multibyte(0xE1A0F00E); /* mov pc,lr */
+      gen_multibyte(diff);
       *(unsigned long *)(cur_text_section->data + func_sub_sp_offset) = 0xE1000000|encbranch(func_sub_sp_offset,addr,1);
     }
   }
@@ -994,7 +993,7 @@ int gjmp(int t)
 {
   int r;
   r=ind;
-  o(0xE0000000|encbranch(r,t,1));
+  gen_multibyte(0xE0000000|encbranch(r,t,1));
   return r;
 }
 
@@ -1014,7 +1013,7 @@ int gtst(int inv, int t)
   if (v == VT_CMP) {
     op=mapcc(inv?negcc(vtop->c.i):vtop->c.i);
     op|=encbranch(r,t,1);
-    o(op);
+    gen_multibyte(op);
     t=r;
   } else if (v == VT_JMP || v == VT_JMPI) {
     if ((v & 1) == inv) {
@@ -1042,10 +1041,10 @@ int gtst(int inv, int t)
     if (is_float(vtop->type.t)) {
       r=gv(RC_FLOAT);
 #ifdef TCC_ARM_VFP
-      o(0xEEB50A40|(vfpr(r)<<12)|T2CPR(vtop->type.t)); /* fcmpzX */
-      o(0xEEF1FA10); /* fmstat */
+      gen_multibyte(0xEEB50A40|(vfpr(r)<<12)|T2CPR(vtop->type.t)); /* fcmpzX */
+      gen_multibyte(0xEEF1FA10); /* fmstat */
 #else
-      o(0xEE90F118|(fpr(r)<<16));
+      gen_multibyte(0xEE90F118|(fpr(r)<<16));
 #endif
       vtop->r = VT_CMP;
       vtop->c.i = TOK_NE;
@@ -1056,7 +1055,7 @@ int gtst(int inv, int t)
 	t = gjmp(t);
     } else {
       v = gv(RC_INT);
-      o(0xE3300000|(intr(v)<<16));
+      gen_multibyte(0xE3300000|(intr(v)<<16));
       vtop->r = VT_CMP;
       vtop->c.i = TOK_NE;
       return gtst(inv, t);
@@ -1115,7 +1114,7 @@ void gen_opi(int op)
       r = vtop[-1].r;
       fr = vtop[0].r;
       vtop--;
-      o(0xE0000090|(intr(r)<<16)|(intr(r)<<8)|intr(fr));
+      gen_multibyte(0xE0000090|(intr(r)<<16)|(intr(r)<<8)|intr(fr));
       return;
     case TOK_SHL:
       opc = 0;
@@ -1152,7 +1151,7 @@ void gen_opi(int op)
       c=vtop[-1].r;
       vtop[-1].r=get_reg_ex(RC_INT,regmask(c));
       vtop--;
-      o(0xE0800090|(r<<16)|(intr(vtop->r)<<12)|(intr(c)<<8)|intr(vtop[1].r));
+      gen_multibyte(0xE0800090|(r<<16)|(intr(vtop->r)<<12)|(intr(c)<<8)|intr(vtop[1].r));
       return;
     default:
       opc = 0x15;
@@ -1179,13 +1178,13 @@ void gen_opi(int op)
 	x=stuff_const(opc|0x2000000,vtop->c.i);
 	if(x) {
 	  r=intr(vtop[-1].r=get_reg_ex(RC_INT,regmask(vtop[-1].r)));
-	  o(x|(r<<12));
+	  gen_multibyte(x|(r<<12));
 	  goto done;
 	}
       }
       fr=intr(gv(RC_INT));
       r=intr(vtop[-1].r=get_reg_ex(RC_INT,two2mask(vtop->r,vtop[-1].r)));
-      o(opc|(r<<12)|fr);
+      gen_multibyte(opc|(r<<12)|fr);
 done:
       vtop--;
       if (op >= TOK_ULT && op <= TOK_GT) {
@@ -1205,11 +1204,11 @@ done:
       if ((vtop->r & (VT_VALMASK | VT_LVAL | VT_SYM)) == VT_CONST) {
 	fr=intr(vtop[-1].r=get_reg_ex(RC_INT,regmask(vtop[-1].r)));
 	c = vtop->c.i & 0x1f;
-	o(opc|(c<<7)|(fr<<12));
+	gen_multibyte(opc|(c<<7)|(fr<<12));
       } else {
         fr=intr(gv(RC_INT));
 	c=intr(vtop[-1].r=get_reg_ex(RC_INT,two2mask(vtop->r,vtop[-1].r)));
-	o(opc|(c<<12)|(fr<<8)|0x10);
+	gen_multibyte(opc|(c<<12)|(fr<<8)|0x10);
       }
       vtop--;
       break;
@@ -1292,14 +1291,14 @@ void gen_opf(int op)
 	x|=0x80; /* fcmpX -> fcmpeX */
       if(is_zero(0)) {
 	vtop--;
-	o(x|0x10000|(vfpr(gv(RC_FLOAT))<<12)); /* fcmp(e)X -> fcmp(e)zX */
+	gen_multibyte(x|0x10000|(vfpr(gv(RC_FLOAT))<<12)); /* fcmp(e)X -> fcmp(e)zX */
       } else {
 	x|=vfpr(gv(RC_FLOAT));
 	vswap();
-	o(x|(vfpr(gv(RC_FLOAT))<<12));
+	gen_multibyte(x|(vfpr(gv(RC_FLOAT))<<12));
 	vtop--;
       }
-      o(0xEEF1FA10); /* fmstat */
+      gen_multibyte(0xEEF1FA10); /* fmstat */
 
       switch(op) {
 	case TOK_LE: op=TOK_ULE; break;
@@ -1325,7 +1324,7 @@ void gen_opf(int op)
   vtop->r=get_reg_ex(RC_FLOAT,r);
   if(!fneg)
     vtop--;
-  o(x|(vfpr(vtop->r)<<12));
+  gen_multibyte(x|(vfpr(vtop->r)<<12));
 }
 
 #else
@@ -1529,7 +1528,7 @@ void gen_opf(int op)
     c1=fpr(vtop[-1].r);
   }
   vtop--;
-  o(x|(r<<16)|(c1<<12)|r2);
+  gen_multibyte(x|(r<<16)|(c1<<12)|r2);
 }
 #endif
 
@@ -1543,17 +1542,17 @@ void gen_cvt_itof(int t)
     r=intr(gv(RC_INT));
 #ifdef TCC_ARM_VFP
     r2=vfpr(vtop->r=get_reg(RC_FLOAT));
-    o(0xEE000A10|(r<<12)|(r2<<16)); /* fmsr */
+    gen_multibyte(0xEE000A10|(r<<12)|(r2<<16)); /* fmsr */
     r2<<=12;
     if(!(vtop->type.t & VT_UNSIGNED))
       r2|=0x80;                /* fuitoX -> fsituX */
-    o(0xEEB80A40|r2|T2CPR(t)); /* fYitoX*/
+    gen_multibyte(0xEEB80A40|r2|T2CPR(t)); /* fYitoX*/
 #else
     r2=fpr(vtop->r=get_reg(RC_FLOAT));
-    o(0xEE000190|(r2<<16)|(r<<12));
+    gen_multibyte(0xEE000190|(r2<<16)|(r<<12));
     if((vtop->type.t & (VT_UNSIGNED|VT_BTYPE)) == (VT_UNSIGNED|VT_INT)) {
       unsigned int off=0;
-      o(0xE3500000|(r<<12));
+      gen_multibyte(0xE3500000|(r<<12));
       r=fpr(get_reg(RC_FLOAT));
       if(last_itod_magic) {
 	off=ind+8-last_itod_magic;
@@ -1561,14 +1560,14 @@ void gen_cvt_itof(int t)
 	if(off>255)
 	  off=0;
       }
-      o(0xBD1F8100|(r<<12)|off);
+      gen_multibyte(0xBD1F8100|(r<<12)|off);
       if(!off) {
-        o(0xEA000001);
+        gen_multibyte(0xEA000001);
         last_itod_magic=ind;
-        o(0x41F00000);
-        o(0);
+        gen_multibyte(0x41F00000);
+        gen_multibyte(0);
       }
-      o(0xBE000180|(r2<<16)|(r2<<12)|r);
+      gen_multibyte(0xBE000180|(r2<<16)|(r2<<12)|r);
     }
 #endif
     return;
@@ -1614,9 +1613,9 @@ void gen_cvt_ftoi(int t)
 #ifdef TCC_ARM_VFP
     r=vfpr(gv(RC_FLOAT));
     u=u?0:0x10000;
-    o(0xEEBC0A40|(r<<12)|r|T2CPR(r2)); /* ftoXiY */
+    gen_multibyte(0xEEBC0A40|(r<<12)|r|T2CPR(r2)); /* ftoXiY */
     r2=intr(vtop->r=get_reg(RC_INT));
-    o(0xEE100A10|(r<<16)|(r2<<12));
+    gen_multibyte(0xEE100A10|(r<<16)|(r2<<12));
     return;
 #else
     if(u) {
@@ -1633,7 +1632,7 @@ void gen_cvt_ftoi(int t)
     } else {
       r=fpr(gv(RC_FLOAT));
       r2=intr(vtop->r=get_reg(RC_INT));
-      o(0xEE100170|(r2<<12)|r);
+      gen_multibyte(0xEE100170|(r2<<12)|r);
     return;
     }
 #endif
@@ -1668,7 +1667,7 @@ void gen_cvt_ftof(int t)
 #ifdef TCC_ARM_VFP
   if(((vtop->type.t & VT_BTYPE) == VT_FLOAT) != ((t & VT_BTYPE) == VT_FLOAT)) {
     int r=vfpr(gv(RC_FLOAT));
-    o(0xEEB70AC0|(r<<12)|r|T2CPR(vtop->type.t));
+    gen_multibyte(0xEEB70AC0|(r<<12)|r|T2CPR(vtop->type.t));
   }
 #else
   /* all we have to do on i386 and FPA ARM is to put the float in a register */

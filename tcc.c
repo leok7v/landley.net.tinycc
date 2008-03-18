@@ -3694,7 +3694,7 @@ void save_reg(int r)
 #ifdef TINYCC_TARGET_I386
                 /* x86 specific: need to pop fp register ST0 if saved */
                 if (r == TREG_ST0) {
-                    o(0xd9dd); /* fstp %st(1) */
+                    gen_multibyte(0xd9dd); /* fstp %st(1) */
                 }
 #endif
                 /* special long long case */
@@ -4135,7 +4135,7 @@ void vpop(void)
 #ifdef TINYCC_TARGET_I386
     /* for x86, we need to pop the FP stack */
     if (v == TREG_ST0) {
-        o(0xd8dd); /* fstp %st(1) */
+        gen_multibyte(0xd8dd); /* fstp %st(1) */
     } else
 #endif
     if (v == VT_JMP || v == VT_JMPI) {
@@ -4388,7 +4388,7 @@ void gen_opl(int op)
                 b = psym(0x850f, 0);
 #elif defined(TINYCC_TARGET_ARM)
                 b = ind;
-                o(0x1A000000 | encbranch(ind, 0, 1));
+                gen_multibyte(0x1A000000 | encbranch(ind, 0, 1));
 #elif defined(TINYCC_TARGET_C67)
                 error("not implemented");
 #else

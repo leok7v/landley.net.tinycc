@@ -90,7 +90,8 @@ void gen_byte(int c)
     ind = ind1;
 }
 
-void o(unsigned int c)
+// Output a variable number of bytes, little endian, ignoring high zero bytes.
+void gen_multibyte(unsigned int c)
 {
     while (c) {
         gen_byte(c);
@@ -98,6 +99,7 @@ void o(unsigned int c)
     }
 }
 
+// Output 4 bytes little endian
 void gen_le32(int c)
 {
     gen_byte(c);
@@ -134,7 +136,7 @@ static int oad(int c, int s)
     int ind1;
 
     if (!cur_text_section) return 0;
-    o(c);
+    gen_multibyte(c);
     ind1 = ind + 4;
     if (ind1 > cur_text_section->data_allocated)
         section_realloc(cur_text_section, ind1);
@@ -152,20 +154,20 @@ static void gen_addr32(int r, Sym *sym, int c)
     gen_le32(c);
 }
 
-/* generate a modrm reference. 'op_reg' contains the addtionnal 3
+/* generate a modrm reference. 'op_reg' contains the addtional 3
    opcode bits */
 static void gen_modrm(int op_reg, int r, Sym *sym, int c)
 {
-    op_reg = op_reg << 3;
+    op_reg <<= 3;
     if ((r & VT_VALMASK) == VT_CONST) {
         /* constant memory reference */
-        o(0x05 | op_reg);
+        gen_multibyte(0x05 | op_reg);  // XXX possibly gen_byte?
         gen_addr32(r, sym, c);
     } else if ((r & VT_VALMASK) == VT_LOCAL) {
         /* currently, we use only ebp as base */
         if (c == (char)c) {
             /* short reference */
-            o(0x45 | op_reg);
+            gen_multibyte(0x45 | op_reg);  // XXX possibly gen_byte?
             gen_byte(c);
         } else {
             oad(0x85 | op_reg, c);
@@ -196,47 +198,47 @@ void load(int r, SValue *sv)
             fr = r;
         }
         if ((ft & VT_BTYPE) == VT_FLOAT) {
-            o(0xd9); /* flds */
+            gen_byte(0xd9); /* flds */
             r = 0;
         } else if ((ft & VT_BTYPE) == VT_DOUBLE) {
-            o(0xdd); /* fldl */
+            gen_byte(0xdd); /* fldl */
             r = 0;
         } else if ((ft & VT_BTYPE) == VT_LDOUBLE) {
-            o(0xdb); /* fldt */
+            gen_byte(0xdb); /* fldt */
             r = 5;
         } else if ((ft & VT_TYPE) == VT_BYTE) {
-            o(0xbe0f);   /* movsbl */
+            gen_multibyte(0xbe0f);   /* movsbl */
         } else if ((ft & VT_TYPE) == (VT_BYTE | VT_UNSIGNED)) {
-            o(0xb60f);   /* movzbl */
+            gen_multibyte(0xb60f);   /* movzbl */
         } else if ((ft & VT_TYPE) == VT_SHORT) {
-            o(0xbf0f);   /* movswl */
+            gen_multibyte(0xbf0f);   /* movswl */
         } else if ((ft & VT_TYPE) == (VT_SHORT | VT_UNSIGNED)) {
-            o(0xb70f);   /* movzwl */
+            gen_multibyte(0xb70f);   /* movzwl */
         } else {
-            o(0x8b);     /* movl */
+            gen_byte(0x8b);     /* movl */
         }
         gen_modrm(r, fr, sv->sym, fc);
     } else {
         if (v == VT_CONST) {
-            o(0xb8 + r); /* mov $xx, r */
+            gen_multibyte(0xb8 + r); /* mov $xx, r */  // XXX possibly gen_byte?
             gen_addr32(fr, sv->sym, fc);
         } else if (v == VT_LOCAL) {
-            o(0x8d); /* lea xxx(%ebp), r */
+            gen_byte(0x8d); /* lea xxx(%ebp), r */
             gen_modrm(r, VT_LOCAL, sv->sym, fc);
         } else if (v == VT_CMP) {
             oad(0xb8 + r, 0); /* mov $0, r */
-            o(0x0f); /* setxx %br */
-            o(fc);
-            o(0xc0 + r);
+            gen_byte(0x0f); /* setxx %br */
+            gen_multibyte(fc);  // XXX possibly gen_byte?
+            gen_multibyte(0xc0 + r); // XXX possibly gen_byte?
         } else if (v == VT_JMP || v == VT_JMPI) {
             t = v & 1;
             oad(0xb8 + r, t); /* mov $1, r */
-            o(0x05eb); /* jmp after */
+            gen_multibyte(0x05eb); /* jmp after */
             gsym(fc);
             oad(0xb8 + r, t ^ 1); /* mov $0, r */
         } else if (v != r) {
-            o(0x89);
-            o(0xc0 + r + v * 8); /* mov v, r */
+            gen_byte(0x89);
+            gen_multibyte(0xc0 + r + v * 8); /* mov v, r */  // XXX possibly gen_byte?
         }
     }
 }
@@ -252,36 +254,33 @@ void store(int r, SValue *v)
     bt = ft & VT_BTYPE;
     /* XXX: incorrect if float reg to reg */
     if (bt == VT_FLOAT) {
-        o(0xd9); /* fsts */
+        gen_byte(0xd9); /* fsts */
         r = 2;
     } else if (bt == VT_DOUBLE) {
-        o(0xdd); /* fstpl */
+        gen_byte(0xdd); /* fstpl */
         r = 2;
     } else if (bt == VT_LDOUBLE) {
-        o(0xc0d9); /* fld %st(0) */
-        o(0xdb); /* fstpt */
+        gen_multibyte(0xc0d9); /* fld %st(0) */  // XXX combine?
+        gen_byte(0xdb); /* fstpt */
         r = 7;
     } else {
-        if (bt == VT_SHORT)
-            o(0x66);
-        if (bt == VT_BYTE || bt == VT_BOOL)
-            o(0x88);
-        else
-            o(0x89);
+        if (bt == VT_SHORT) gen_byte(0x66);
+        else if (bt == VT_BYTE || bt == VT_BOOL) gen_byte(0x88);
+        else gen_byte(0x89);
     }
     if (fr == VT_CONST ||
         fr == VT_LOCAL ||
         (v->r & VT_LVAL)) {
         gen_modrm(r, v->r, v->sym, fc);
     } else if (fr != r) {
-        o(0xc0 + fr + r * 8); /* mov r, fr */
+        gen_multibyte(0xc0 + fr + r * 8); /* mov r, fr */ // XXX maybe gen_byte?
     }
 }
 
 static void gadd_sp(int val)
 {
     if (val == (char)val) {
-        o(0xc483);
+        gen_multibyte(0xc483);
         gen_byte(val);
     } else {
         oad(0xc481, val); /* add $xxx, %esp */
@@ -307,8 +306,8 @@ static void gcall_or_jmp(int is_jmp)
     } else {
         /* otherwise, indirect call */
         r = gv(RC_INT);
-        o(0xff); /* call/jmp *r */
-        o(0xd0 + r + (is_jmp << 4));
+        gen_byte(0xff); /* call/jmp *r */
+        gen_multibyte(0xd0 + r + (is_jmp << 4));  // XXX maybe gen_byte?
     }
 }
 
@@ -333,26 +332,21 @@ void gfunc_call(int nb_args)
             oad(0xec81, size); /* sub $xxx, %esp */
             /* generate structure store */
             r = get_reg(RC_INT);
-            o(0x89); /* mov %esp, r */
-            o(0xe0 + r);
+            gen_byte(0x89); /* mov %esp, r */
+            gen_multibyte(0xe0 + r);  // XXX maybe gen_byte?  Combine?
             vset(&vtop->type, r | VT_LVAL, 0);
             vswap();
             vstore();
             args_size += size;
         } else if (is_float(vtop->type.t)) {
             gv(RC_FLOAT); /* only one float register */
-            if ((vtop->type.t & VT_BTYPE) == VT_FLOAT)
-                size = 4;
-            else if ((vtop->type.t & VT_BTYPE) == VT_DOUBLE)
-                size = 8;
-            else
-                size = 12;
+            if ((vtop->type.t & VT_BTYPE) == VT_FLOAT) size = 4;
+            else if ((vtop->type.t & VT_BTYPE) == VT_DOUBLE) size = 8;
+            else size = 12;
             oad(0xec81, size); /* sub $xxx, %esp */
-            if (size == 12)
-                o(0x7cdb);
-            else
-                o(0x5cd9 + size - 4); /* fstp[s|l] 0(%esp) */
-            gen_byte(0x24);
+            if (size == 12) gen_multibyte(0x7cdb);
+            else gen_multibyte(0x5cd9 + size - 4); /* fstp[s|l] 0(%esp) */
+            gen_byte(0x24); // XXX maybe combine?
             gen_byte(0x00);
             args_size += size;
         } else {
@@ -361,11 +355,9 @@ void gfunc_call(int nb_args)
             r = gv(RC_INT);
             if ((vtop->type.t & VT_BTYPE) == VT_LLONG) {
                 size = 8;
-                o(0x50 + vtop->r2); /* push r */
-            } else {
-                size = 4;
-            }
-            o(0x50 + r); /* push r */
+                gen_multibyte(0x50 + vtop->r2); /* push r */ // XXX maybe gen_byte?
+            } else size = 4;
+            gen_multibyte(0x50 + r); /* push r */ // XXX maybe gen_byte?
             args_size += size;
         }
         vtop--;
@@ -388,7 +380,7 @@ void gfunc_call(int nb_args)
         for(i = 0;i < fastcall_nb_regs; i++) {
             if (args_size <= 0)
                 break;
-            o(0x58 + fastcall_regs_ptr[i]); /* pop r */
+            gen_multibyte(0x58 + fastcall_regs_ptr[i]); /* pop r */ // XXX maybe gen_byte?
             /* XXX: incorrect for struct/floats */
             args_size -= 4;
         }
@@ -451,7 +443,7 @@ void gfunc_prolog(CType *func_type)
         if (param_index < fastcall_nb_regs) {
             /* save FASTCALL register */
             loc -= 4;
-            o(0x89);     /* movl */
+            gen_byte(0x89);     /* movl */
             gen_modrm(fastcall_regs_ptr[param_index], VT_LOCAL, NULL, loc);
             param_addr = loc;
         } else {
@@ -502,7 +494,7 @@ void gfunc_epilog(void)
         oad(0xe8, -4);
         ind = saved_ind;
         /* generate bound check local freeing */
-        o(0x5250); /* save returned value, if any */
+        gen_multibyte(0x5250); /* save returned value, if any */
         greloc(cur_text_section, sym_data,
                ind + 1, R_386_32);
         oad(0xb8, 0); /* mov %eax, xxx */
@@ -510,14 +502,14 @@ void gfunc_epilog(void)
         greloc(cur_text_section, sym, 
                ind + 1, R_386_PC32);
         oad(0xe8, -4);
-        o(0x585a); /* restore returned value, if any */
+        gen_multibyte(0x585a); /* restore returned value, if any */
     }
 #endif
-    o(0xc9); /* leave */
+    gen_byte(0xc9); /* leave */
     if (func_ret_sub == 0) {
-        o(0xc3); /* ret */
+        gen_byte(0xc3); /* ret */
     } else {
-        o(0xc2); /* ret n */
+        gen_byte(0xc2); /* ret n */
         gen_byte(func_ret_sub);
         gen_byte(func_ret_sub >> 8);
     }
@@ -534,8 +526,8 @@ void gfunc_epilog(void)
     } else
 #endif
     {
-        o(0xe58955);  /* push %ebp, mov %esp, %ebp */
-        o(0xec81);  /* sub esp, stacksize */
+        gen_multibyte(0xe58955);  /* push %ebp, mov %esp, %ebp */
+        gen_multibyte(0xec81);  /* sub esp, stacksize */
     }
     gen_le32(v);
     ind = saved_ind;
@@ -595,8 +587,8 @@ int gtst(int inv, int t)
                 t = gjmp(t);
         } else {
             v = gv(RC_INT);
-            o(0x85);
-            o(0xc0 + v * 9);
+            gen_byte(0x85);
+            gen_multibyte(0xc0 + v * 9); // XXX maybe gen_byte?
             gen_byte(0x0f);
             t = psym(0x85 ^ inv, t);
         }
@@ -623,19 +615,19 @@ void gen_opi(int op)
             c = vtop->c.i;
             if (c == (char)c) {
                 /* XXX: generate inc and dec for smaller code ? */
-                o(0x83);
-                o(0xc0 | (opc << 3) | r);
+                gen_byte(0x83);
+                gen_multibyte(0xc0 | (opc << 3) | r); // XXX maybe gen_byte?
                 gen_byte(c);
             } else {
-                o(0x81);
+                gen_byte(0x81);
                 oad(0xc0 | (opc << 3) | r, c);
             }
         } else {
             gv2(RC_INT, RC_INT);
             r = vtop[-1].r;
             fr = vtop[0].r;
-            o((opc << 3) | 0x01);
-            o(0xc0 + r + fr * 8); 
+            gen_multibyte((opc << 3) | 0x01); // XXX maybe gen_byte?
+            gen_multibyte(0xc0 + r + fr * 8);  // XXX maybe gen_byte?
         }
         vtop--;
         if (op >= TOK_ULT && op <= TOK_GT) {
@@ -667,8 +659,8 @@ void gen_opi(int op)
         r = vtop[-1].r;
         fr = vtop[0].r;
         vtop--;
-        o(0xaf0f); /* imul fr, r */
-        o(0xc0 + fr + r * 8);
+        gen_multibyte(0xaf0f); /* imul fr, r */
+        gen_multibyte(0xc0 + fr + r * 8); // XXX maybe gen_byte?
         break;
     case TOK_SHL:
         opc = 4;
@@ -686,15 +678,15 @@ void gen_opi(int op)
             r = gv(RC_INT);
             vswap();
             c = vtop->c.i & 0x1f;
-            o(0xc1); /* shl/shr/sar $xxx, r */
-            o(opc | r);
+            gen_byte(0xc1); /* shl/shr/sar $xxx, r */
+            gen_multibyte(opc | r); // XXX maybe gen_byte?
             gen_byte(c);
         } else {
             /* we generate the shift in ecx */
             gv2(RC_INT, RC_ECX);
             r = vtop[-1].r;
-            o(0xd3); /* shl/shr/sar %cl, r */
-            o(opc | r);
+            gen_byte(0xd3); /* shl/shr/sar %cl, r */
+            gen_multibyte(opc | r); // XXX maybe gen_byte?
         }
         vtop--;
         break;
@@ -712,17 +704,17 @@ void gen_opi(int op)
         vtop--;
         save_reg(TREG_EDX);
         if (op == TOK_UMULL) {
-            o(0xf7); /* mul fr */
-            o(0xe0 + fr);
+            gen_byte(0xf7); /* mul fr */
+            gen_multibyte(0xe0 + fr); // XXX maybe gen_byte, or combine?
             vtop->r2 = TREG_EDX;
             r = TREG_EAX;
         } else {
             if (op == TOK_UDIV || op == TOK_UMOD) {
-                o(0xf7d231); /* xor %edx, %edx, div fr, %eax */
-                o(0xf0 + fr);
+                gen_multibyte(0xf7d231); /* xor %edx, %edx, div fr, %eax */
+                gen_multibyte(0xf0 + fr); // XXX maybe gen_byte/combine?
             } else {
-                o(0xf799); /* cltd, idiv fr, %eax */
-                o(0xf8 + fr);
+                gen_multibyte(0xf799); /* cltd, idiv fr, %eax */
+                gen_multibyte(0xf8 + fr); // XXX maybe gen_byte/combine?
             }
             if (op == '%' || op == TOK_UMOD)
                 r = TREG_EDX;
@@ -776,21 +768,21 @@ void gen_opf(int op)
         else if (op == TOK_EQ || op == TOK_NE)
             swapped = 0;
         if (swapped)
-            o(0xc9d9); /* fxch %st(1) */
-        o(0xe9da); /* fucompp */
-        o(0xe0df); /* fnstsw %ax */
+            gen_multibyte(0xc9d9); /* fxch %st(1) */
+        gen_multibyte(0xe9da); /* fucompp */
+        gen_multibyte(0xe0df); /* fnstsw %ax */ // XXX maybe combine?
         if (op == TOK_EQ) {
-            o(0x45e480); /* and $0x45, %ah */
-            o(0x40fC80); /* cmp $0x40, %ah */
+            gen_multibyte(0x45e480); /* and $0x45, %ah */
+            gen_multibyte(0x40fC80); /* cmp $0x40, %ah */
         } else if (op == TOK_NE) {
-            o(0x45e480); /* and $0x45, %ah */
-            o(0x40f480); /* xor $0x40, %ah */
-            op = TOK_NE;
+            gen_multibyte(0x45e480); /* and $0x45, %ah */
+            gen_multibyte(0x40f480); /* xor $0x40, %ah */
+            op = TOK_NE; // XXX redundant?
         } else if (op == TOK_GE || op == TOK_LE) {
-            o(0x05c4f6); /* test $0x05, %ah */
+            gen_multibyte(0x05c4f6); /* test $0x05, %ah */
             op = TOK_EQ;
         } else {
-            o(0x45c4f6); /* test $0x45, %ah */
+            gen_multibyte(0x45c4f6); /* test $0x45, %ah */
             op = TOK_EQ;
         }
         vtop--;
@@ -825,8 +817,8 @@ void gen_opf(int op)
         ft = vtop->type.t;
         fc = vtop->c.ul;
         if ((ft & VT_BTYPE) == VT_LDOUBLE) {
-            o(0xde); /* fxxxp %st, %st(1) */
-            o(0xc1 + (a << 3));
+            gen_byte(0xde); /* fxxxp %st, %st(1) */
+            gen_multibyte(0xc1 + (a << 3)); // XXX maybe gen_byte/combine?
         } else {
             /* if saved lvalue, then we must reload it */
             r = vtop->r;
@@ -840,10 +832,8 @@ void gen_opf(int op)
                 fc = 0;
             }
 
-            if ((ft & VT_BTYPE) == VT_DOUBLE)
-                o(0xdc);
-            else
-                o(0xd8);
+            if ((ft & VT_BTYPE) == VT_DOUBLE) gen_byte(0xdc);
+            else gen_byte(0xd8);
             gen_modrm(a, r, vtop->sym, fc);
         }
         vtop--;
@@ -859,23 +849,23 @@ void gen_cvt_itof(int t)
     if ((vtop->type.t & VT_BTYPE) == VT_LLONG) {
         /* signed long long to float/double/long double (unsigned case
            is handled generically) */
-        o(0x50 + vtop->r2); /* push r2 */
-        o(0x50 + (vtop->r & VT_VALMASK)); /* push r */
-        o(0x242cdf); /* fildll (%esp) */
-        o(0x08c483); /* add $8, %esp */
+        gen_multibyte(0x50 + vtop->r2); /* push r2 */  // XXX maybe gen_byte?
+        gen_multibyte(0x50 + (vtop->r & VT_VALMASK)); /* push r */ /// XXX maybe gen_byte?
+        gen_multibyte(0x242cdf); /* fildll (%esp) */
+        gen_multibyte(0x08c483); /* add $8, %esp */
     } else if ((vtop->type.t & (VT_BTYPE | VT_UNSIGNED)) == 
                (VT_INT | VT_UNSIGNED)) {
         /* unsigned int to float/double/long double */
-        o(0x6a); /* push $0 */
+        gen_byte(0x6a); /* push $0 */
         gen_byte(0x00);
-        o(0x50 + (vtop->r & VT_VALMASK)); /* push r */
-        o(0x242cdf); /* fildll (%esp) */
-        o(0x08c483); /* add $8, %esp */
+        gen_multibyte(0x50 + (vtop->r & VT_VALMASK)); /* push r */ // XXX maybe gen_byte?
+        gen_multibyte(0x242cdf); /* fildll (%esp) */
+        gen_multibyte(0x08c483); /* add $8, %esp */
     } else {
         /* int to float/double/long double */
-        o(0x50 + (vtop->r & VT_VALMASK)); /* push r */
-        o(0x2404db); /* fildl (%esp) */
-        o(0x04c483); /* add $4, %esp */
+        gen_multibyte(0x50 + (vtop->r & VT_VALMASK)); /* push r */ // XXX maybe gen_byte?
+        gen_multibyte(0x2404db); /* fildl (%esp) */
+        gen_multibyte(0x04c483); /* add $4, %esp */
     }
     vtop->r = TREG_ST0;
 }
@@ -891,12 +881,10 @@ void gen_cvt_ftoi(int t)
     ushort_type.t = VT_SHORT | VT_UNSIGNED;
 
     gv(RC_FLOAT);
-    if (t != VT_INT)
-        size = 8;
-    else 
-        size = 4;
+    if (t != VT_INT) size = 8;
+    else size = 4;
     
-    o(0x2dd9); /* ldcw xxx */
+    gen_multibyte(0x2dd9); /* ldcw xxx */
     sym = external_global_sym(TOK___tcc_int_fpu_control, 
                               &ushort_type, VT_LVAL);
     greloc(cur_text_section, sym, 
@@ -904,12 +892,10 @@ void gen_cvt_ftoi(int t)
     gen_le32(0);
     
     oad(0xec81, size); /* sub $xxx, %esp */
-    if (size == 4)
-        o(0x1cdb); /* fistpl */
-    else
-        o(0x3cdf); /* fistpll */
-    o(0x24);
-    o(0x2dd9); /* ldcw xxx */
+    if (size == 4) gen_multibyte(0x1cdb); /* fistpl */
+    else gen_multibyte(0x3cdf); /* fistpll */
+    gen_byte(0x24); // XXX maybe combine?
+    gen_multibyte(0x2dd9); /* ldcw xxx */
     sym = external_global_sym(TOK___tcc_fpu_control, 
                               &ushort_type, VT_LVAL);
     greloc(cur_text_section, sym, 
@@ -917,16 +903,14 @@ void gen_cvt_ftoi(int t)
     gen_le32(0);
 
     r = get_reg(RC_INT);
-    o(0x58 + r); /* pop r */
+    gen_multibyte(0x58 + r); /* pop r */ // XXX maybe gen_byte?
     if (size == 8) {
         if (t == VT_LLONG) {
             vtop->r = r; /* mark reg as used */
             r2 = get_reg(RC_INT);
-            o(0x58 + r2); /* pop r2 */
+            gen_multibyte(0x58 + r2); /* pop r2 */ // XXX maybe gen_byte?
             vtop->r2 = r2;
-        } else {
-            o(0x04c483); /* add $4, %esp */
-        }
+        } else gen_multibyte(0x04c483); /* add $4, %esp */
     }
     vtop->r = r;
 }
