@@ -14,7 +14,7 @@
 [ -z "$EXESUF" ] && EXESUF=
 [ -z "$CFLAGS" ] && CFLAGS="-g -Wall -fsigned-char -Os -fno-strict-aliasing"
 [ -z "$LIBS" ] && LIBS="-lm -ldl"
-[ -z "$HOST" ] && HOST=$(uname -m | sed 's/i.86/i686/')
+[ -z "$HOST" ] && HOST=$(uname -m | sed 's/i.86/i386/')
 [ -z "$PREFIX" ] && PREFIX=/usr/local
 
 # Set the compiler's search/install paths.
