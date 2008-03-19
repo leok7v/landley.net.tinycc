@@ -414,6 +414,9 @@ static void asm_opcode(TCCState *s1, int opcode)
     Operand ops[MAX_OPERANDS], *pop, seg_prefix;
     int op_type[3]; /* decoded op type */
 
+    // Work around a gcc bug.
+    seg_prefix.reg = 0;
+
     /* get operands */
     pop = ops;
     nb_ops = 0;
