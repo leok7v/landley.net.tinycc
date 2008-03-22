@@ -1,0 +1,193 @@
+<title>Rob's notes-to-self about the ELF file format.</title>
+
+<p>The actual spec is available <a href=http://www.muppetlabs.com/~breadbox/software/ELF.txt>here</a>,
+these are just my notes from reading it:</p>
+
+<p>There are three kinds of ELF files:</p>
+<ul>
+<li>Executables</li>
+<li>Shared libraries (*.so)</li>
+<li>Relocatable files (*.o)</li>
+</ul>
+
+<h2>Elf Header</h2>
+
+<p>Each ELF file starts with an <b>elf header</b>, which (for 32 bit elfses)
+looks like:</p>
+
+<pre>
+struct liv_tyler {
+  uint8_t ident[4];   // Always set to "0x7fELF"
+  uint8_t class;      // 1==32 bit, 2==64 bit
+  uint8_t endian;     // 1==little endian, 2==big endian
+  uint8_t version1;   // Set to 1
+  uint8_t pad[9];     // Unused (set to 0)
+  uint16_t type;      // 1==relocatable.o, 2==executable, 3==sharedobject.so
+  uint16_t machine;   // 2==sparc,3==x86,4==m68k,10==mips
+  uint32_t version2;  // Set to 1
+  uint32_t entry;     // Process entry point (virtual address)
+  uint32_t phoff;     // Program Header table (file offset, usually ehsize or 0)
+  uint32_t shoff;     // Section header table (file offset)
+  uint32_t flags;     // "processor-specific flags", whatever that is.
+  uint16_t ehsize;    // Set to 52 (elf header's size in bytes.  Why?)
+  uint16_t phentsize; // sizeof(program header table entry) == 32
+  uint16_t phnum;     // Count of entries in program header table (0 for *.o).
+  uint16_t shentsize; // sizeof(section header table entry) == 40
+  uint16_t shnum;     // Count of entries in section header table.
+  uint16_t shstrndx;  // Index in section header table of .shstrtab
+} eheader;
+</pre>
+
+<p>The "endian" byte indicates the endianness of the rest of the data.  The
+default entry value for x86 is 0x8048000.</p>
+
+<p>The above refers to three other data structures:</p>
+<ul>
+<li>The <b>program header table</b> - used to load program into memory and execute it.</li>
+<li>The <b>section header table</b> - used by compiler, linker, objdump, gdb...</li>
+<li>The <b>section header string table</b> - we'll get to this later.</li>
+</ul>
+
+<h2>Program Header Table</h2>
+
+<p>Executables and shared libraries have a program header table, *.o files do
+not (which is why you can't run 'em).  When an ELF file has a program header
+table, it usually starts right after the ELF header, I.E. eheader.phoff == 52.
+For *.o files both phoff and phnum are zero.</p>
+
+<p>The program header table is an array of program header structs, each of which
+describes a chunk of the file relevant to actually executing a program with
+this file.  The ELF spec says it must come before any other loadable segment
+in the file, although it doesn't say why.</p>
+
+<p>Each of the program header structs looks like:</p>
+
+<pre>
+struct orlando_bloom {
+  uint32_t type;    // LOAD=1, DYNAMIC=2, INTERP=3, NOTE=4, PHDR=6
+  uint32_t offset;  // Starting location of data in file.
+  uint32_t vaddr;   // virtual address to map the segment into memory at
+  uint32_t paddr;   // physical address (unused in Linux?)
+  uint32_t filesz;  // Number of bytes to load from file.
+  uint32_t memsz;   // Number of bytes to allocate in memory.
+  uint32_t flags;   // Or together: execute=1, write=2, read=4
+  uint32_t align;   // loader aligns vaddr to this, must be power of 2.
+} pheader;
+</pre>
+
+<p>If memsz > filesz then the memory at the end is zeroed.  (If memsz < filesz
+your ELF file is broken.)  The flags say what permissions to mmap it with.</p>
+
+<ul>
+
+<li><p>An INTERP program header (there can be only one per file, presumably
+Connor McLeod) indicates the dynamic linker, and the first thing an exec() call
+does is look for one of these and if it finds it, loads that program instead and
+passes it a filehandle to this one.  (Look at the uClibc dynamic linker source
+to see how that works.)</p></li>
+
+<li><p>A LOAD segment gets mapped into the program's address space.  (This is
+more or less a "normal" segment.)  The loader basically does:
+<blockquote>
+  mmap(ph.vaddr, ph.filesz, ph.flags, MAP_PRIVATE, fd, ph.offset)
+</blockquote>
+Plus the bit about extra zeroed memory at the end, if any.</p></li>
+
+<li><p>A DYNAMIC segment refers to something this program need to get out of a
+shared library.  The dynamic linker needs to fix these up before the program
+can run, which means static executables can't have any DYNAMIC
+segments.</p></li>
+
+<li><p>A NOTE section is a comment.  Don't bother.  Humans seldom read ELF
+files by hand.</p></li>
+
+<li><p>A PHDR section points back to the program header itself, showing where
+it lives in the file.  This makes life easier for debuggers, but is not
+actually required.</p>
+
+<h2>Section Headers:</h2>
+
+<p>The section header table is an array of these structures:</p>
+<pre>
+struct cate_blanchett {
+  uint32_t name;  // Name of section (index into section header string table)
+  uint32_t type;  // Type of this section (see below)
+  uint32_t flags; // Or together: 1 writeable, 2 occupies memory, 4 executable
+  uint32_t addr;  // Virtual address at which to map this section (0 if none)
+  uint32_t offset;// Start of section in file.
+  uint32_t size;  // Section's length in bytes
+  uint32_t link;  // varies based on type (usually section header index of
+                     a related string or symbol table)
+  uint32_t info;  // varies based on type
+  uint32_t addralign; // Alignment (must be power of 2)
+  uint32_t entsize;   // Size of entries (or 0)
+}
+</pre>
+
+<p>The "type" field can be one of:</p>
+<ul>
+<li>1 = <b>PROGBITS</b> - binary data, just map it in.</li>
+<li>2 = <b>SYMTAB</b> - Imports symbol table (what we need to run).</li>
+<li>3 = <b>STRTAB</b> - String table</li>
+<li>4 = <b>RELA</b> - Relocation entries "with explicit addends"</li>
+<li>5 = <b>HASH</b> - Symbol hash table (for dynamic linking)</li>
+<li>6 = <b>DYNAMIC</b> - Exports symbol table (we are a shared library)</li>
+<li>7 = <b>NOTE</b> - Comment</li>
+<li>8 = <b>NOBITS</b> - zeroed data (bss)</li>
+<li>9 = <b>REL</b> - Relocation entries "without explicit addends".  (What's an addend?)</li>
+<li>11 = <b>DYNSYM</b> - Brief version of SYMTAB (just the symbols the linker
+actually needs.)</li>
+</ul>
+
+<p>A section index is an index into the array of section headers.  Special
+indexes that _don't_ point into the array are:</p>
+
+<ul>
+<li><b>SHN_UNDEF</b> (0) - Undefined symbol</li>
+<li><b>SHN_ABS</b> (0xfff1) - Symbols living at an absolute address.</li>
+<li><b>SHN_COMMON</b> (0xfff2) - "common" symbols (Unallocated globals?  What?)</li>
+</ul>
+
+<p>Note that the first section header (0, also known as SHN_UNDEF) exists but
+can never be used and has all zeroed fields.  It's wasted space.  Bad spec
+developers, no biscuit!  (I wonder if anything actually _refers_ to it, and if
+not can I just cheat and omit it?  Not that tinycc really optimizes the size of
+the output binaries but come on guys, this is sad and pointless.  Maybe exec
+or ld-linux.so uses it internally?)</p>
+
+<h2>String Table</h2>
+</p>A STRTAB is a bunch of null terminated strings one after the other, the
+first of which is zero length (always starts with a NULL byte at position 0).
+The last string must be null terminated, can't end the section short.  (As a
+special case, a zero length STRTAB is allowed, and referring to offset zero in
+it refers to an empty string.)</p>
+
+<p>The "shstridx" field in the elf header is the index of a section header with
+a STRTAB for the section names.  The "name" field in each section header is
+an index into that string table.</p>
+
+<h2>Symbol Table</h2>
+
+<p>The symbol table is another array.  Executables don't actually need it
+(unless they contain debugging information), but object files and shared
+libraries do.</p>
+
+<p>The structure for symbol tables is:</p>
+
+<pre>
+typedef hugo_weaving {
+  uint32_t name;  // Index into the object string table (in sht.link), 0=none
+  uint32_t value; // Value of the symbol
+  uint32_t size;  // Size of symbol (0 for none or unknown)
+  uint8_t  info;  // High 4 bits symbol binding: 0=local, 1=global, 2=weak
+                  // Low 4 bits symbol type: data=1, func=2, section=3, file=4
+  uint8_t  other; // Set to 0
+  uint16_t shndx; // Section header table index for this symbol's section.
+};
+</pre>
+
+<p>And again, the spec insists that the first entry in each symbol table be
+wasted and zeroed out.</p>
+
+</pre>
+</blockquote>
