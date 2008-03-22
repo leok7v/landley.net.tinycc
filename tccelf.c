@@ -2239,37 +2239,31 @@ static int ld_next(TCCState *s1, char *name, int name_size)
     int c;
     char *q;
 
- redo:
-    switch(fch) {
-    case ' ':
-    case '\t':
-    case '\f':
-    case '\v':
-    case '\r':
-    case '\n':
-        inp();
-        goto redo;
-    case '/':
-        minp();
-        if (fch == '*') {
-            file->buf_ptr = parse_comment(file->buf_ptr);
-            fch = file->buf_ptr[0];
-            goto redo;
-        } else {
+    for(;;) {
+        if (fch==CH_EOF) {
+            c = LD_TOK_EOF;
+            break;
+        }
+        if (is_space(fch) || fch=='\n') {
+            inp();
+            continue;
+        }
+        if (fch=='/') {
+            minp();
+            if (fch=='*') {
+                fch = *(file->buf_ptr = parse_comment(file->buf_ptr));
+                continue;
+            }
             q = name;
             *q++ = '/';
-            goto parse_name;
+        } else if ((fch>='a' && fch<='z') || (fch>='A' && fch<='Z')
+                    || strchr("_\\.$~",fch)) q = name;
+        else {
+          c = fch;
+          inp();
+          break;
         }
-        break;
-    case 'a' ... 'z':
-    case 'A' ... 'Z':
-    case '_':
-    case '\\':
-    case '.':
-    case '$':
-    case '~':
-        q = name;
-    parse_name:
+
         for(;;) {
             if (!((fch >= 'a' && fch <= 'z') ||
                   (fch >= 'A' && fch <= 'Z') ||
@@ -2283,13 +2277,6 @@ static int ld_next(TCCState *s1, char *name, int name_size)
         }
         *q = '\0';
         c = LD_TOK_NAME;
-        break;
-    case CH_EOF:
-        c = LD_TOK_EOF;
-        break;
-    default:
-        c = fch;
-        inp();
         break;
     }
 #if 0
