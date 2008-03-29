@@ -302,7 +302,7 @@ int parse_args(TCCState *s, int argc, char **argv)
             } else break;
         }
         r = argv[optind++];
-        if (r[0] != '-') {
+        if (r[0] != '-' || !r[1]) {
             /* add a new file */
             dynarray_add((void ***)&files, &nb_files, r);
             if (!multiple_files) {

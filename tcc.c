@@ -915,7 +915,8 @@ BufferedFile *tcc_open(TCCState *s1, char *filename)
     BufferedFile *bf;
     int i, len;
 
-    fd = open(filename, O_RDONLY | O_BINARY);
+    if (!filename) fd = 0;
+    else fd = open(filename, O_RDONLY | O_BINARY);
     if (fd < 0)
         return NULL;
     bf = xmalloc(sizeof(BufferedFile));
@@ -923,7 +924,8 @@ BufferedFile *tcc_open(TCCState *s1, char *filename)
     bf->buf_ptr = bf->buffer;
     bf->buf_end = bf->buffer;
     bf->buffer[0] = CH_EOB; /* put eob symbol */
-    pstrcpy(bf->filename, sizeof(bf->filename), filename);
+    pstrcpy(bf->filename, sizeof(bf->filename),
+        filename ? filename : "*stdin*");
     len = strlen(bf->filename);
     for (i = 0; i < len; i++)
         if (bf->filename[i] == '\\')
@@ -931,7 +933,7 @@ BufferedFile *tcc_open(TCCState *s1, char *filename)
     bf->line_num = 1;
     bf->ifndef_macro = 0;
     bf->ifdef_stack_ptr = s1->ifdef_stack_ptr;
-    //    printf("opening '%s'\n", filename);
+
     return bf;
 }
 
@@ -8917,20 +8919,27 @@ void tcc_delete(TCCState *s1)
 
 int tcc_add_file_internal(TCCState *s1, char *filename, int flags)
 {
-    char *ext, *filename1;
+    char *ext = 0;
     int fd, ret;
     BufferedFile *saved_file;
 
-    /* find source file type with extension */
-    filename1 = strrchr(filename, '/');
-    if (filename1) filename1++;
-    else filename1 = filename;
-    ext = strrchr(filename1, '.');
-    if (ext) ext++;
-
-    /* open the file */
     saved_file = file;
-    file = tcc_open(s1, filename);
+
+    // Treat filename "-" as /dev/stdin
+    if (*filename=='-' && !filename[1]) file = tcc_open(s1, 0);
+    else {
+        char *filename1;
+
+        /* find source file type with extension */
+        filename1 = strrchr(filename, '/');
+        if (filename1) filename1++;
+        else filename1 = filename;
+        ext = strrchr(filename1, '.');
+        if (ext) ext++;
+
+        file = tcc_open(s1, filename);
+    }
+
     if (tccg_verbose > !file)
         printf("%s file '%s'\n", file ? "Read" : "Tried", filename);
     if (!file) {
