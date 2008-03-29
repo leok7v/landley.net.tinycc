@@ -596,7 +596,7 @@ int main(int argc, char **argv)
         if (tccg_output_type == TCC_OUTPUT_PREPROCESS) {
             tcc_add_file_internal(s, filename,
                                   AFF_PRINT_ERROR | AFF_PREPROCESS);
-        } else if (filename[0] == '-') {
+        } else if (*filename == '-' && filename[1]) {
             if (tcc_add_library(s, filename + 2) < 0)
                 error("cannot find %s", filename);
         } else if (tcc_add_file(s, filename) < 0) {
