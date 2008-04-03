@@ -235,7 +235,7 @@ static TCCOption tcc_options[] = {
     { "static", TCC_OPTION_static, 0 },
     { "shared", TCC_OPTION_shared, 0 },
     { "o", TCC_OPTION_o, TCC_OPTION_HAS_ARG },
-    { "run", TCC_OPTION_run, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
+    { "run", TCC_OPTION_run, 0 },
     { "rdynamic", TCC_OPTION_rdynamic, 0 },
     { "r", TCC_OPTION_r, 0 },
     { "Wl,", TCC_OPTION_Wl, TCC_OPTION_HAS_ARG | TCC_OPTION_NOSEP },
@@ -251,33 +251,6 @@ static TCCOption tcc_options[] = {
     { "pipe", TCC_OPTION_pipe, 0},
     { NULL },
 };
-
-/* convert 'str' into an array of space separated strings */
-static int expand_args(char ***pargv, char *str)
-{
-    char *s1;
-    char **argv, *arg;
-    int argc, len;
-
-    argc = 0;
-    argv = NULL;
-    for(;;) {
-        while (is_space(*str))
-            str++;
-        if (*str == '\0')
-            break;
-        s1 = str;
-        while (*str != '\0' && !is_space(*str))
-            str++;
-        len = str - s1;
-        arg = xmalloc(len + 1);
-        memcpy(arg, s1, len);
-        arg[len] = '\0';
-        dynarray_add((void ***)&argv, &argc, arg);
-    }
-    *pargv = argv;
-    return argc;
-}
 
 static char **files;
 static int nb_files, nb_libraries;
@@ -422,16 +395,8 @@ int parse_args(TCCState *s, int argc, char **argv)
                 print_search_dirs = 1;
                 break;
             case TCC_OPTION_run:
-                {
-                    int argc1;
-                    char **argv1;
-                    argc1 = expand_args(&argv1, optarg);
-                    if (argc1 > 0) {
-                        parse_args(s, argc1, argv1);
-                    }
-                    multiple_files = 0;
-                    tccg_output_type = TCC_OUTPUT_MEMORY;
-                }
+                multiple_files = 0;
+                tccg_output_type = TCC_OUTPUT_MEMORY;
                 break;
             case TCC_OPTION_v:
                 if (!tccg_verbose++) show_version();
