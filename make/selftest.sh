@@ -21,6 +21,6 @@ echo -e "\npass three: tinycc -o tinycc -o tinycc" &&
 CC=./test2cc make/make.sh $TARGET &&
 
 echo -e "\nSanity check." &&
-./$CCNAME >/dev/null &&
+./$CCNAME -E - </dev/null >/dev/null &&
 
 echo success || echo test failed
