@@ -265,7 +265,7 @@ void store(int r, SValue *v)
         r = 7;
     } else {
         if (bt == VT_SHORT) gen_byte(0x66);
-        else if (bt == VT_BYTE || bt == VT_BOOL) gen_byte(0x88);
+        if (bt == VT_BYTE || bt == VT_BOOL) gen_byte(0x88);
         else gen_byte(0x89);
     }
     if (fr == VT_CONST ||
