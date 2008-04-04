@@ -270,7 +270,7 @@ static void asm_new_label1(TCCState *s1, int label, int is_local,
 
 static void asm_new_label(TCCState *s1, int label, int is_local)
 {
-    asm_new_label1(s1, label, is_local, cur_text_section->sh_num, ind);
+    asm_new_label1(s1, label, is_local, cur_text_section->sh_num, gen_ind);
 }
 
 static void asm_free_labels(TCCState *st)
@@ -295,9 +295,9 @@ static void asm_free_labels(TCCState *st)
 
 static void use_section1(TCCState *s1, Section *sec)
 {
-    cur_text_section->data_offset = ind;
+    cur_text_section->data_offset = gen_ind;
     cur_text_section = sec;
-    ind = cur_text_section->data_offset;
+    gen_ind = cur_text_section->data_offset;
 }
 
 static void use_section(TCCState *s1, char *name)
@@ -326,8 +326,8 @@ static void asm_parse_directive(TCCState *s1)
         if (tok1 == TOK_ASM_align) {
             if (n < 0 || (n & (n-1)) != 0)
                 error("alignment must be a positive power of two");
-            offset = (ind + n - 1) & -n;
-            size = offset - ind;
+            offset = (gen_ind + n - 1) & -n;
+            size = offset - gen_ind;
             /* the section must have a compatible alignment */
             if (sec->sh_addralign < n)
                 sec->sh_addralign = n;
@@ -341,11 +341,11 @@ static void asm_parse_directive(TCCState *s1)
         }
     zero_pad:
         if (sec->sh_type != SHT_NOBITS) {
-            sec->data_offset = ind;
+            sec->data_offset = gen_ind;
             ptr = section_ptr_add(sec, size);
             memset(ptr, v, size);
         }
-        ind += size;
+        gen_ind += size;
         break;
     case TOK_ASM_quad:
         next();
@@ -367,7 +367,7 @@ static void asm_parse_directive(TCCState *s1)
                 gen_le32(vl);
                 gen_le32(vl >> 32);
             } else {
-                ind += 8;
+                gen_ind += 8;
             }
             if (tok != ',')
                 break;
@@ -401,7 +401,7 @@ static void asm_parse_directive(TCCState *s1)
                         gen_le16(e.v);
                 }
             } else {
-                ind += size;
+                gen_ind += size;
             }
             if (tok != ',')
                 break;
@@ -456,10 +456,10 @@ static void asm_parse_directive(TCCState *s1)
             next();
             /* XXX: handle section symbols too */
             n = asm_int_expr(s1);
-            if (n < ind)
+            if (n < gen_ind)
                 error("attempt to .org backwards");
             v = 0;
-            size = n - ind;
+            size = n - gen_ind;
             goto zero_pad;
         }
         break;
@@ -674,13 +674,13 @@ static int tcc_assemble(TCCState *s1, int do_preprocess)
 
     /* default section is text */
     cur_text_section = text_section;
-    ind = cur_text_section->data_offset;
+    gen_ind = cur_text_section->data_offset;
 
     define_start = define_stack;
 
     ret = tcc_assemble_internal(s1, do_preprocess);
 
-    cur_text_section->data_offset = ind;
+    cur_text_section->data_offset = gen_ind;
 
     free_defines(define_start); 
 
@@ -992,12 +992,12 @@ static void asm_global_instr(void)
     printf("asm_global: \"%s\"\n", (char *)astr.data);
 #endif
     cur_text_section = text_section;
-    ind = cur_text_section->data_offset;
+    gen_ind = cur_text_section->data_offset;
 
     /* assemble the string with tcc internal assembler */
     tcc_assemble_inline(tcc_state, astr.data, astr.size - 1);
     
-    cur_text_section->data_offset = ind;
+    cur_text_section->data_offset = gen_ind;
 
     /* restore the current C token */
     next();

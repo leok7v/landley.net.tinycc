@@ -154,19 +154,19 @@ void gen_multibyte(unsigned long i)
   /* this is a good place to start adding big-endian support*/
   int ind1;
 
-  ind1 = ind + 4;
+  ind1 = gen_ind + 4;
   if (!cur_text_section)
     error("compiler error! This happens f.ex. if the compiler\n"
          "can't evaluate constant expressions outside of a function.");
   if (ind1 > cur_text_section->data_allocated)
     section_realloc(cur_text_section, ind1);
-  cur_text_section->data[ind++] = i&255;
+  cur_text_section->data[gen_ind++] = i&255;
   i>>=8;
-  cur_text_section->data[ind++] = i&255;
+  cur_text_section->data[gen_ind++] = i&255;
   i>>=8; 
-  cur_text_section->data[ind++] = i&255;
+  cur_text_section->data[gen_ind++] = i&255;
   i>>=8;
-  cur_text_section->data[ind++] = i;
+  cur_text_section->data[gen_ind++] = i;
 }
 
 static unsigned long stuff_const(unsigned long op,unsigned long c)
@@ -319,7 +319,7 @@ void gsym_addr(int t, int a)
 
 void gsym(int t)
 {
-  gsym_addr(t, ind);
+  gsym_addr(t, gen_ind);
 }
 
 #ifdef TCC_ARM_VFP
@@ -535,7 +535,7 @@ void load(int r, SValue *sv)
         gen_multibyte(0xE59F0000|(intr(r)<<12));
         gen_multibyte(0xEA000000);
         if(fr & VT_SYM)
-	  greloc(cur_text_section, sv->sym, ind, R_ARM_ABS32);
+	  greloc(cur_text_section, sv->sym, gen_ind, R_ARM_ABS32);
         gen_multibyte(sv->c.ul);
       } else
         gen_multibyte(op);
@@ -546,7 +546,7 @@ void load(int r, SValue *sv)
 	gen_multibyte(0xE59F0000|(intr(r)<<12));
 	gen_multibyte(0xEA000000);
 	if(fr & VT_SYM) // needed ?
-	  greloc(cur_text_section, sv->sym, ind, R_ARM_ABS32);
+	  greloc(cur_text_section, sv->sym, gen_ind, R_ARM_ABS32);
 	gen_multibyte(sv->c.ul);
 	gen_multibyte(0xE08B0000|(intr(r)<<12)|intr(r));
       } else
@@ -672,20 +672,20 @@ static void gcall_or_jmp(int is_jmp)
   if ((vtop->r & (VT_VALMASK | VT_LVAL)) == VT_CONST) {
     unsigned long x;
     /* constant case */
-    x=encbranch(ind,ind+vtop->c.ul,0);
+    x=encbranch(gen_ind,gen_ind+vtop->c.ul,0);
     if(x) {
       if (vtop->r & VT_SYM) {
 	/* relocation case */
-	greloc(cur_text_section, vtop->sym, ind, R_ARM_PC24);
+	greloc(cur_text_section, vtop->sym, gen_ind, R_ARM_PC24);
       } else
-	put_elf_reloc(symtab_section, cur_text_section, ind, R_ARM_PC24, 0);
+	put_elf_reloc(symtab_section, cur_text_section, gen_ind, R_ARM_PC24, 0);
       gen_multibyte(x|(is_jmp?0xE0000000:0xE1000000));
     } else {
       if(!is_jmp)
 	gen_multibyte(0xE28FE004); // add lr,pc,#4
       gen_multibyte(0xE51FF004);   // ldr pc,[pc,#-4]
       if (vtop->r & VT_SYM)
-	greloc(cur_text_section, vtop->sym, ind, R_ARM_ABS32);
+	greloc(cur_text_section, vtop->sym, gen_ind, R_ARM_ABS32);
       gen_multibyte(vtop->c.ul);
     }
   } else {
@@ -933,7 +933,7 @@ void gfunc_prolog(CType *func_type)
   }
   gen_multibyte(0xE92D5800); /* save fp, ip, lr */
   gen_multibyte(0xE28DB00C); /* add fp, sp, #12 */
-  func_sub_sp_offset = ind;
+  func_sub_sp_offset = gen_ind;
   gen_multibyte(0xE1A00000); /* nop, leave space for stack adjustment */
   while ((sym = sym->next)) {
     CType *type;
@@ -978,7 +978,7 @@ void gfunc_epilog(void)
       *(unsigned long *)(cur_text_section->data + func_sub_sp_offset) = x;
     else {
       unsigned long addr;
-      addr=ind;
+      addr=gen_ind;
       gen_multibyte(0xE59FC004); /* ldr ip,[pc+4] */
       gen_multibyte(0xE04BD00C); /* sub sp,fp,ip  */
       gen_multibyte(0xE1A0F00E); /* mov pc,lr */
@@ -992,7 +992,7 @@ void gfunc_epilog(void)
 int gjmp(int t)
 {
   int r;
-  r=ind;
+  r=gen_ind;
   gen_multibyte(0xE0000000|encbranch(r,t,1));
   return r;
 }
@@ -1009,7 +1009,7 @@ int gtst(int inv, int t)
   int v, r;
   unsigned long op;
   v = vtop->r & VT_VALMASK;
-  r=ind;
+  r=gen_ind;
   if (v == VT_CMP) {
     op=mapcc(inv?negcc(vtop->c.i):vtop->c.i);
     op|=encbranch(r,t,1);
@@ -1555,7 +1555,7 @@ void gen_cvt_itof(int t)
       gen_multibyte(0xE3500000|(r<<12));
       r=fpr(get_reg(RC_FLOAT));
       if(last_itod_magic) {
-	off=ind+8-last_itod_magic;
+	off=gen_ind+8-last_itod_magic;
 	off/=4;
 	if(off>255)
 	  off=0;
@@ -1563,7 +1563,7 @@ void gen_cvt_itof(int t)
       gen_multibyte(0xBD1F8100|(r<<12)|off);
       if(!off) {
         gen_multibyte(0xEA000001);
-        last_itod_magic=ind;
+        last_itod_magic=gen_ind;
         gen_multibyte(0x41F00000);
         gen_multibyte(0);
       }

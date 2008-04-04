@@ -12,7 +12,7 @@
 
 // This stuff is used by the code generation backend.
 
-static int ind; /* output code index */
+static int gen_ind; /* output code index */
 static int loc; /* local variable index */
 static Section *cur_text_section; /* current section where function code is generated */
 static SValue *vtop;
@@ -4389,8 +4389,8 @@ void gen_opl(int op)
 #if defined(TINYCC_TARGET_I386)
                 b = psym(0x850f, 0);
 #elif defined(TINYCC_TARGET_ARM)
-                b = ind;
-                gen_multibyte(0x1A000000 | encbranch(ind, 0, 1));
+                b = gen_ind;
+                gen_multibyte(0x1A000000 | encbranch(gen_ind, 0, 1));
 #elif defined(TINYCC_TARGET_C67)
                 error("not implemented");
 #else
@@ -7095,9 +7095,9 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
 
     /* generate line number info */
     if (do_debug && 
-        (last_line_num != file->line_num || last_ind != ind)) {
-        put_stabn(N_SLINE, 0, file->line_num, ind - func_ind);
-        last_ind = ind;
+        (last_line_num != file->line_num || last_ind != gen_ind)) {
+        put_stabn(N_SLINE, 0, file->line_num, gen_ind - func_ind);
+        last_ind = gen_ind;
         last_line_num = file->line_num;
     }
 
@@ -7125,7 +7125,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             gsym(a);
     } else if (tok == TOK_WHILE) {
         next();
-        d = ind;
+        d = gen_ind;
         skip('(');
         gexpr();
         skip(')');
@@ -7242,10 +7242,8 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             vpop();
         }
         skip(';');
-        d = ind;
-        c = ind;
-        a = 0;
-        b = 0;
+        d = c = gen_ind;
+        a = b = 0;
         if (tok != ';') {
             gexpr();
             a = gtst(1, 0);
@@ -7253,7 +7251,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
         skip(';');
         if (tok != ')') {
             e = gjmp(0);
-            c = ind;
+            c = gen_ind;
             gexpr();
             vpop();
             gjmp_addr(d);
@@ -7267,9 +7265,8 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
     } else 
     if (tok == TOK_DO) {
         next();
-        a = 0;
-        b = 0;
-        d = ind;
+        a = b = 0;
+        d = gen_ind;
         block(&a, &b, case_sym, def_sym, case_reg, 0);
         skip(TOK_WHILE);
         skip('(');
@@ -7295,7 +7292,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
         block(&a, csym, &b, &c, case_reg, 0);
         /* if no default, jmp after switch */
         if (c == 0)
-            c = ind;
+            c = gen_ind;
         /* default label */
         gsym_addr(b, c);
         /* break label */
@@ -7347,7 +7344,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             expect("switch");
         if (*def_sym)
             error("too many 'default'");
-        *def_sym = ind;
+        *def_sym = gen_ind;
         is_expr = 0;
         goto block_after_label;
     } else
@@ -7394,7 +7391,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             } else {
                 s = label_push(&global_label_stack, b, LABEL_DEFINED);
             }
-            s->next = (void *)ind;
+            s->next = (void *)gen_ind;
             /* we accept this, but it is a mistake */
         block_after_label:
             if (tok == '}') {
@@ -8132,11 +8129,11 @@ static void func_decl_list(Sym *func_sym)
    'cur_text_section' */
 static void gen_function(Sym *sym)
 {
-    ind = cur_text_section->data_offset;
+    gen_ind = cur_text_section->data_offset;
     /* NOTE: we patch the symbol size later */
-    put_extern_sym(sym, cur_text_section, ind, 0);
+    put_extern_sym(sym, cur_text_section, gen_ind, 0);
     funcname = get_tok_str(sym->token, NULL);
-    func_ind = ind;
+    func_ind = gen_ind;
     /* put debug symbol */
     if (do_debug)
         put_func_debug(sym);
@@ -8147,19 +8144,19 @@ static void gen_function(Sym *sym)
     block(NULL, NULL, NULL, NULL, 0, 0);
     gsym(rsym);
     gfunc_epilog();
-    cur_text_section->data_offset = ind;
+    cur_text_section->data_offset = gen_ind;
     label_pop(&global_label_stack, NULL);
     sym_pop(&local_stack, NULL); /* reset local stack */
     /* end of function */
     /* patch symbol size */
     ((Elf32_Sym *)symtab_section->data)[sym->c].st_size = 
-        ind - func_ind;
+        gen_ind - func_ind;
     if (do_debug) {
-        put_stabn(N_FUN, 0, 0, ind - func_ind);
+        put_stabn(N_FUN, 0, 0, gen_ind - func_ind);
     }
     funcname = ""; /* for safety */
     func_vt.t = VT_VOID; /* for safety */
-    ind = 0; /* for safety */
+    gen_ind = 0; /* for safety */
 }
 
 static void gen_inline_functions(void)

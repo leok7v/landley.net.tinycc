@@ -83,11 +83,11 @@ void gen_byte(int c)
     int ind1;
 
     if (!cur_text_section) return;
-    ind1 = ind + 1;
+    ind1 = gen_ind + 1;
     if (ind1 > cur_text_section->data_allocated)
         section_realloc(cur_text_section, ind1);
-    cur_text_section->data[ind] = c;
-    ind = ind1;
+    cur_text_section->data[gen_ind] = c;
+    gen_ind = ind1;
 }
 
 // Output a variable number of bytes, little endian, ignoring high zero bytes.
@@ -123,26 +123,26 @@ void gsym_addr(int t, int a)
 
 void gsym(int t)
 {
-    gsym_addr(t, ind);
+    gsym_addr(t, gen_ind);
 }
 
 /* psym is used to put an instruction with a data field which is a
    reference to a symbol. It is in fact the same as oad ! */
 #define psym oad
 
-/* instruction + 4 bytes data. Return the address of the data */
+/* Output instruction + 4 bytes data. Return the address of the data */
 static int oad(int c, int s)
 {
     int ind1;
 
     if (!cur_text_section) return 0;
     gen_multibyte(c);
-    ind1 = ind + 4;
+    ind1 = gen_ind + 4;
     if (ind1 > cur_text_section->data_allocated)
         section_realloc(cur_text_section, ind1);
-    *(int *)(cur_text_section->data + ind) = s;
-    s = ind;
-    ind = ind1;
+    *(int *)(cur_text_section->data + gen_ind) = s;
+    s = gen_ind;
+    gen_ind = ind1;
     return s;
 }
 
@@ -150,7 +150,7 @@ static int oad(int c, int s)
 static void gen_addr32(int r, Sym *sym, int c)
 {
     if (r & VT_SYM)
-        greloc(cur_text_section, sym, ind, R_386_32);
+        greloc(cur_text_section, sym, gen_ind, R_386_32);
     gen_le32(c);
 }
 
@@ -296,11 +296,11 @@ static void gcall_or_jmp(int is_jmp)
         if (vtop->r & VT_SYM) {
             /* relocation case */
             greloc(cur_text_section, vtop->sym, 
-                   ind + 1, R_386_PC32);
+                   gen_ind + 1, R_386_PC32);
         } else {
             /* put an empty PC32 relocation */
             put_elf_reloc(symtab_section, cur_text_section, 
-                          ind + 1, R_386_PC32, 0);
+                          gen_ind + 1, R_386_PC32, 0);
         }
         oad(0xe8 + is_jmp, vtop->c.ul - 4); /* call/jmp im */
     } else {
@@ -418,8 +418,8 @@ void gfunc_prolog(CType *func_type)
     }
     param_index = 0;
 
-    ind += FUNC_PROLOG_SIZE;
-    func_sub_sp_offset = ind;
+    gen_ind += FUNC_PROLOG_SIZE;
+    func_sub_sp_offset = gen_ind;
     /* if the function returns a structure, then add an
        implicit pointer parameter */
     func_vt = sym->type;
@@ -481,26 +481,26 @@ void gfunc_epilog(void)
         bounds_ptr = section_ptr_add(lbounds_section, sizeof(int));
         *bounds_ptr = 0;
         /* generate bound local allocation */
-        saved_ind = ind;
-        ind = func_sub_sp_offset;
+        saved_ind = gen_ind;
+        gen_ind = func_sub_sp_offset;
         sym_data = get_sym_ref(&char_pointer_type, lbounds_section, 
                                func_bound_offset, lbounds_section->data_offset);
         greloc(cur_text_section, sym_data,
-               ind + 1, R_386_32);
+               gen_ind + 1, R_386_32);
         oad(0xb8, 0); /* mov %eax, xxx */
         sym = external_global_sym(TOK___bound_local_new, &func_old_type, 0);
         greloc(cur_text_section, sym, 
-               ind + 1, R_386_PC32);
+               gen_ind + 1, R_386_PC32);
         oad(0xe8, -4);
-        ind = saved_ind;
+        gen_ind = saved_ind;
         /* generate bound check local freeing */
         gen_multibyte(0x5250); /* save returned value, if any */
         greloc(cur_text_section, sym_data,
-               ind + 1, R_386_32);
+               gen_ind + 1, R_386_32);
         oad(0xb8, 0); /* mov %eax, xxx */
         sym = external_global_sym(TOK___bound_local_delete, &func_old_type, 0);
         greloc(cur_text_section, sym, 
-               ind + 1, R_386_PC32);
+               gen_ind + 1, R_386_PC32);
         oad(0xe8, -4);
         gen_multibyte(0x585a); /* restore returned value, if any */
     }
@@ -516,13 +516,13 @@ void gfunc_epilog(void)
     /* align local size to word & save local variables */
     
     v = (-loc + 3) & -4; 
-    saved_ind = ind;
-    ind = func_sub_sp_offset - FUNC_PROLOG_SIZE;
+    saved_ind = gen_ind;
+    gen_ind = func_sub_sp_offset - FUNC_PROLOG_SIZE;
 #ifdef TINYCC_TARGET_PE
     if (v >= 4096) {
         Sym *sym = external_global_sym(TOK___chkstk, &func_old_type, 0);
         oad(0xe8, -4); /* call __chkstk, (does the stackframe too) */
-        greloc(cur_text_section, sym, ind-4, R_386_PC32);
+        greloc(cur_text_section, sym, gen_ind-4, R_386_PC32);
     } else
 #endif
     {
@@ -530,7 +530,7 @@ void gfunc_epilog(void)
         gen_multibyte(0xec81);  /* sub esp, stacksize */
     }
     gen_le32(v);
-    ind = saved_ind;
+    gen_ind = saved_ind;
 }
 
 /* generate a jump to a label */
@@ -543,12 +543,12 @@ int gjmp(int t)
 void gjmp_addr(int a)
 {
     int r;
-    r = a - ind - 2;
+    r = a - gen_ind - 2;
     if (r == (char)r) {
         gen_byte(0xeb);
         gen_byte(r);
     } else {
-        oad(0xe9, a - ind - 5);
+        oad(0xe9, a - gen_ind - 5);
     }
 }
 
@@ -887,8 +887,7 @@ void gen_cvt_ftoi(int t)
     gen_multibyte(0x2dd9); /* ldcw xxx */
     sym = external_global_sym(TOK___tcc_int_fpu_control, 
                               &ushort_type, VT_LVAL);
-    greloc(cur_text_section, sym, 
-           ind, R_386_32);
+    greloc(cur_text_section, sym, gen_ind, R_386_32);
     gen_le32(0);
     
     oad(0xec81, size); /* sub $xxx, %esp */
@@ -898,8 +897,7 @@ void gen_cvt_ftoi(int t)
     gen_multibyte(0x2dd9); /* ldcw xxx */
     sym = external_global_sym(TOK___tcc_fpu_control, 
                               &ushort_type, VT_LVAL);
-    greloc(cur_text_section, sym, 
-           ind, R_386_32);
+    greloc(cur_text_section, sym, gen_ind, R_386_32);
     gen_le32(0);
 
     r = get_reg(RC_INT);
@@ -944,8 +942,7 @@ void gen_bounded_ptr_add(void)
     save_regs(0);
     /* do a fast function call */
     sym = external_global_sym(TOK___bound_ptr_add, &func_old_type, 0);
-    greloc(cur_text_section, sym, 
-           ind + 1, R_386_PC32);
+    greloc(cur_text_section, sym, gen_ind + 1, R_386_PC32);
     oad(0xe8, -4);
     /* returned pointer is in eax */
     vtop++;
