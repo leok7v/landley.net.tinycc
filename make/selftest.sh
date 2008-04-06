@@ -14,11 +14,11 @@ make/make.sh $TARGET &&
 mv $CCNAME test1cc &&
 
 echo -e "\npass two: tinycc -o tinycc" &&
-CC=./test1cc make/make.sh $TARGET &&
+CC=./test1cc HOSTCC=./test1cc make/make.sh $TARGET &&
 mv $CCNAME test2cc &&
 
 echo -e "\npass three: tinycc -o tinycc -o tinycc" &&
-CC=./test2cc make/make.sh $TARGET &&
+CC=./test2cc HOSTCC=./test2cc make/make.sh $TARGET &&
 
 echo -e "\nSanity check." &&
 ./$CCNAME -E - </dev/null >/dev/null &&

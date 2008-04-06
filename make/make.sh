@@ -17,15 +17,16 @@ DOLOCAL="-B. -I./include -I."
 # the value of the environment variable of the same name.
 function DEF()
 {
+  local DATA=$(eval "echo \$$1")
   if [ -z "$DEBUG" ]
   then
     # Add a -DSYMBOL="STRING" argument.  The shell eats some of the characters
     # but this gives the compiler the right arguments.
-    echo -D$1=\"\$$1\"
+    echo -D$1=\""$DATA"\"
   else
     # Add an extra layer of quotes so that even after the shell eats one,
     # "echo" produces something that works if we cut and paste it.
-    echo -D$1=\\\"\$$1\\\"
+    echo -D$1=\\\""$DATA"\\\"
   fi
 }
 
@@ -49,7 +50,10 @@ function show_verbose()
   SHOWIT=echo
   [ "$1" == "compile_tinycc" ] && SHOWIT=""
   [ ! -z "$VERBOSE" ] && DEBUG=echo $SHOWIT "$@"
-  [ "$VERBOSE" != "debug" ] && "$@" || return 0
+  if [ "$VERBOSE" != "debug" ]
+  then
+    "$@"
+  fi
 }
 
 function build()
