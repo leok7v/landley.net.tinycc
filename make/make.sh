@@ -13,23 +13,44 @@ TINYCC_VERSION=1.0.0-pre3
 
 DOLOCAL="-B. -I./include -I."
 
+# Add a compiler define to the cc argument list, set to a string containing
+# the value of the environment variable of the same name.
+function DEF()
+{
+  if [ -z "$DEBUG" ]
+  then
+    # Add a -DSYMBOL="STRING" argument.  The shell eats some of the characters
+    # but this gives the compiler the right arguments.
+    echo -D$1=\"\$$1\"
+  else
+    # Add an extra layer of quotes so that even after the shell eats one,
+    # "echo" produces something that works if we cut and paste it.
+    echo -D$1=\\\"\$$1\\\"
+  fi
+}
+
 # Invoke the compiler with all the appropriate arguments
 
 function compile_tinycc()
 {
   OUTFILE=$1
   shift
+  TINYCC_TARGET="$ARCH"
   $DEBUG $CC $@ -o $OUTFILE $CFLAGS $LIBS \
     -DTINYCC_TARGET_$(echo $ARCH | tr a-z A-Z) \
-    -DTINYCC_TARGET='"'$ARCH'"' \
-    -DTINYCC_VERSION='"'$TINYCC_VERSION'"' \
-    -DTINYCC_INSTALLDIR='"'$TINYCC_INSTALLDIR'"' \
-    -DCC_CRTDIR='"'$CC_CRTDIR'"' \
-    -DCC_LIBPATH='"'$CC_LIBPATH'"' \
-    -DCC_HEADERPATH='"'$CC_HEADERPATH'"' \
-    -DCC_DYNAMIC_LINKER='"'$CC_DYNAMIC_LINKER'"'
+    $(DEF TINYCC_TARGET) $(DEF TINYCC_VERSION) $(DEF TINYCC_INSTALLDIR) \
+    $(DEF CC_CRTDIR) $(DEF CC_LIBPATH) $(DEF CC_HEADERPATH) \
+    $(DEF CC_DYNAMIC_LINKER)
 }
 
+# Show command line before running it.
+function show_verbose()
+{
+  SHOWIT=echo
+  [ "$1" == "compile_tinycc" ] && SHOWIT=""
+  [ ! -z "$VERBOSE" ] && DEBUG=echo $SHOWIT "$@"
+  [ "$VERBOSE" != "debug" ] && "$@" || return 0
+}
 
 function build()
 {
@@ -47,8 +68,9 @@ function build()
 
   # Build tinycc with a specific architecture and search paths.
 
-  ARCH=$1 CC_LIBPATH="$L" compile_tinycc $1-tinycc_unstripped tcc.c options.c &&
-  $DEBUG $STRIP $1-tinycc_unstripped -o $1-tinycc
+  ARCH=$1 CC_LIBPATH="$L" show_verbose compile_tinycc $1-tinycc_unstripped \
+    tcc.c options.c &&
+  show_verbose $STRIP $1-tinycc_unstripped -o $1-tinycc
 
   [ $? -ne 0 ] && exit 1
 
@@ -57,13 +79,14 @@ function build()
 
   if [ "$1" == "$HOST" ]
   then
-    $DEBUG rm -f tinycc
-    $DEBUG ln -s $1-tinycc tinycc || exit 1
+    show_verbose rm -f tinycc
+    show_verbose ln -s $1-tinycc tinycc || exit 1
   fi
 
   # Compile tinycc engine as a shared library.
 
-  ARCH=$1 compile_tinycc libtinycc-$1.so -shared -fPIC -DLIBTCC tcc.c &&
+  ARCH=$1 show_verbose compile_tinycc libtinycc-$1.so -shared -fPIC -DLIBTCC \
+    tcc.c &&
 
   # If we're building a tinycc binary we can't run, build one we _can_ run
   # that outputs binaries for the same target.  We need it to build a target
@@ -72,7 +95,8 @@ function build()
   if [ "$CC" != "$HOSTCC" ]
   then
     LIBCC=host-$1-tinycc
-    ARCH=$1 CC="$HOSTCC" CC_LIBPATH="$L" compile_tinycc $LIBCC tcc.c options.c
+    ARCH=$1 CC="$HOSTCC" CC_LIBPATH="$L" show_verbose compile_tinycc $LIBCC \
+      tcc.c options.c
   else
     LIBCC=$1-tinycc
   fi
@@ -85,11 +109,11 @@ function build()
 
   if [ -f $1/alloca.S ]
   then
-    $DEBUG mkdir -p lib/$1
-    $DEBUG ./$LIBCC $DOLOCAL -o libtinycc1-$1.o -c libtinycc1.c &&
-    $DEBUG ./$LIBCC $DOLOCAL -o alloca-$1.o -c $1/alloca.S &&
-    $DEBUG ./$LIBCC $DOLOCAL -o bound-alloca-$1.o -c $1/bound-alloca.S &&
-    $DEBUG $AR rcs libtinyccrt-$1.a {libtinycc1,alloca,bound-alloca}-$1.o
+    show_verbose mkdir -p lib/$1
+    show_verbose ./$LIBCC $DOLOCAL -o libtinycc1-$1.o -c libtinycc1.c &&
+    show_verbose ./$LIBCC $DOLOCAL -o alloca-$1.o -c $1/alloca.S &&
+    show_verbose ./$LIBCC $DOLOCAL -o bound-alloca-$1.o -c $1/bound-alloca.S &&
+    show_verbose $AR rcs libtinyccrt-$1.a {libtinycc1,alloca,bound-alloca}-$1.o
   fi
 }
 
