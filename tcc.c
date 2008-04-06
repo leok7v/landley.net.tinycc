@@ -8329,7 +8329,7 @@ static void decl(int l)
                     }
                     tok_str_add(&func_str, -1, 0);
                     tok_str_add(&func_str, 0, 0);
-                    sym->r = (int)func_str.str;
+                    sym->r = (long)func_str.str;
                 } else {
                     /* compute text section */
                     cur_text_section = ad.section;

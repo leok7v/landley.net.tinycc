@@ -164,7 +164,7 @@ typedef struct SValue {
 /* symbol management */
 typedef struct Sym {
     int token;    /* symbol token */
-    int r;    /* associated register */
+    long r;    /* associated register */
     long c;    /* associated number */
     CType type;    /* associated type */
     struct Sym *next; /* next related symbol */
