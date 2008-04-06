@@ -301,25 +301,25 @@ int decbranch(int pos)
 }
 
 /* output a symbol and patch all calls to it */
-void gsym_addr(int t, int a)
+void gen_resolve_sym_addr(int call_addr, int sym_addr)
 {
   unsigned long *x;
   int lt;
-  while(t) {
-    x=(unsigned long *)(cur_text_section->data + t);
-    t=decbranch(lt=t);
-    if(a==lt+4)
+  while(call_addr) {
+    x=(unsigned long *)(cur_text_section->data + call_addr);
+    call_addr=decbranch(lt=call_addr);
+    if(sym_addr==lt+4)
       *x=0xE1A00000; // nop
     else {
       *x &= 0xff000000;
-      *x |= encbranch(lt,a,1);
+      *x |= encbranch(lt,sym_addr,1);
     }
   }
 }
 
-void gsym(int t)
+void gen_resolve_sym(int call_addr)
 {
-  gsym_addr(t, gen_ind);
+  gen_resolve_sym_addr(call_addr, gen_ind);
 }
 
 #ifdef TCC_ARM_VFP
@@ -561,7 +561,7 @@ void load(int r, SValue *sv)
       t = v & 1;
       gen_multibyte(0xE3A00000|(intr(r)<<12)|t);
       gen_multibyte(0xEA000000);
-      gsym(sv->c.ul);
+      gen_resolve_sym(sv->c.ul);
       gen_multibyte(0xE3A00000|(intr(r)<<12)|(t^1));
       return;
     } else if (v < VT_CONST) {
@@ -1035,7 +1035,7 @@ int gtst(int inv, int t)
       }
     } else {
       t = gjmp(t);
-      gsym(vtop->c.i);
+      gen_resolve_sym(vtop->c.i);
     }
   } else {
     if (is_float(vtop->type.t)) {

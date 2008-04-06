@@ -108,22 +108,25 @@ void gen_le32(int c)
     gen_byte(c >> 24);
 }
 
-/* output a symbol and patch all calls to it */
-void gsym_addr(int t, int a)
+// Resolve all calls to a symbol, patching each to point to a known address.
+void gen_resolve_sym_addr(int call_addr, int symbol_addr)
 {
-    int n, *ptr;
     if (!cur_text_section) return;
-    while (t) {
-        ptr = (int *)(cur_text_section->data + t);
+    // Traverse the linked list of calls and patch each one.
+    while (call_addr) {
+        int n, *ptr;
+
+        ptr = (int *)(cur_text_section->data + call_addr);
         n = *ptr; /* next value */
-        *ptr = a - t - 4;
-        t = n;
+        *ptr = symbol_addr - call_addr - 4;
+        call_addr = n;
     }
 }
 
-void gsym(int t)
+// Resolve a symbol at the current location, patching all calls to it.
+void gen_resolve_sym(int call_addr)
 {
-    gsym_addr(t, gen_ind);
+    gen_resolve_sym_addr(call_addr, gen_ind);
 }
 
 /* psym is used to put an instruction with a data field which is a
@@ -234,7 +237,7 @@ void load(int r, SValue *sv)
             t = v & 1;
             oad(0xb8 + r, t); /* mov $1, r */
             gen_multibyte(0x05eb); /* jmp after */
-            gsym(fc);
+            gen_resolve_sym(fc);
             oad(0xb8 + r, t ^ 1); /* mov $0, r */
         } else if (v != r) {
             gen_byte(0x89);
@@ -559,7 +562,8 @@ int gtst(int inv, int t)
 
     v = vtop->r & VT_VALMASK;
     if (v == VT_CMP) {
-        /* fast case : can jump directly since flags are set */
+        /* fast case : the top of the value stack is still in a register,
+           and the comparison flag is set, so we can jump directly */
         gen_byte(0x0f);
         t = psym((vtop->c.i - 16) ^ inv, t);
     } else if (v == VT_JMP || v == VT_JMPI) {
@@ -573,7 +577,7 @@ int gtst(int inv, int t)
             t = vtop->c.i;
         } else {
             t = gjmp(t);
-            gsym(vtop->c.i);
+            gen_resolve_sym(vtop->c.i);
         }
     } else {
         if (is_float(vtop->type.t) || is_llong(vtop->type.t)) {

@@ -4142,7 +4142,7 @@ void vpop(void)
 #endif
     if (v == VT_JMP || v == VT_JMPI) {
         /* need to put correct jump if && or || without test */
-        gsym(vtop->c.ul);
+        gen_resolve_sym(vtop->c.ul);
     }
     vtop--;
 }
@@ -4410,7 +4410,7 @@ void gen_opl(int op)
             op1 = TOK_UGE;
         gen_op(op1);
         a = gtst(1, a);
-        gsym(b);
+        gen_resolve_sym(b);
         vseti(VT_JMPI, a);
         break;
     }
@@ -6932,7 +6932,7 @@ static void expr_eq(void)
             vtop--; /* no vpop so that FP stack is not flushed */
             skip(':');
             u = gjmp(0);
-            gsym(tt);
+            gen_resolve_sym(tt);
             expr_eq();
             type2 = vtop->type;
 
@@ -6994,7 +6994,7 @@ static void expr_eq(void)
             /* this is horrible, but we must also convert first
                operand */
             tt = gjmp(0);
-            gsym(u);
+            gen_resolve_sym(u);
             /* put again first value and cast it */
             *vtop = sv;
             gen_cast(&type);
@@ -7003,7 +7003,7 @@ static void expr_eq(void)
             r1 = gv(rc);
             move_reg(r2, r1);
             vtop->r = r2;
-            gsym(tt);
+            gen_resolve_sym(tt);
         }
     }
 }
@@ -7118,11 +7118,11 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
         if (tok == TOK_ELSE) {
             next();
             d = gjmp(0);
-            gsym(a);
+            gen_resolve_sym(a);
             block(bsym, csym, case_sym, def_sym, case_reg, 0);
-            gsym(d); /* patch else jmp */
+            gen_resolve_sym(d); /* patch else jmp */
         } else
-            gsym(a);
+            gen_resolve_sym(a);
     } else if (tok == TOK_WHILE) {
         next();
         d = gen_ind;
@@ -7133,8 +7133,8 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
         b = 0;
         block(&a, &b, case_sym, def_sym, case_reg, 0);
         gjmp_addr(d);
-        gsym(a);
-        gsym_addr(b, d);
+        gen_resolve_sym(a);
+        gen_resolve_sym_addr(b, d);
     } else if (tok == '{') {
         Sym *llabel;
         
@@ -7255,13 +7255,13 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             gexpr();
             vpop();
             gjmp_addr(d);
-            gsym(e);
+            gen_resolve_sym(e);
         }
         skip(')');
         block(&a, &b, case_sym, def_sym, case_reg, 0);
         gjmp_addr(c);
-        gsym(a);
-        gsym_addr(b, c);
+        gen_resolve_sym(a);
+        gen_resolve_sym_addr(b, c);
     } else 
     if (tok == TOK_DO) {
         next();
@@ -7270,12 +7270,12 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
         block(&a, &b, case_sym, def_sym, case_reg, 0);
         skip(TOK_WHILE);
         skip('(');
-        gsym(b);
+        gen_resolve_sym(b);
         gexpr();
         c = gtst(0, 0);
-        gsym_addr(c, d);
+        gen_resolve_sym_addr(c, d);
         skip(')');
-        gsym(a);
+        gen_resolve_sym(a);
         skip(';');
     } else
     if (tok == TOK_SWITCH) {
@@ -7294,9 +7294,9 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
         if (c == 0)
             c = gen_ind;
         /* default label */
-        gsym_addr(b, c);
+        gen_resolve_sym_addr(b, c);
         /* break label */
-        gsym(a);
+        gen_resolve_sym(a);
     } else
     if (tok == TOK_CASE) {
         int v1, v2;
@@ -7314,7 +7314,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             if (v2 < v1)
                 warning("empty case range");
         }
-        gsym(*case_sym);
+        gen_resolve_sym(*case_sym);
         vseti(case_reg, 0);
         vpushi(v1);
         if (v1 == v2) {
@@ -7333,7 +7333,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             goto next_case;
         }
         *case_sym = gtst(1, *case_sym);
-        gsym(b);
+        gen_resolve_sym(b);
         is_expr = 0;
         goto block_after_label;
     } else 
@@ -7386,7 +7386,7 @@ static void block(int *bsym, int *csym, int *case_sym, int *def_sym,
             if (s) {
                 if (s->r == LABEL_DEFINED)
                     error("duplicate label '%s'", get_tok_str(s->token, NULL));
-                gsym((long)s->next);
+                gen_resolve_sym((long)s->next);
                 s->r = LABEL_DEFINED;
             } else {
                 s = label_push(&global_label_stack, b, LABEL_DEFINED);
@@ -8142,7 +8142,7 @@ static void gen_function(Sym *sym)
     gfunc_prolog(&sym->type);
     rsym = 0;
     block(NULL, NULL, NULL, NULL, 0, 0);
-    gsym(rsym);
+    gen_resolve_sym(rsym);
     gfunc_epilog();
     cur_text_section->data_offset = gen_ind;
     label_pop(&global_label_stack, NULL);
