@@ -9096,8 +9096,7 @@ int init_output_type(TCCState *s)
 
         /* default include paths */
         /* XXX: reverse order needed if -isystem support */
-        add_dynarray_path(s, "/usr/local/include:/usr/include",
-            &(s->sysinclude_paths));
+        add_dynarray_path(s, CC_HEADERPATH, &(s->sysinclude_paths));
         snprintf(buf, sizeof(buf), "%s/include", tinycc_path);
         add_dynarray_path(s, buf, &(s->sysinclude_paths));
     }
