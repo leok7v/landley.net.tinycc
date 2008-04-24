@@ -93,7 +93,7 @@ static CType int_type;
 static unsigned char isidnum_table[256];
 
 /* compile with debug symbol (and use them if error during execution) */
-static int do_debug = 0;
+extern int do_debug;
 
 /* display benchmark infos */
 static int total_lines;
